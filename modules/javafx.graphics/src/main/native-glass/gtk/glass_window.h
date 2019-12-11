@@ -376,6 +376,8 @@ class WindowContextTop: public WindowContextBase {
         bool prev; //former resizable value (used in setEnabled for parents of modal window)
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
+    GdkGeometry gdk_geometry;
+    bool was_resizable;
 
     bool frame_extents_initialized;
     bool map_received;
@@ -415,6 +417,7 @@ public:
     void set_title(const char*);
     void set_alpha(double);
     void set_enabled(bool);
+    void apply_geometry();
     void set_minimum_size(int, int);
     void set_maximum_size(int, int);
     void set_icon(GdkPixbuf*);
@@ -442,8 +445,6 @@ private:
     void set_cached_extents(WindowFrameExtents ex);
     WindowFrameExtents get_cached_extents();
     void window_configure(XWindowChanges *, unsigned int);
-    void update_window_constraints();
-    void set_window_resizable(bool);
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
