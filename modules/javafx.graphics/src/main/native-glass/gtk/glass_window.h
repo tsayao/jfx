@@ -94,8 +94,11 @@ struct WindowGeometry {
     // notification
     int current_height;
 
-    WindowFrameExtents extents;
+    int current_x;
+    int current_y;
 
+    WindowFrameExtents extents;
+    GdkGeometry gdk_geometry;
 };
 
 class WindowContextChild;
@@ -376,9 +379,6 @@ class WindowContextTop: public WindowContextBase {
         bool prev; //former resizable value (used in setEnabled for parents of modal window)
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
-    GdkGeometry gdk_geometry;
-    bool was_resizable;
-
     bool frame_extents_initialized;
     bool map_received;
     bool location_assigned;
@@ -411,6 +411,7 @@ public:
     void set_minimized(bool);
     void set_maximized(bool);
     void set_bounds(int, int, bool, bool, int, int, int, int);
+    void set_window_resizable(bool);
     void set_resizable(bool);
     void request_focus();
     void set_focusable(bool);
