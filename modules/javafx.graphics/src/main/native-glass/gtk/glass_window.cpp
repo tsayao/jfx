@@ -51,6 +51,67 @@
 #define MOUSE_BACK_BTN 8
 #define MOUSE_FORWARD_BTN 9
 
+// EVENTS
+static gboolean on_configure(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_configure(&event->configure);
+    return FALSE;
+}
+
+static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_expose(&event->expose);
+    return FALSE;
+}
+
+static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_property_notify(&event->property);
+    return FALSE;
+}
+
+static gboolean on_focus_change(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
+    return FALSE;
+}
+
+static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_delete();
+    return FALSE;
+}
+
+static gboolean on_window_state(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_state(&event->window_state);
+    return FALSE;
+}
+
+static gboolean on_device_button(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_mouse_button(&event->button);
+    return FALSE;
+}
+
+static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_mouse_motion(&event->motion);
+    return FALSE;
+}
+
+static gboolean on_device_scroll(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_mouse_scroll(&event->scroll);
+    return FALSE;
+}
+
+static gboolean on_enter_or_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_mouse_cross(&event->crossing);
+    return FALSE;
+}
+
+static gboolean on_key_press_or_release(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_key(&event->key);
+    return FALSE;
+}
+
+static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_map();
+    return FALSE;
+}
+
 WindowContext * WindowContextBase::sm_grab_window = NULL;
 WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
@@ -687,6 +748,42 @@ void WindowContextBase::set_background(float r, float g, float b) {
 #endif
 }
 
+void WindowContextBase::configure_events() {
+    //Signals
+    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), this);
+
+    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), this);
+
+#ifdef GLASS_GTK3
+    g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), this);
+#else
+    g_signal_connect(gtk_widget, "expose", G_CALLBACK(on_damage_or_draw), this);
+#endif
+
+    g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), this);
+
+    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), this);
+    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_property_notify), this);
+
+    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), this);
+
+    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(on_window_state), this);
+
+    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(on_device_button), this);
+    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(on_device_button), this);
+
+    g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(on_device_motion), this);
+    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(on_device_scroll), this);
+
+    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(on_device_scroll), this);
+    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(on_enter_or_leave), this);
+
+    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), this);
+    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), this);
+
+    g_signal_connect(gtk_widget, "map", G_CALLBACK(on_map), this);
+}
+
 WindowContextBase::~WindowContextBase() {
     if (xim.ic) {
         XDestroyIC(xim.ic);
@@ -773,6 +870,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type == TITLED) {
         request_frame_extents();
     }
+
+
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1010,6 +1109,15 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
         process_net_wm_property();
     }
 }
+
+/*
+
+gboolean WindowContextTop::process_configure_signal(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    process_configure(&event->configure);
+    return FALSE;
+}
+*/
+
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
     gint x, y, w, h;

@@ -453,50 +453,50 @@ static void process_events(GdkEvent* event, gpointer data)
         try {
             switch (event->type) {
                 case GDK_PROPERTY_NOTIFY:
-                    ctx->process_property_notify(&event->property);
+//                    ctx->process_property_notify(&event->property);
                     gtk_main_do_event(event);
                     break;
                 case GDK_CONFIGURE:
-                    ctx->process_configure(&event->configure);
+//                    ctx->process_configure(&event->configure);
                     gtk_main_do_event(event);
                     break;
                 case GDK_FOCUS_CHANGE:
-                    ctx->process_focus(&event->focus_change);
+//                    ctx->process_focus(&event->focus_change);
                     gtk_main_do_event(event);
                     break;
                 case GDK_DESTROY:
-                    destroy_and_delete_ctx(ctx);
+//                    destroy_and_delete_ctx(ctx);
                     gtk_main_do_event(event);
                     break;
                 case GDK_DELETE:
-                    ctx->process_delete();
+//                    ctx->process_delete();
                     break;
                 case GDK_EXPOSE:
                 case GDK_DAMAGE:
-                    ctx->process_expose(&event->expose);
+//                    ctx->process_expose(&event->expose);
                     break;
                 case GDK_WINDOW_STATE:
-                    ctx->process_state(&event->window_state);
+//                    ctx->process_state(&event->window_state);
                     gtk_main_do_event(event);
                     break;
                 case GDK_BUTTON_PRESS:
                 case GDK_BUTTON_RELEASE:
-                    ctx->process_mouse_button(&event->button);
+//                    ctx->process_mouse_button(&event->button);
                     break;
                 case GDK_MOTION_NOTIFY:
-                    ctx->process_mouse_motion(&event->motion);
-                    gdk_event_request_motions(&event->motion);
+//                    ctx->process_mouse_motion(&event->motion);
+//                    gdk_event_request_motions(&event->motion);
                     break;
                 case GDK_SCROLL:
-                    ctx->process_mouse_scroll(&event->scroll);
+//                    ctx->process_mouse_scroll(&event->scroll);
                     break;
                 case GDK_ENTER_NOTIFY:
                 case GDK_LEAVE_NOTIFY:
-                    ctx->process_mouse_cross(&event->crossing);
+//                    ctx->process_mouse_cross(&event->crossing);
                     break;
                 case GDK_KEY_PRESS:
                 case GDK_KEY_RELEASE:
-                    ctx->process_key(&event->key);
+//                    ctx->process_key(&event->key);
                     break;
                 case GDK_DROP_START:
                 case GDK_DRAG_ENTER:
@@ -505,7 +505,7 @@ static void process_events(GdkEvent* event, gpointer data)
                     process_dnd_target(ctx, &event->dnd);
                     break;
                 case GDK_MAP:
-                    ctx->process_map();
+//                    ctx->process_map();
                     // fall-through
                 case GDK_UNMAP:
                 case GDK_CLIENT_EVENT:

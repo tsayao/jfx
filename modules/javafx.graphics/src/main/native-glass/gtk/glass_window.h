@@ -176,6 +176,9 @@ public:
     virtual void decrement_events_counter() = 0;
     virtual size_t get_events_count() = 0;
     virtual bool is_dead() = 0;
+
+    virtual void configure_events() = 0;
+
     virtual ~WindowContext() {}
 };
 
@@ -266,6 +269,8 @@ public:
     void decrement_events_counter();
     size_t get_events_count();
     bool is_dead();
+
+    void configure_events();
 
     ~WindowContextBase();
 protected:
