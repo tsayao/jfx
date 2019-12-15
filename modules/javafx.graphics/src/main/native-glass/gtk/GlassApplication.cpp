@@ -465,10 +465,11 @@ static void process_events(GdkEvent* event, gpointer data)
                     gtk_main_do_event(event);
                     break;
                 case GDK_DELETE:
-//                    ctx->process_delete();
+                    ctx->process_delete();
                     break;
                 case GDK_EXPOSE:
                 case GDK_DAMAGE:
+                    gtk_main_do_event(event);
 //                    ctx->process_expose(&event->expose);
                     break;
                 case GDK_WINDOW_STATE:
@@ -477,29 +478,34 @@ static void process_events(GdkEvent* event, gpointer data)
                     break;
                 case GDK_BUTTON_PRESS:
                 case GDK_BUTTON_RELEASE:
+                    gtk_main_do_event(event);
 //                    ctx->process_mouse_button(&event->button);
                     break;
                 case GDK_MOTION_NOTIFY:
+                    gtk_main_do_event(event);
 //                    ctx->process_mouse_motion(&event->motion);
 //                    gdk_event_request_motions(&event->motion);
                     break;
                 case GDK_SCROLL:
+                    gtk_main_do_event(event);
 //                    ctx->process_mouse_scroll(&event->scroll);
                     break;
                 case GDK_ENTER_NOTIFY:
                 case GDK_LEAVE_NOTIFY:
+                    gtk_main_do_event(event);
 //                    ctx->process_mouse_cross(&event->crossing);
                     break;
                 case GDK_KEY_PRESS:
                 case GDK_KEY_RELEASE:
+                    gtk_main_do_event(event);
 //                    ctx->process_key(&event->key);
                     break;
                 case GDK_DROP_START:
                 case GDK_DRAG_ENTER:
                 case GDK_DRAG_LEAVE:
-                case GDK_DRAG_MOTION:
                     process_dnd_target(ctx, &event->dnd);
                     break;
+                case GDK_DRAG_MOTION:
                 case GDK_MAP:
 //                    ctx->process_map();
                     // fall-through

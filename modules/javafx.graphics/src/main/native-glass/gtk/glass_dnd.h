@@ -31,6 +31,8 @@
 
 #include <gtk/gtk.h>
 
+void process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
+                                    gint x, gint y, guint time);
 void process_dnd_target(WindowContext *, GdkEventDND *);
 jint dnd_target_get_supported_actions(JNIEnv *);
 jobjectArray dnd_target_get_mimes(JNIEnv *);

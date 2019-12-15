@@ -164,24 +164,26 @@ static void process_dnd_target_drag_enter(WindowContext *ctx, GdkEventDND *event
     is_dnd_owner = is_in_drag();
 }
 
-static void process_dnd_target_drag_motion(WindowContext *ctx, GdkEventDND *event)
+
+void process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
+                                    gint x, gint y, guint time)
 {
     if (!enter_ctx.ctx) {
-        gdk_drag_status(event->context, static_cast<GdkDragAction>(0), GDK_CURRENT_TIME);
+        gdk_drag_status(context, static_cast<GdkDragAction>(0), GDK_CURRENT_TIME);
         return; // Do not process motion events if no enter event was received
     }
     jmethodID method = enter_ctx.just_entered ? jViewNotifyDragEnter : jViewNotifyDragOver;
-    GdkDragAction suggested = gdk_drag_context_get_suggested_action(event->context);
+    GdkDragAction suggested = gdk_drag_context_get_suggested_action(context);
     GdkDragAction result = translate_glass_action_to_gdk(mainEnv->CallIntMethod(ctx->get_jview(), method,
-            (jint)event->x_root - enter_ctx.dx, (jint)event->y_root - enter_ctx.dy,
-            (jint)event->x_root, (jint)event->y_root,
+            (jint)x - enter_ctx.dx, (jint)y - enter_ctx.dy,
+            (jint)x, (jint)y,
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION(mainEnv)
 
     if (enter_ctx.just_entered) {
         enter_ctx.just_entered = FALSE;
     }
-    gdk_drag_status(event->context, result, GDK_CURRENT_TIME);
+    gdk_drag_status(context, result, GDK_CURRENT_TIME);
 }
 
 static void process_dnd_target_drag_leave(WindowContext *ctx, GdkEventDND *event)
@@ -231,9 +233,9 @@ void process_dnd_target(WindowContext *ctx, GdkEventDND *event)
         case GDK_DRAG_ENTER:
             process_dnd_target_drag_enter(ctx, event);
             break;
-        case GDK_DRAG_MOTION:
-            process_dnd_target_drag_motion(ctx, event);
-            break;
+//        case GDK_DRAG_MOTION:
+//            process_dnd_target_drag_motion(ctx, event);
+//            break;
         case GDK_DRAG_LEAVE:
             process_dnd_target_drag_leave(ctx, event);
             break;
