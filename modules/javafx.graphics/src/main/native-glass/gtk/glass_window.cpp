@@ -781,7 +781,7 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), this);
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), this);
 
-    g_signal_connect(gtk_widget, "map", G_CALLBACK(on_map), this);
+    g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), this);
 }
 
 WindowContextBase::~WindowContextBase() {
