@@ -391,6 +391,7 @@ class WindowContextTop: public WindowContextBase {
     bool location_assigned;
     bool size_assigned;
     bool on_top;
+    bool is_fullscreen;
 
     struct _Size {
         int width, height;
@@ -453,7 +454,6 @@ private:
     bool update_frame_extents();
     void set_cached_extents(WindowFrameExtents ex);
     WindowFrameExtents get_cached_extents();
-    void window_configure(XWindowChanges *, unsigned int);
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();

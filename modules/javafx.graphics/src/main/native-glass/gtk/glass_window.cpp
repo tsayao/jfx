@@ -150,9 +150,9 @@ static gboolean on_drag_motion (GtkWidget      *widget,
                                 gpointer        user_data) {
     g_print("on_drag_motion: %d, %d\n", x ,y);
 
-    process_dnd_target_drag_motion (((WindowContext*)user_data), widget, context, x, y, time);
+    process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
 
-    return FALSE;
+    return TRUE;
 }
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
@@ -832,9 +832,6 @@ void WindowContextBase::configure_events() {
     //DND
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
 
-//    drag-begin
-//     	drag-leave
-//     	drag-drop
 }
 
 WindowContextBase::~WindowContextBase() {
@@ -911,7 +908,22 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
 
-    gdk_window_register_dnd(gdk_window);
+    GtkTargetEntry desttargetentries[] =
+    {
+        { (gchar*) "UTF8_STRING",   0, 0 },
+        { (gchar*) "text/plain",    0, 0 },
+        { (gchar*) "COMPOUND_TEXT", 0, 0 },
+        { (gchar*) "STRING",        0, 0 },
+        { (gchar*) "text/uri-list", 0, 0 },
+        { (gchar*) "image/png",     0, 0 },
+        { (gchar*) "image/jpeg",    0, 0 },
+        { (gchar*) "image/tiff",    0, 0 },
+        { (gchar*) "image/bmp",     0, 0 }
+    };
+
+    //gdk_window_register_dnd(gdk_window);
+    gtk_drag_dest_set(gtk_widget, GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
+                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
 
     gdk_windowManagerFunctions = wmf;
     if (wmf) {
@@ -923,6 +935,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type == TITLED) {
         request_frame_extents();
     }
+
+    is_fullscreen = FALSE;
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1254,6 +1268,10 @@ void WindowContextTop::set_visible(bool visible)
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
+    if (is_maximized || is_fullscreen) {
+        return;
+    }
+
     int newW = w > 0 ? w :
                    cw > 0 ? cw + geometry.extents.right + geometry.extents.left : geometry.current_width;
 
@@ -1269,8 +1287,8 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     }
 
     if (xSet || ySet) {
-        int newX = (xSet && x >= 0) ? x : geometry.current_x;
-        int newY = (ySet && y >= 0) ? y : geometry.current_y;
+        int newX = (xSet) ? x : geometry.current_x;
+        int newY = (ySet) ? y : geometry.current_y;
 
         if (newX != geometry.current_x || newY != geometry.current_y) {
             g_print("gtk_window_move(%d, %d)\n", newX, newY);
@@ -1286,48 +1304,6 @@ void WindowContextTop::process_map() {
     map_received = true;
     set_window_resizable(resizable.value);
     update_frame_extents();
-}
-
-void WindowContextTop::window_configure(XWindowChanges *windowChanges,
-        unsigned int windowChangesMask) {
-//    if (windowChangesMask == 0) {
-//        return;
-//    }
-//
-//    if (windowChangesMask & (CWX | CWY)) {
-//        gint newX, newY;
-//        gtk_window_get_position(GTK_WINDOW(gtk_widget), &newX, &newY);
-//
-//        if (windowChangesMask & CWX) {
-//            newX = windowChanges->x;
-//        }
-//        if (windowChangesMask & CWY) {
-//            newY = windowChanges->y;
-//        }
-//        gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
-//    }
-//
-//    if (windowChangesMask & (CWWidth | CWHeight)) {
-//        gint newWidth, newHeight;
-//        gtk_window_get_size(GTK_WINDOW(gtk_widget), &newWidth, &newHeight);
-//
-//        if (windowChangesMask & CWWidth) {
-//            newWidth = windowChanges->width;
-//        }
-//        if (windowChangesMask & CWHeight) {
-//            newHeight = windowChanges->height;
-//        }
-////
-////        if (!resizable.value) {
-////            GdkGeometry geom;
-////            GdkWindowHints hints = (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
-////            geom.min_width = geom.max_width = newWidth;
-////            geom.min_height = geom.max_height = newHeight;
-////            gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), NULL, &geom, hints);
-////        }
-//
-//        gtk_window_resize(GTK_WINDOW(gtk_widget), newWidth, newHeight);
-//    }
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height)
@@ -1377,7 +1353,6 @@ void WindowContextTop::set_minimized(bool minimize) {
 void WindowContextTop::set_maximized(bool maximize) {
     is_maximized = maximize;
     if (maximize) {
-        ensure_window_size();
         gtk_window_maximize(GTK_WINDOW(gtk_widget));
     } else {
         gtk_window_unmaximize(GTK_WINDOW(gtk_widget));
@@ -1385,11 +1360,12 @@ void WindowContextTop::set_maximized(bool maximize) {
 }
 
 void WindowContextTop::enter_fullscreen() {
-    ensure_window_size();
+    is_fullscreen = TRUE;
     gtk_window_fullscreen(GTK_WINDOW(gtk_widget));
 }
 
 void WindowContextTop::exit_fullscreen() {
+    is_fullscreen = FALSE;
     gtk_window_unfullscreen(GTK_WINDOW(gtk_widget));
 }
 

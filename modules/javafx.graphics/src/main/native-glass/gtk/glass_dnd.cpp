@@ -49,9 +49,9 @@ static jint translate_gdk_action_to_glass(GdkDragAction action)
 static GdkDragAction translate_glass_action_to_gdk(jint action)
 {
     int result = 0;
-    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_COPY)? GDK_ACTION_COPY : 0;
-    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_MOVE)? GDK_ACTION_MOVE : 0;
-    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_REFERENCE)? GDK_ACTION_LINK : 0;
+    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_COPY) ? GDK_ACTION_COPY : 0;
+    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_MOVE) ? GDK_ACTION_MOVE : 0;
+    result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_REFERENCE) ? GDK_ACTION_LINK : 0;
     return static_cast<GdkDragAction>(result);
 }
 
@@ -168,6 +168,7 @@ static void process_dnd_target_drag_enter(WindowContext *ctx, GdkEventDND *event
 void process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
                                     gint x, gint y, guint time)
 {
+    g_print("process_dnd_target_drag_motion\n");
     if (!enter_ctx.ctx) {
         gdk_drag_status(context, static_cast<GdkDragAction>(0), GDK_CURRENT_TIME);
         return; // Do not process motion events if no enter event was received
