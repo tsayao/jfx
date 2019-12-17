@@ -885,9 +885,11 @@ WindowContextBase::~WindowContextBase() {
 }
 
 ////////////////////////////// WindowContextTop /////////////////////////////////
-WindowFrameExtents WindowContextTop::normal_extents = {28, 1, 1, 1};
-WindowFrameExtents WindowContextTop::utility_extents = {28, 1, 1, 1};
+//WindowFrameExtents WindowContextTop::normal_extents = {28, 1, 1, 1};
+//WindowFrameExtents WindowContextTop::utility_extents = {28, 1, 1, 1};
 
+static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
+static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
 
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
@@ -988,14 +990,8 @@ void WindowContextTop::detach_from_java() {
     }
 }
 
-static GdkAtom
-get_net_frame_extents_atom() {
-    static const char * extents_str = "_NET_FRAME_EXTENTS";
-    return gdk_atom_intern(extents_str, TRUE);
-}
 
-void
-WindowContextTop::request_frame_extents() {
+void WindowContextTop::request_frame_extents() {
     Display *display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(gdk_window));
     Atom rfeAtom = XInternAtom(display, "_NET_REQUEST_FRAME_EXTENTS", True);
     if (rfeAtom != None) {
@@ -1036,47 +1032,12 @@ void WindowContextTop::activate_window() {
     }
 }
 
-void WindowContextTop::set_cached_extents(WindowFrameExtents ex) {
-    if (window_type == NORMAL) {
-        normal_extents = ex;
-    } else {
-        utility_extents = ex;
-    }
-}
-
-WindowFrameExtents WindowContextTop::get_cached_extents() {
-    return window_type == NORMAL ? normal_extents : utility_extents;
-}
-
-
-bool WindowContextTop::update_frame_extents() {
-    bool changed = false;
-    int top, left, bottom, right;
-    if (get_frame_extents_property(&top, &left, &bottom, &right)) {
-        changed = geometry.extents.top != top
-                    || geometry.extents.left != left
-                    || geometry.extents.bottom != bottom
-                    || geometry.extents.right != right;
-        if (changed) {
-            geometry.extents.top = top;
-            geometry.extents.left = left;
-            geometry.extents.bottom = bottom;
-            geometry.extents.right = right;
-            if (!is_null_extents()) {
-                set_cached_extents(geometry.extents);
-            }
-        }
-    }
-    return changed;
-}
-
-bool
-WindowContextTop::get_frame_extents_property(int *top, int *left,
+bool WindowContextTop::get_frame_extents_property(int *top, int *left,
         int *bottom, int *right) {
     unsigned long *extents;
 
     if (gdk_property_get(gdk_window,
-            get_net_frame_extents_atom(),
+            atom_net_wm_frame_extents,
             gdk_atom_intern("CARDINAL", FALSE),
             0,
             sizeof (unsigned long) * 4,
@@ -1097,7 +1058,6 @@ WindowContextTop::get_frame_extents_property(int *top, int *left,
     return false;
 }
 
-
 static int geometry_get_window_width(const WindowGeometry *windowGeometry) {
      return (windowGeometry->final_width.type != BOUNDSTYPE_WINDOW)
                    ? windowGeometry->final_width.value
@@ -1114,6 +1074,7 @@ static int geometry_get_window_height(const WindowGeometry *windowGeometry) {
                    : windowGeometry->final_height.value;
 }
 
+/*
 static int geometry_get_content_width(WindowGeometry *windowGeometry) {
     return (windowGeometry->final_width.type != BOUNDSTYPE_CONTENT)
                    ? windowGeometry->final_width.value
@@ -1128,6 +1089,7 @@ static int geometry_get_content_height(WindowGeometry *windowGeometry) {
                          - windowGeometry->extents.bottom
                    : windowGeometry->final_height.value;
 }
+*/
 
 static int geometry_get_window_x(const WindowGeometry *windowGeometry) {
     float value = windowGeometry->refx;
@@ -1147,6 +1109,7 @@ static int geometry_get_window_y(const WindowGeometry *windowGeometry) {
     return (int) value;
 }
 
+
 static void geometry_set_window_x(WindowGeometry *windowGeometry, int value) {
     float newValue = value;
     if (windowGeometry->gravity_x != 0) {
@@ -1165,6 +1128,8 @@ static void geometry_set_window_y(WindowGeometry *windowGeometry, int value) {
     windowGeometry->refy = newValue;
 }
 
+
+
 void WindowContextTop::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
 
@@ -1174,7 +1139,6 @@ void WindowContextTop::process_net_wm_property() {
     static GdkAtom atom_net_wm_state_above = gdk_atom_intern_static_string("_NET_WM_STATE_ABOVE");
 
     gint length;
-
     glong* atoms = NULL;
 
     if (gdk_property_get(gdk_window, atom_net_wm_state, atom_atom,
@@ -1205,21 +1169,26 @@ void WindowContextTop::process_net_wm_property() {
 }
 
 void WindowContextTop::process_property_notify(GdkEventProperty* event) {
-    static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 
-    if (event->atom == atom_net_wm_state && event->window == gdk_window) {
-        process_net_wm_property();
+    g_print("process_property_notify: %s\n", gdk_atom_name(event->atom));
+
+    if (event->window == gdk_window) {
+        if (event->atom == atom_net_wm_state) {
+            process_net_wm_property();
+        } else if (event->atom == atom_net_wm_frame_extents) {
+            gint top, left, bottom, right;
+
+            get_frame_extents_property(&top, &left, &bottom, &right);
+
+            geometry.extents.top = top;
+            geometry.extents.left = left;
+            geometry.extents.bottom = bottom;
+            geometry.extents.right = right;
+
+            g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+        }
     }
 }
-
-/*
-
-gboolean WindowContextTop::process_configure_signal(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    process_configure(&event->configure);
-    return FALSE;
-}
-*/
-
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
     gint x, y, w, h;
@@ -1340,7 +1309,7 @@ void WindowContextTop::process_pre_map() {
 void WindowContextTop::process_map() {
     map_received = true;
     set_window_resizable(resizable.value);
-    update_frame_extents();
+    request_frame_extents();
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height)
@@ -1490,6 +1459,7 @@ WindowFrameExtents WindowContextTop::get_frame_extents() {
 }
 
 void WindowContextTop::set_gravity(float x, float y) {
+// TODO
     int oldX = geometry_get_window_x(&geometry);
     int oldY = geometry_get_window_y(&geometry);
     geometry.gravity_x = x;
