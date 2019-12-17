@@ -62,7 +62,7 @@ static gboolean on_configure(GtkWidget *widget, GdkEvent *event, gpointer user_d
 static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
 //    g_print("on_damage_or_draw\n");
 
-    ((WindowContextBase*)user_data)->process_expose(&event->expose);
+    ((WindowContextBase*)user_data)->process_draw(&event->expose);
     return FALSE;
 }
 
@@ -134,11 +134,6 @@ static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
 //    g_print("on_map\n");
 
     ((WindowContextBase*)user_data)->process_map();
-    return FALSE;
-}
-
-static gboolean on_pre_map(GtkWidget *widget, gpointer user_data) {
-    ((WindowContextBase*)user_data)->process_pre_map();
     return FALSE;
 }
 
@@ -377,7 +372,7 @@ void WindowContextBase::process_delete() {
     }
 }
 
-void WindowContextBase::process_expose(GdkEventExpose* event) {
+void WindowContextBase::process_draw(GdkEventExpose* event) {
     if (jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
         CHECK_JNI_EXCEPTION(mainEnv)
@@ -863,7 +858,6 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), this);
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), this);
 
-    g_signal_connect(gtk_widget, "map", G_CALLBACK(on_pre_map), this);
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), this);
 
     g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), this);
@@ -1139,8 +1133,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     if (jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, w, h);
         CHECK_JNI_EXCEPTION(mainEnv);
-        mainEnv->CallVoidMethod(jview, jViewNotifyView,
-                com_sun_glass_events_ViewEvent_MOVE);
+
+        mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 
@@ -1235,9 +1229,6 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
             gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
         }
     }
-}
-
-void WindowContextTop::process_pre_map() {
 }
 
 void WindowContextTop::process_map() {
