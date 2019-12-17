@@ -164,20 +164,6 @@ static void on_screen_changed(GtkWidget *widget,
     ((WindowContextBase*)user_data)->process_screen_changed();
 }
 
-//static gboolean on_event(GtkWidget *widget,
-//                         GdkEvent  *event,
-//                         gpointer   user_data) {
-//
-////    if (event->type == GDK_DRAG_ENTER) {
-////        g_print("on_event GDK_DRAG_ENTER\n");
-////        process_dnd_target_drag_enter(((WindowContext*)user_data), widget, &event->dnd);
-////    }
-//
-////    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
-//
-//    return FALSE;
-//}
-
 
 static gboolean on_drag_leave(GtkWidget      *widget,
                               GdkDragContext *context,
@@ -865,10 +851,6 @@ void WindowContextBase::configure_events() {
     //DND
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
     g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), this);
-
-    //Events that Gtk does not map
-//    g_signal_connect(gtk_widget, "event", G_CALLBACK(on_event), this);
-
 }
 
 WindowContextBase::~WindowContextBase() {
@@ -1122,33 +1104,44 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
     gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
 
-    geometry.current_width = w;
-    geometry.current_height = h;
+    gboolean was_moved = geometry.current_x != x || geometry.current_y != y;
+    gboolean was_resized = geometry.current_width != w || geometry.current_height != h;
 
     geometry.current_x = x;
     geometry.current_y = y;
 
+    geometry.current_width = w;
+    geometry.current_height = h;
+
 //    g_print("process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
 
     if (jview) {
-        mainEnv->CallVoidMethod(jview, jViewNotifyResize, w, h);
-        CHECK_JNI_EXCEPTION(mainEnv);
+        if (was_resized) {
+            mainEnv->CallVoidMethod(jview, jViewNotifyResize, w, h);
+            CHECK_JNI_EXCEPTION(mainEnv);
+        }
 
-        mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
-        CHECK_JNI_EXCEPTION(mainEnv)
+        if (was_moved) {
+            mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
+            CHECK_JNI_EXCEPTION(mainEnv)
+        }
     }
 
     if (jwindow) {
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-                (is_maximized)
-                    ? com_sun_glass_events_WindowEvent_MAXIMIZE
-                    : com_sun_glass_events_WindowEvent_RESIZE,
-                w,
-                h);
-        CHECK_JNI_EXCEPTION(mainEnv)
+        if (is_maximized || was_resized) {
+            mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                    (is_maximized)
+                        ? com_sun_glass_events_WindowEvent_MAXIMIZE
+                        : com_sun_glass_events_WindowEvent_RESIZE,
+                    w,
+                    h);
+            CHECK_JNI_EXCEPTION(mainEnv)
+        }
 
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
-        CHECK_JNI_EXCEPTION(mainEnv)
+        if (was_moved) {
+            mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
+            CHECK_JNI_EXCEPTION(mainEnv)
+        }
     }
 }
 
@@ -1168,6 +1161,10 @@ void WindowContextTop::process_screen_changed() {
 }
 
 void WindowContextTop::set_window_resizable(bool res) {
+    if (res == resizable.value) {
+        return;
+    }
+
     if (res) {
         geometry.gdk_geometry.min_width = (resizable.minw > 0) ? resizable.minw : 1;
         geometry.gdk_geometry.min_height = (resizable.minh > 0) ? resizable.minh : 1;
@@ -1310,7 +1307,10 @@ void WindowContextTop::set_alpha(double alpha) {
 }
 
 void WindowContextTop::set_enabled(bool enabled) {
-    gtk_widget_set_sensitive(gtk_widget, enabled);
+    if (gtk_widget_get_sensitive(gtk_widget) != enabled) {
+        gtk_widget_set_sensitive(gtk_widget, enabled);
+    }
+
     resizable.prev = resizable.value;
 
     if (!enabled && resizable.value) {
@@ -1321,11 +1321,18 @@ void WindowContextTop::set_enabled(bool enabled) {
 }
 
 void WindowContextTop::apply_geometry() {
+    //TODO: leak?
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), gtk_widget, &geometry.gdk_geometry,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 }
 
 void WindowContextTop::set_minimum_size(int w, int h) {
+    gboolean changed = resizable.minw != w || resizable.minh != h;
+
+    if (!changed) {
+        return;
+    }
+
     resizable.minw = w;
     resizable.minh = h;
 
@@ -1336,6 +1343,12 @@ void WindowContextTop::set_minimum_size(int w, int h) {
 }
 
 void WindowContextTop::set_maximum_size(int w, int h) {
+    gboolean changed = resizable.maxw != w || resizable.maxh != h;
+
+    if (!changed) {
+        return;
+    }
+
     resizable.maxw = w;
     resizable.maxh = h;
 
