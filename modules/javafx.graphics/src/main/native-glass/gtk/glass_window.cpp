@@ -163,19 +163,25 @@ static gboolean on_drag_drop(GtkWidget      *widget,
     return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
 }
 
-static gboolean on_event(GtkWidget *widget,
-                         GdkEvent  *event,
-                         gpointer   user_data) {
-
-//    if (event->type == GDK_DRAG_ENTER) {
-//        g_print("on_event GDK_DRAG_ENTER\n");
-//        process_dnd_target_drag_enter(((WindowContext*)user_data), widget, &event->dnd);
-//    }
-
-//    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
-
-    return FALSE;
+static void on_screen_changed(GtkWidget *widget,
+                              GdkScreen *previous_screen,
+                              gpointer   user_data) {
+    ((WindowContextBase*)user_data)->process_screen_changed();
 }
+
+//static gboolean on_event(GtkWidget *widget,
+//                         GdkEvent  *event,
+//                         gpointer   user_data) {
+//
+////    if (event->type == GDK_DRAG_ENTER) {
+////        g_print("on_event GDK_DRAG_ENTER\n");
+////        process_dnd_target_drag_enter(((WindowContext*)user_data), widget, &event->dnd);
+////    }
+//
+////    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
+//
+//    return FALSE;
+//}
 
 
 static gboolean on_drag_leave(GtkWidget      *widget,
@@ -861,13 +867,14 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "map", G_CALLBACK(on_pre_map), this);
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), this);
 
+    g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), this);
 
     //DND
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
     g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), this);
 
     //Events that Gtk does not map
-    g_signal_connect(gtk_widget, "event", G_CALLBACK(on_event), this);
+//    g_signal_connect(gtk_widget, "event", G_CALLBACK(on_event), this);
 
 }
 
@@ -1058,6 +1065,7 @@ bool WindowContextTop::get_frame_extents_property(int *top, int *left,
     return false;
 }
 
+/*
 static int geometry_get_window_width(const WindowGeometry *windowGeometry) {
      return (windowGeometry->final_width.type != BOUNDSTYPE_WINDOW)
                    ? windowGeometry->final_width.value
@@ -1074,7 +1082,6 @@ static int geometry_get_window_height(const WindowGeometry *windowGeometry) {
                    : windowGeometry->final_height.value;
 }
 
-/*
 static int geometry_get_content_width(WindowGeometry *windowGeometry) {
     return (windowGeometry->final_width.type != BOUNDSTYPE_CONTENT)
                    ? windowGeometry->final_width.value
@@ -1089,7 +1096,6 @@ static int geometry_get_content_height(WindowGeometry *windowGeometry) {
                          - windowGeometry->extents.bottom
                    : windowGeometry->final_height.value;
 }
-*/
 
 static int geometry_get_window_x(const WindowGeometry *windowGeometry) {
     float value = windowGeometry->refx;
@@ -1127,7 +1133,7 @@ static void geometry_set_window_y(WindowGeometry *windowGeometry, int value) {
     }
     windowGeometry->refy = newValue;
 }
-
+*/
 
 
 void WindowContextTop::process_net_wm_property() {
@@ -1224,8 +1230,10 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
+}
 
-    glong to_screen = getScreenPtrForLocation(x, y);
+void WindowContextTop::process_screen_changed() {
+    glong to_screen = getScreenPtrForLocation(geometry.current_x, geometry.current_y);
     if (to_screen != -1) {
         if (to_screen != screen) {
             if (jwindow) {
@@ -1460,12 +1468,12 @@ WindowFrameExtents WindowContextTop::get_frame_extents() {
 
 void WindowContextTop::set_gravity(float x, float y) {
 // TODO
-    int oldX = geometry_get_window_x(&geometry);
-    int oldY = geometry_get_window_y(&geometry);
-    geometry.gravity_x = x;
-    geometry.gravity_y = y;
-    geometry_set_window_x(&geometry, oldX);
-    geometry_set_window_y(&geometry, oldY);
+//    int oldX = geometry_get_window_x(&geometry);
+//    int oldY = geometry_get_window_y(&geometry);
+//    geometry.gravity_x = x;
+//    geometry.gravity_y = y;
+//    geometry_set_window_x(&geometry, oldX);
+//    geometry_set_window_y(&geometry, oldY);
 }
 
 void WindowContextTop::update_ontop_tree(bool on_top) {

@@ -156,7 +156,7 @@ public:
     virtual void process_mouse_cross(GdkEventCrossing*) = 0;
     virtual void process_key(GdkEventKey*) = 0;
     virtual void process_state(GdkEventWindowState*) = 0;
-
+    virtual void process_screen_changed() { }
     virtual void notify_state(jint) = 0;
     virtual void notify_on_top(bool) {}
 
@@ -414,6 +414,7 @@ public:
     void process_configure(GdkEventConfigure*);
     void process_destroy();
     void process_net_wm_property();
+    void process_screen_changed();
 
     WindowFrameExtents get_frame_extents();
 
