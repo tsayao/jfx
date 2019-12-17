@@ -891,8 +891,6 @@ WindowContextBase::~WindowContextBase() {
 }
 
 ////////////////////////////// WindowContextTop /////////////////////////////////
-//WindowFrameExtents WindowContextTop::normal_extents = {28, 1, 1, 1};
-//WindowFrameExtents WindowContextTop::utility_extents = {28, 1, 1, 1};
 
 static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
@@ -996,7 +994,6 @@ void WindowContextTop::detach_from_java() {
         jwindow = NULL;
     }
 }
-
 
 void WindowContextTop::request_frame_extents() {
     Display *display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(gdk_window));
@@ -1105,7 +1102,7 @@ void WindowContextTop::process_net_wm_property() {
 
 void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 
-    g_print("process_property_notify: %s\n", gdk_atom_name(event->atom));
+//    g_print("process_property_notify: %s\n", gdk_atom_name(event->atom));
 
     if (event->window == gdk_window) {
         if (event->atom == atom_net_wm_state) {
@@ -1120,7 +1117,7 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
             geometry.extents.bottom = bottom;
             geometry.extents.right = right;
 
-            g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+//            g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
         }
     }
 }
@@ -1137,7 +1134,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     geometry.current_x = x;
     geometry.current_y = y;
 
-    g_print("process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
+//    g_print("process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
 
     if (jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, w, h);
@@ -1221,12 +1218,12 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     int newH = h > 0 ? h :
                    ch > 0 ? ch + geometry.extents.bottom + geometry.extents.top : geometry.current_height;
 
-    g_print("extents: r: %d, l: %d, b: %d, t: %d\n", geometry.extents.right, geometry.extents.left,
-            geometry.extents.bottom, geometry.extents.top);
+//    g_print("extents: r: %d, l: %d, b: %d, t: %d\n", geometry.extents.right, geometry.extents.left,
+//            geometry.extents.bottom, geometry.extents.top);
 
     if (newW != geometry.current_width || newH != geometry.current_height) {
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
-        g_print("gtk_window_resize(%d, %d)\n", newW, newH);
+//        g_print("gtk_window_resize(%d, %d)\n", newW, newH);
     }
 
     if (xSet || ySet) {
@@ -1234,7 +1231,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         int newY = (ySet) ? y : geometry.current_y;
 
         if (newX != geometry.current_x || newY != geometry.current_y) {
-            g_print("gtk_window_move(%d, %d)\n", newX, newY);
+//            g_print("gtk_window_move(%d, %d)\n", newX, newY);
             gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
         }
     }
