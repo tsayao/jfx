@@ -137,22 +137,27 @@ static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     return FALSE;
 }
 
-static gboolean on_pre_map (GtkWidget *widget, gpointer user_data) {
+static gboolean on_pre_map(GtkWidget *widget, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_pre_map();
     return FALSE;
 }
 
-static gboolean on_drag_motion (GtkWidget      *widget,
-                                GdkDragContext *context,
-                                gint            x,
-                                gint            y,
-                                guint           time,
-                                gpointer        user_data) {
-    g_print("on_drag_motion: %d, %d\n", x ,y);
+static gboolean on_drag_motion(GtkWidget      *widget,
+                               GdkDragContext *context,
+                               gint            x,
+                               gint            y,
+                               guint           time,
+                               gpointer        user_data) {
+    // g_print("on_drag_motion: %d, %d\n", x ,y);
 
-    process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
+    return process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
+}
 
-    return TRUE;
+void on_drag_leave(GtkWidget      *widget,
+                   GdkDragContext *context,
+                   guint           time,
+                   gpointer        user_data) {
+    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
 }
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
@@ -831,6 +836,7 @@ void WindowContextBase::configure_events() {
 
     //DND
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
+    g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), this);
 
 }
 
