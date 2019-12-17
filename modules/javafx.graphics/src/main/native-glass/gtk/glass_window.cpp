@@ -153,11 +153,39 @@ static gboolean on_drag_motion(GtkWidget      *widget,
     return process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
 }
 
-void on_drag_leave(GtkWidget      *widget,
-                   GdkDragContext *context,
-                   guint           time,
-                   gpointer        user_data) {
+static gboolean on_drag_drop(GtkWidget      *widget,
+                             GdkDragContext *context,
+                             gint            x,
+                             gint            y,
+                             guint           time,
+                             gpointer        user_data) {
+
+    return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
+}
+
+static gboolean on_event(GtkWidget *widget,
+                         GdkEvent  *event,
+                         gpointer   user_data) {
+
+//    if (event->type == GDK_DRAG_ENTER) {
+//        g_print("on_event GDK_DRAG_ENTER\n");
+//        process_dnd_target_drag_enter(((WindowContext*)user_data), widget, &event->dnd);
+//    }
+
+//    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
+
+    return FALSE;
+}
+
+
+static gboolean on_drag_leave(GtkWidget      *widget,
+                              GdkDragContext *context,
+                              guint           time,
+                              gpointer        user_data) {
+
     process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
+
+    return FALSE;
 }
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
@@ -838,6 +866,9 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
     g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), this);
 
+    //Events that Gtk does not map
+    g_signal_connect(gtk_widget, "event", G_CALLBACK(on_event), this);
+
 }
 
 WindowContextBase::~WindowContextBase() {
@@ -927,7 +958,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         { (gchar*) "image/bmp",     0, 0 }
     };
 
-    //gdk_window_register_dnd(gdk_window);
+//    gdk_window_register_dnd(gdk_window);
     gtk_drag_dest_set(gtk_widget, GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
 

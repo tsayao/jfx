@@ -503,8 +503,8 @@ static void process_events(GdkEvent* event, gpointer data)
                 case GDK_DROP_START:
                 case GDK_DRAG_ENTER:
                 case GDK_DRAG_LEAVE:
-                    process_dnd_target(ctx, &event->dnd);
-                    break;
+//                    process_dnd_target(ctx, &event->dnd);
+//                    break;
                 case GDK_DRAG_MOTION:
                 case GDK_MAP:
 //                    ctx->process_map();

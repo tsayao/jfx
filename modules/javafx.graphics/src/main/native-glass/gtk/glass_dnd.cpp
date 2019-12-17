@@ -136,12 +136,9 @@ static struct {
     GdkDragContext *ctx;
     gboolean just_entered;
     jobjectArray mimes;
-//    gint dx, dy;
 } enter_ctx = {NULL, FALSE, NULL,};
 
 gboolean is_dnd_owner = FALSE;
-gboolean just_entered = FALSE;
-
 GtkWidget *drag_widget = NULL;
 
 gboolean is_in_drag() {
@@ -156,81 +153,68 @@ static void reset_enter_ctx() {
     memset(&enter_ctx, 0, sizeof(enter_ctx));
 }
 
-//static void process_dnd_target_drag_enter(WindowContext *ctx, GdkEventDND *event)
-//{
-//    // reset_enter_ctx();
-//    // enter_ctx.ctx = event->context;
-//    // enter_ctx.just_entered = TRUE;
-//    gint x, y;
-//    gdk_window_get_origin(ctx->get_gdk_window(), &x, &y);
-//
-//    g_print("ENTER: %d, %d\n", x, y);
-//    // is_dnd_owner = is_in_drag();
-//}
-
 void process_dnd_target_drag_leave(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context, guint time) {
-//    reset_enter_ctx();
+    reset_enter_ctx();
 
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
-
-    g_print("process_dnd_target_drag_leave\n");
 }
 
 gboolean process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
                                         gint x, gint y, guint time) {
-    // g_print("process_dnd_target_drag_motion\n");
-    // if (!enter_ctx.ctx) {
-    //     gdk_drag_status(context, static_cast<GdkDragAction>(0), GDK_CURRENT_TIME);
-    //     return; // Do not process motion events if no enter event was received
-    // }
 
-    is_dnd_owner = is_in_drag();
+    if (enter_ctx.ctx == NULL || (enter_ctx.ctx != context && !enter_ctx.just_entered)) {
+        reset_enter_ctx();
+        is_dnd_owner = is_in_drag();
+        enter_ctx.ctx = context;
+        enter_ctx.just_entered = TRUE;
+    }
+
     gint x_abs, y_abs;
     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
 
-//    jmethodID method = local_just_entered ? jViewNotifyDragEnter : jViewNotifyDragOver;
+    jmethodID method = enter_ctx.just_entered ? jViewNotifyDragEnter : jViewNotifyDragOver;
 
     GdkDragAction suggested = gdk_drag_context_get_suggested_action(context);
-    GdkDragAction result = translate_glass_action_to_gdk(mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragOver,
+    GdkDragAction result = translate_glass_action_to_gdk(mainEnv->CallIntMethod(ctx->get_jview(), method,
             (jint)x, (jint)y,
             (jint)x_abs, (jint)y_abs,
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
+
+    if (enter_ctx.just_entered) {
+        enter_ctx.just_entered = FALSE;
+    }
 
     gdk_drag_status(context, result, GDK_CURRENT_TIME);
 
     return (gboolean) result;
 }
 
-
-/*
-static void process_dnd_target_drag_leave(WindowContext *ctx, GdkEventDND *event)
-{
-    (void)event;
-
-    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-    CHECK_JNI_EXCEPTION(mainEnv)
-}
-*/
-
-static void process_dnd_target_drop_start(WindowContext *ctx, GdkEventDND *event)
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
+                                      gint x, gint y, guint time)
 {
     if (!enter_ctx.ctx || enter_ctx.just_entered) {
-        gdk_drop_finish(event->context, FALSE, GDK_CURRENT_TIME);
-        gdk_drop_reply(event->context, FALSE, GDK_CURRENT_TIME);
-        return; // Do not process drop events if no enter event and subsequent motion event were received
+        gdk_drop_finish(context, FALSE, GDK_CURRENT_TIME);
+        gdk_drop_reply(context, FALSE, GDK_CURRENT_TIME);
+        return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
-    GdkDragAction selected = gdk_drag_context_get_selected_action(event->context);
 
-//    mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
-//            (jint)event->x_root - enter_ctx.dx, (jint)event->y_root - enter_ctx.dy,
-//            (jint)event->x_root, (jint)event->y_root,
-//            translate_gdk_action_to_glass(selected));
-//    LOG_EXCEPTION(mainEnv)
+    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
 
-    gdk_drop_finish(event->context, TRUE, GDK_CURRENT_TIME);
-    gdk_drop_reply(event->context, TRUE, GDK_CURRENT_TIME);
+    gint x_abs, y_abs;
+    gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
+
+    mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
+            (jint)x, (jint)y,
+            (jint)x_abs, (jint)y_abs,
+            translate_gdk_action_to_glass(selected));
+    LOG_EXCEPTION(mainEnv)
+
+    gdk_drop_finish(context, TRUE, GDK_CURRENT_TIME);
+    gdk_drop_reply(context, TRUE, GDK_CURRENT_TIME);
+
+    return TRUE;
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
@@ -244,27 +228,6 @@ static gboolean check_state_in_drag(JNIEnv *env)
         return TRUE;
     }
     return FALSE;
-}
-
-// Events coming from application that are related to us being a DnD target
-void process_dnd_target(WindowContext *ctx, GdkEventDND *event)
-{
-    switch (event->type) {
-//        case GDK_DRAG_ENTER:
-//            process_dnd_target_drag_enter(ctx, event);
-//            break;
-//        case GDK_DRAG_MOTION:
-//            process_dnd_target_drag_motion(ctx, event);
-//            break;
-        // case GDK_DRAG_LEAVE:
-        //     process_dnd_target_drag_leave(ctx, event);
-        //     break;
-        case GDK_DROP_START:
-            process_dnd_target_drop_start(ctx, event);
-            break;
-        default:
-            break;
-    }
 }
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
