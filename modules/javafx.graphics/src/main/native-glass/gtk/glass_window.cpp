@@ -1219,14 +1219,14 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     }
 
     if (jwindow) {
-//        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-//                (is_maximized)
-//                    ? com_sun_glass_events_WindowEvent_MAXIMIZE
-//                    : com_sun_glass_events_WindowEvent_RESIZE,
-//                w,
-//                h);
-//        CHECK_JNI_EXCEPTION(mainEnv)
-//
+        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                (is_maximized)
+                    ? com_sun_glass_events_WindowEvent_MAXIMIZE
+                    : com_sun_glass_events_WindowEvent_RESIZE,
+                w,
+                h);
+        CHECK_JNI_EXCEPTION(mainEnv)
+
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
