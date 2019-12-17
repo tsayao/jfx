@@ -53,56 +53,56 @@
 
 // EVENTS
 static gboolean on_configure(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_configure\n");
+    g_print("on_configure\n");
 
     ((WindowContextBase*)user_data)->process_configure(&event->configure);
     return FALSE;
 }
 
 static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_damage_or_draw\n");
+    g_print("on_damage_or_draw\n");
 
     ((WindowContextBase*)user_data)->process_draw(&event->expose);
     return FALSE;
 }
 
 static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_property_notify\n");
+    g_print("on_property_notify\n");
 
     ((WindowContextBase*)user_data)->process_property_notify(&event->property);
     return FALSE;
 }
 
 static gboolean on_focus_change(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_focus_change\n");
+    g_print("on_focus_change\n");
 
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
     return FALSE;
 }
 
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_delete\n");
+    g_print("on_delete\n");
 
     ((WindowContextBase*)user_data)->process_delete();
     return FALSE;
 }
 
 static gboolean on_window_state(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_window_state\n");
+    g_print("on_window_state\n");
 
     ((WindowContextBase*)user_data)->process_state(&event->window_state);
     return FALSE;
 }
 
 static gboolean on_device_button(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_device_button\n");
+    g_print("on_device_button\n");
 
     ((WindowContextBase*)user_data)->process_mouse_button(&event->button);
     return FALSE;
 }
 
 static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_device_motion\n");
+    g_print("on_device_motion\n");
 
     ((WindowContextBase*)user_data)->process_mouse_motion(&event->motion);
     gdk_event_request_motions(&event->motion);
@@ -110,28 +110,28 @@ static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer us
 }
 
 static gboolean on_device_scroll(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_device_scroll\n");
+    g_print("on_device_scroll\n");
 
     ((WindowContextBase*)user_data)->process_mouse_scroll(&event->scroll);
     return FALSE;
 }
 
 static gboolean on_enter_or_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_enter_or_leave\n");
+    g_print("on_enter_or_leave\n");
 
     ((WindowContextBase*)user_data)->process_mouse_cross(&event->crossing);
     return FALSE;
 }
 
 static gboolean on_key_press_or_release(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_key_press_or_release\n");
+    g_print("on_key_press_or_release\n");
 
     ((WindowContextBase*)user_data)->process_key(&event->key);
     return FALSE;
 }
 
 static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-//    g_print("on_map\n");
+    g_print("on_map\n");
 
     ((WindowContextBase*)user_data)->process_map();
     return FALSE;
@@ -148,6 +148,12 @@ static gboolean on_drag_motion(GtkWidget      *widget,
     return process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
 }
 
+static void on_screen_changed(GtkWidget *widget,
+                              GdkScreen *previous_screen,
+                              gpointer   user_data) {
+    ((WindowContextBase*)user_data)->process_screen_changed();
+}
+
 static gboolean on_drag_drop(GtkWidget      *widget,
                              GdkDragContext *context,
                              gint            x,
@@ -157,13 +163,6 @@ static gboolean on_drag_drop(GtkWidget      *widget,
 
     return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
 }
-
-static void on_screen_changed(GtkWidget *widget,
-                              GdkScreen *previous_screen,
-                              gpointer   user_data) {
-    ((WindowContextBase*)user_data)->process_screen_changed();
-}
-
 
 static gboolean on_drag_leave(GtkWidget      *widget,
                               GdkDragContext *context,
@@ -816,7 +815,6 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), this);
 
     g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), this);
-
 #ifdef GLASS_GTK3
     g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), this);
 #else
@@ -941,7 +939,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
         { (gchar*) "image/bmp",     0, 0 }
     };
 
-//    gdk_window_register_dnd(gdk_window);
     gtk_drag_dest_set(gtk_widget, GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
 
