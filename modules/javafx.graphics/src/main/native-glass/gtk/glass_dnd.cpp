@@ -794,9 +794,7 @@ static void dnd_source_push_data(JNIEnv *env, jobject data, jint supported)
 
     // this widget is used only to pass events and will
     // be destroyed on drag end
-    drag_widget = gtk_window_new(GTK_WINDOW_POPUP);
-    gtk_window_resize(GTK_WINDOW(drag_widget), 1, 1);
-    gtk_window_move(GTK_WINDOW(drag_widget), -200, -200);
+    drag_widget = gtk_invisible_new();
     gtk_widget_show(drag_widget);
 
     g_object_set_data_full(G_OBJECT(drag_widget), SOURCE_DND_DATA, data, clear_global_ref);
