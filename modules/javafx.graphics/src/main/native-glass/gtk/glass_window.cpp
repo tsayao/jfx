@@ -863,7 +863,6 @@ void WindowContextBase::configure_events() {
     g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), this);
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), this);
 
-
     g_signal_connect(gtk_widget, "map", G_CALLBACK(on_pre_map), this);
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), this);
 
@@ -954,6 +953,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
 
+    //TODO: move to glass_dnd
     GtkTargetEntry desttargetentries[] =
     {
         { (gchar*) "UTF8_STRING",   0, 0 },
@@ -1064,77 +1064,6 @@ bool WindowContextTop::get_frame_extents_property(int *top, int *left,
 
     return false;
 }
-
-/*
-static int geometry_get_window_width(const WindowGeometry *windowGeometry) {
-     return (windowGeometry->final_width.type != BOUNDSTYPE_WINDOW)
-                   ? windowGeometry->final_width.value
-                         + windowGeometry->extents.left
-                         + windowGeometry->extents.right
-                   : windowGeometry->final_width.value;
-}
-
-static int geometry_get_window_height(const WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_height.type != BOUNDSTYPE_WINDOW)
-                   ? windowGeometry->final_height.value
-                         + windowGeometry->extents.top
-                         + windowGeometry->extents.bottom
-                   : windowGeometry->final_height.value;
-}
-
-static int geometry_get_content_width(WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_width.type != BOUNDSTYPE_CONTENT)
-                   ? windowGeometry->final_width.value
-                         - windowGeometry->extents.left
-                         - windowGeometry->extents.right
-                   : windowGeometry->final_width.value;
-}
-static int geometry_get_content_height(WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_height.type != BOUNDSTYPE_CONTENT)
-                   ? windowGeometry->final_height.value
-                         - windowGeometry->extents.top
-                         - windowGeometry->extents.bottom
-                   : windowGeometry->final_height.value;
-}
-
-static int geometry_get_window_x(const WindowGeometry *windowGeometry) {
-    float value = windowGeometry->refx;
-    if (windowGeometry->gravity_x != 0) {
-        value -= geometry_get_window_width(windowGeometry)
-                     * windowGeometry->gravity_x;
-    }
-    return (int) value;
-}
-
-static int geometry_get_window_y(const WindowGeometry *windowGeometry) {
-    float value = windowGeometry->refy;
-    if (windowGeometry->gravity_y != 0) {
-        value -= geometry_get_window_height(windowGeometry)
-                     * windowGeometry->gravity_y;
-    }
-    return (int) value;
-}
-
-
-static void geometry_set_window_x(WindowGeometry *windowGeometry, int value) {
-    float newValue = value;
-    if (windowGeometry->gravity_x != 0) {
-        newValue += geometry_get_window_width(windowGeometry)
-                * windowGeometry->gravity_x;
-    }
-    windowGeometry->refx = newValue;
-}
-
-static void geometry_set_window_y(WindowGeometry *windowGeometry, int value) {
-    float newValue = value;
-    if (windowGeometry->gravity_y != 0) {
-        newValue += geometry_get_window_height(windowGeometry)
-                * windowGeometry->gravity_y;
-    }
-    windowGeometry->refy = newValue;
-}
-*/
-
 
 void WindowContextTop::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
@@ -1317,7 +1246,10 @@ void WindowContextTop::process_pre_map() {
 void WindowContextTop::process_map() {
     map_received = true;
     set_window_resizable(resizable.value);
-    request_frame_extents();
+
+    if (frame_type == TITLED) {
+        request_frame_extents();
+    }
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height)
@@ -1327,21 +1259,6 @@ void WindowContextTop::applyShapeMask(void* data, uint width, uint height)
     }
 
     glass_window_apply_shape_mask(gtk_widget_get_window(gtk_widget), data, width, height);
-}
-
-void WindowContextTop::ensure_window_size() {
-    gint w, h;
-#ifdef GLASS_GTK3
-    gdk_window_get_geometry(gdk_window, NULL, NULL, &w, &h);
-#else
-    gdk_window_get_geometry(gdk_window, NULL, NULL, &w, &h, NULL);
-#endif
-    if (size_assigned && (geometry.final_width.value != w
-                       || geometry.final_height.value != h)) {
-
-        gdk_window_resize(gdk_window, geometry.final_width.value,
-                                      geometry.final_height.value);
-    }
 }
 
 void WindowContextTop::set_minimized(bool minimize) {
@@ -1467,13 +1384,7 @@ WindowFrameExtents WindowContextTop::get_frame_extents() {
 }
 
 void WindowContextTop::set_gravity(float x, float y) {
-// TODO
-//    int oldX = geometry_get_window_x(&geometry);
-//    int oldY = geometry_get_window_y(&geometry);
-//    geometry.gravity_x = x;
-//    geometry.gravity_y = y;
-//    geometry_set_window_x(&geometry, oldX);
-//    geometry_set_window_y(&geometry, oldY);
+    //does nothing.
 }
 
 void WindowContextTop::update_ontop_tree(bool on_top) {

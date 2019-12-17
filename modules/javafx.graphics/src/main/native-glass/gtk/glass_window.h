@@ -61,31 +61,9 @@ struct WindowFrameExtents {
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
-enum BoundsType {
-    BOUNDSTYPE_CONTENT,
-    BOUNDSTYPE_WINDOW
-};
-
 struct WindowGeometry {
-    WindowGeometry(): final_width(), final_height(),
-    refx(), refy(), gravity_x(), gravity_y(), current_width(), current_height(), extents() {}
-    // estimate of the final width the window will get after all pending
-    // configure requests are processed by the window manager
-    struct {
-        int value;
-        BoundsType type;
-    } final_width;
-
-    struct {
-        int value;
-        BoundsType type;
-    } final_height;
-
-    float refx;
-    float refy;
-    float gravity_x;
-    float gravity_y;
-
+    WindowGeometry(): current_width(), current_height(), current_x(),
+                      current_y(), extents(), gdk_geometry() {}
     // the last width which was configured or obtained from configure
     // notification
     int current_width;
@@ -458,7 +436,6 @@ private:
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
-    void ensure_window_size();
     WindowContextTop(WindowContextTop&);
     WindowContextTop& operator= (const WindowContextTop&);
 };
