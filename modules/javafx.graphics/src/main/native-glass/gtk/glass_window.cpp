@@ -372,13 +372,15 @@ void WindowContextBase::process_delete() {
 
 void WindowContextBase::process_draw(GdkEventExpose* event) {
     if (jview) {
-        g_print("repaint: %d, %d, %d, %d, %d\n", event->count, event->area.x, event->area.y, event->area.width, event->area.height);
+        GtkAllocation a;
+        gtk_widget_get_allocation(gtk_widget, &a);
 
-        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
+        g_print("repaint: %s %d, %d, %d, %d\n", (event->type == GDK_EXPOSE) ? "GDK_EXPOSE" : "GDK_DAMAGE",
+                a.x, a.y, a.width, a.height);
+
+        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, a.x, a.y, a.width, a.height);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
-
-    //gdk_threads_add_idle_full(GDK_PRIORITY_REDRAW + 10, redraw_schedule_callback, this, NULL);
 }
 
 static inline jint gtk_button_number_to_mouse_button(guint button) {
