@@ -66,6 +66,19 @@ static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer u
     return FALSE;
 }
 
+/*
+static void redraw_schedule_callback(gpointer data) {
+    WindowContextBase * b = (WindowContextBase*) data;
+
+    jobject jview = b->get_jview;
+
+    if (jview) {
+        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
+        CHECK_JNI_EXCEPTION(mainEnv)
+    }
+}
+*/
+
 static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     g_print("on_property_notify\n");
 
@@ -359,9 +372,13 @@ void WindowContextBase::process_delete() {
 
 void WindowContextBase::process_draw(GdkEventExpose* event) {
     if (jview) {
+        g_print("repaint: %d, %d, %d, %d, %d\n", event->count, event->area.x, event->area.y, event->area.width, event->area.height);
+
         mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
+
+    //gdk_threads_add_idle_full(GDK_PRIORITY_REDRAW + 10, redraw_schedule_callback, this, NULL);
 }
 
 static inline jint gtk_button_number_to_mouse_button(guint button) {
