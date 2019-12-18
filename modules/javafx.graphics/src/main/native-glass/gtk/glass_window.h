@@ -155,8 +155,6 @@ public:
     virtual size_t get_events_count() = 0;
     virtual bool is_dead() = 0;
 
-    virtual void configure_events() = 0;
-
     virtual ~WindowContext() {}
 };
 
@@ -247,8 +245,6 @@ public:
     void decrement_events_counter();
     size_t get_events_count();
     bool is_dead();
-
-    void configure_events();
 
     ~WindowContextBase();
 protected:
@@ -350,6 +346,7 @@ private:
 
 class WindowContextTop: public WindowContextBase {
     jlong screen;
+    GtkWidget* gtk_container;
     WindowFrameType frame_type;
     WindowType window_type;
     struct WindowContext *owner;
@@ -362,7 +359,6 @@ class WindowContextTop: public WindowContextBase {
         bool prev; //former resizable value (used in setEnabled for parents of modal window)
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
-    bool frame_extents_initialized;
     bool map_received;
     bool location_assigned;
     bool size_assigned;

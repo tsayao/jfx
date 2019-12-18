@@ -92,8 +92,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1createWindow
             glass_mask_to_wm_function(mask)
             );
 
-    ctx->configure_events();
-
     return PTR_TO_JLONG(ctx);
 }
 
@@ -135,8 +133,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1createChildWindow
                         parent_ctx->gtk_container,
                         parent_ctx);
     }
-
-    ctx->configure_events();
 
     return PTR_TO_JLONG(ctx);
 }

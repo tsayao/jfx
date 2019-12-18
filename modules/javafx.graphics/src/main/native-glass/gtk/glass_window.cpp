@@ -187,6 +187,49 @@ static gboolean on_drag_leave(GtkWidget      *widget,
     return FALSE;
 }
 
+static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
+    //Signals
+    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), ctx);
+
+    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), ctx);
+#ifdef GLASS_GTK3
+    g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), ctx);
+#else
+    g_signal_connect(gtk_widget, "expose", G_CALLBACK(on_damage_or_draw), ctx);
+#endif
+
+    g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), ctx);
+
+    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), ctx);
+    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_property_notify), ctx);
+
+    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), ctx);
+
+    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(on_window_state), ctx);
+
+    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(on_device_button), ctx);
+    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(on_device_button), ctx);
+
+    g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(on_device_motion), ctx);
+    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(on_device_scroll), ctx);
+
+    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(on_device_scroll), ctx);
+    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(on_enter_or_leave), ctx);
+
+    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), ctx);
+    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), ctx);
+
+    g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), ctx);
+
+    g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), ctx);
+
+    //DND
+    g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), ctx);
+    g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), ctx);
+}
+
+
+
 WindowContext * WindowContextBase::sm_grab_window = NULL;
 WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
@@ -829,47 +872,6 @@ void WindowContextBase::set_background(float r, float g, float b) {
 #endif
 }
 
-void WindowContextBase::configure_events() {
-    //Signals
-    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), this);
-
-    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), this);
-#ifdef GLASS_GTK3
-    g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), this);
-#else
-    g_signal_connect(gtk_widget, "expose", G_CALLBACK(on_damage_or_draw), this);
-#endif
-
-    g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), this);
-
-    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), this);
-    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_property_notify), this);
-
-    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), this);
-
-    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(on_window_state), this);
-
-    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(on_device_button), this);
-    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(on_device_button), this);
-
-    g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(on_device_motion), this);
-    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(on_device_scroll), this);
-
-    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(on_device_scroll), this);
-    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(on_enter_or_leave), this);
-
-    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), this);
-    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), this);
-
-    g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), this);
-
-    g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), this);
-
-    //DND
-    g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), this);
-    g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), this);
-}
-
 WindowContextBase::~WindowContextBase() {
     if (xim.ic) {
         XDestroyIC(xim.ic);
@@ -897,7 +899,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             owner(_owner),
             geometry(),
             resizable(),
-            frame_extents_initialized(),
             map_received(false),
             location_assigned(false),
             size_assigned(false),
@@ -972,6 +973,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     }
 
     is_fullscreen = FALSE;
+
+    connect_signals(gtk_widget, this);
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1505,11 +1508,13 @@ WindowContextPlug::WindowContextPlug(jobject _jwindow, void* _owner) :
     gdk_window = gtk_widget_get_window(gtk_widget);
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
-    gdk_window_register_dnd(gdk_window);
+//    gdk_window_register_dnd(gdk_window);
 
     gtk_container = gtk_fixed_new();
     gtk_container_add (GTK_CONTAINER(gtk_widget), gtk_container);
     gtk_widget_realize(gtk_container);
+
+    connect_signals(gtk_widget, this);
 }
 
 GtkWindow *WindowContextPlug::get_gtk_window() {
