@@ -901,8 +901,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             map_received(false),
             location_assigned(false),
             size_assigned(false),
-            on_top(false),
-            requested_bounds()
+            on_top(false)
 {
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 

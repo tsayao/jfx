@@ -369,19 +369,6 @@ class WindowContextTop: public WindowContextBase {
     bool on_top;
     bool is_fullscreen;
 
-    struct _Size {
-        int width, height;
-        int client_width, client_height;
-    } requested_bounds;
-
-    bool is_null_extents() { return is_null_extents(geometry.extents); }
-
-    bool is_null_extents(WindowFrameExtents ex) {
-        return !ex.top && !ex.left && !ex.bottom && !ex.right;
-    }
-
-    static WindowFrameExtents normal_extents;
-    static WindowFrameExtents utility_extents;
 public:
     WindowContextTop(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
     void process_map();
