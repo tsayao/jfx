@@ -1182,6 +1182,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
         if (was_resized) {
             mainEnv->CallVoidMethod(jview, jViewNotifyResize, geometry.current_width, geometry.current_height);
             CHECK_JNI_EXCEPTION(mainEnv);
+
+            g_print("JVIEW SIZE: %d, %d\n", geometry.current_width, geometry.current_height);
         }
 
         if (was_moved) {
@@ -1199,6 +1201,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
                     geometry.current_width,
                     geometry.current_height);
             CHECK_JNI_EXCEPTION(mainEnv)
+
+            g_print("JWINDOW SIZE: %d, %d\n", geometry.current_width, geometry.current_height);
         }
 
         if (was_moved) {
