@@ -62,13 +62,20 @@ enum request_type {
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
 struct WindowGeometry {
-    WindowGeometry(): current_width(0), current_height(0), current_x(0),
-                      current_y(0) {}
+    WindowGeometry(): current_x(0),
+                      current_y(0),
+                      current_width(0),
+                      current_height(0),
+                      delta_x(0),
+                      delta_y(0) {}
 
-    int current_width;
-    int current_height;
     int current_x;
     int current_y;
+    int current_width;
+    int current_height;
+
+    int delta_x;
+    int delta_y;
 
 //FIXME: leak?
     GdkGeometry gdk_geometry;
@@ -300,7 +307,7 @@ class WindowContextChild: public WindowContextBase {
     WindowContextTop* full_screen_window;
     GlassView* view; // not null while in Full Screen
 public:
-    void process_mouse_button(GdkEventButton*);
+//    void process_mouse_button(GdkEventButton*);
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
     WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
@@ -324,6 +331,7 @@ public:
     void restack(bool);
     void set_modal(bool, WindowContext*) {}
 //    void set_gravity(float, float) {}
+    void process_focus(GdkEventFocus*);
     void process_property_notify(GdkEventProperty*) {}
     void process_configure(GdkEventConfigure*);
     void process_destroy();
@@ -346,7 +354,7 @@ private:
 
 class WindowContextTop: public WindowContextBase {
     jlong screen;
-    GtkWidget* gtk_container;
+//    GtkWidget* gtk_view;
     WindowFrameType frame_type;
     WindowType window_type;
     struct WindowContext *owner;

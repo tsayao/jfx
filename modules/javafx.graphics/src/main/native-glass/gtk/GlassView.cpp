@@ -100,10 +100,10 @@ JNIEXPORT jint JNICALL Java_com_sun_glass_ui_gtk_GtkView__1getX
     (void)env;
     (void)obj;
 
-    GlassView* view = JLONG_TO_GLASSVIEW(ptr);
-    if (view && view->current_window) {
-        return view->current_window->get_geometry().current_x;
-    }
+//    GlassView* view = JLONG_TO_GLASSVIEW(ptr);
+//    if (view && view->current_window) {
+//        return view->current_window->get_geometry().current_view_x;
+//    }
     return 0;
 }
 
@@ -118,10 +118,11 @@ JNIEXPORT jint JNICALL Java_com_sun_glass_ui_gtk_GtkView__1getY
     (void)env;
     (void)obj;
 
-    GlassView* view = JLONG_TO_GLASSVIEW(ptr);
-    if (view && view->current_window) {
-        return view->current_window->get_geometry().current_y;
-    }
+// TODO: when this is not 0?
+//    GlassView* view = JLONG_TO_GLASSVIEW(ptr);
+//    if (view && view->current_window) {
+//        return view->current_window->get_geometry().current_view_y;
+//    }
     return 0;
 }
 
