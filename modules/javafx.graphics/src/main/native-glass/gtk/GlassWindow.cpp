@@ -590,40 +590,40 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1getNativeWindowImp
     WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
     return GDK_WINDOW_XID(ctx->get_gdk_window());
 }
-/*
- * Class:     com_sun_glass_ui_gtk_GtkWindow
- * Method:    getFrameExtents
- * Signature: (J[I)V
- */
-JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow_getFrameExtents
-    (JNIEnv * env, jobject obj, jlong ptr, jintArray extarr)
-{
-    (void)obj;
+///*
+// * Class:     com_sun_glass_ui_gtk_GtkWindow
+// * Method:    getFrameExtents
+// * Signature: (J[I)V
+// */
+//JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow_getFrameExtents
+//    (JNIEnv * env, jobject obj, jlong ptr, jintArray extarr)
+//{
+//    (void)obj;
+//
+//    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
+//    WindowFrameExtents extents = ctx->get_frame_extents();
+//
+//    env->SetIntArrayRegion(extarr, 0, 1, &extents.left);
+//    env->SetIntArrayRegion(extarr, 1, 1, &extents.right);
+//    env->SetIntArrayRegion(extarr, 2, 1, &extents.top);
+//    env->SetIntArrayRegion(extarr, 3, 1, &extents.bottom);
+//}
 
-    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
-    WindowFrameExtents extents = ctx->get_frame_extents();
-
-    env->SetIntArrayRegion(extarr, 0, 1, &extents.left);
-    env->SetIntArrayRegion(extarr, 1, 1, &extents.right);
-    env->SetIntArrayRegion(extarr, 2, 1, &extents.top);
-    env->SetIntArrayRegion(extarr, 3, 1, &extents.bottom);
-}
-
-/*
- * Class:     com_sun_glass_ui_gtk_GtkWindow
- * Method:    _setGravity
- * Signature: (JFF)V
- */
-JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1setGravity
-    (JNIEnv * env, jobject obj, jlong ptr, jfloat xGravity, jfloat yGravity)
-{
-    (void)env;
-    (void)obj;
-
-    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
-    ctx->set_gravity(xGravity, yGravity);
-
-}
+///*
+// * Class:     com_sun_glass_ui_gtk_GtkWindow
+// * Method:    _setGravity
+// * Signature: (JFF)V
+// */
+//JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1setGravity
+//    (JNIEnv * env, jobject obj, jlong ptr, jfloat xGravity, jfloat yGravity)
+//{
+//    (void)env;
+//    (void)obj;
+//
+//    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
+//    ctx->set_gravity(xGravity, yGravity);
+//
+//}
 
 
 /*

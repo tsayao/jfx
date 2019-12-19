@@ -907,6 +907,12 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
+#ifdef GLASS_GTK3
+    gtk_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
+    gtk_container = gtk_vbox_new(FALSE, 0);
+#endif
+    gtk_container_add(GTK_CONTAINER(gtk_widget), gtk_container);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
@@ -968,9 +974,9 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     geometry.gdk_geometry.win_gravity = GDK_GRAVITY_NORTH_WEST;
 
-    if (frame_type == TITLED) {
-        request_frame_extents();
-    }
+//    if (frame_type == TITLED) {
+//        request_frame_extents();
+//    }
 
     is_fullscreen = FALSE;
 
@@ -989,24 +995,24 @@ void WindowContextTop::detach_from_java() {
     }
 }
 
-void WindowContextTop::request_frame_extents() {
-    Display *display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(gdk_window));
-    Atom rfeAtom = XInternAtom(display, "_NET_REQUEST_FRAME_EXTENTS", True);
-    if (rfeAtom != None) {
-        XClientMessageEvent clientMessage;
-        memset(&clientMessage, 0, sizeof(clientMessage));
-
-        clientMessage.type = ClientMessage;
-        clientMessage.window = GDK_WINDOW_XID(gdk_window);
-        clientMessage.message_type = rfeAtom;
-        clientMessage.format = 32;
-
-        XSendEvent(display, XDefaultRootWindow(display), False,
-                   SubstructureRedirectMask | SubstructureNotifyMask,
-                   (XEvent *) &clientMessage);
-        XFlush(display);
-    }
-}
+//void WindowContextTop::request_frame_extents() {
+//    Display *display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(gdk_window));
+//    Atom rfeAtom = XInternAtom(display, "_NET_REQUEST_FRAME_EXTENTS", True);
+//    if (rfeAtom != None) {
+//        XClientMessageEvent clientMessage;
+//        memset(&clientMessage, 0, sizeof(clientMessage));
+//
+//        clientMessage.type = ClientMessage;
+//        clientMessage.window = GDK_WINDOW_XID(gdk_window);
+//        clientMessage.message_type = rfeAtom;
+//        clientMessage.format = 32;
+//
+//        XSendEvent(display, XDefaultRootWindow(display), False,
+//                   SubstructureRedirectMask | SubstructureNotifyMask,
+//                   (XEvent *) &clientMessage);
+//        XFlush(display);
+//    }
+//}
 
 void WindowContextTop::activate_window() {
     Display *display = GDK_DISPLAY_XDISPLAY (gdk_window_get_display (gdk_window));
@@ -1030,31 +1036,31 @@ void WindowContextTop::activate_window() {
     }
 }
 
-bool WindowContextTop::get_frame_extents_property(int *top, int *left,
-        int *bottom, int *right) {
-    unsigned long *extents;
-
-    if (gdk_property_get(gdk_window,
-            atom_net_wm_frame_extents,
-            gdk_atom_intern("CARDINAL", FALSE),
-            0,
-            sizeof (unsigned long) * 4,
-            FALSE,
-            NULL,
-            NULL,
-            NULL,
-            (guchar**) & extents)) {
-        *left = extents [0];
-        *right = extents [1];
-        *top = extents [2];
-        *bottom = extents [3];
-
-        g_free(extents);
-        return true;
-    }
-
-    return false;
-}
+//bool WindowContextTop::get_frame_extents_property(int *top, int *left,
+//        int *bottom, int *right) {
+//    unsigned long *extents;
+//
+//    if (gdk_property_get(gdk_window,
+//            atom_net_wm_frame_extents,
+//            gdk_atom_intern("CARDINAL", FALSE),
+//            0,
+//            sizeof (unsigned long) * 4,
+//            FALSE,
+//            NULL,
+//            NULL,
+//            NULL,
+//            (guchar**) & extents)) {
+//        *left = extents [0];
+//        *right = extents [1];
+//        *top = extents [2];
+//        *bottom = extents [3];
+//
+//        g_free(extents);
+//        return true;
+//    }
+//
+//    return false;
+//}
 
 void WindowContextTop::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
@@ -1101,18 +1107,19 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
     if (event->window == gdk_window) {
         if (event->atom == atom_net_wm_state) {
             process_net_wm_property();
-        } else if (event->atom == atom_net_wm_frame_extents) {
-            gint top, left, bottom, right;
-
-            get_frame_extents_property(&top, &left, &bottom, &right);
-
-            geometry.extents.top = top;
-            geometry.extents.left = left;
-            geometry.extents.bottom = bottom;
-            geometry.extents.right = right;
-
-//            g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
         }
+//        else if (event->atom == atom_net_wm_frame_extents) {
+//            gint top, left, bottom, right;
+//
+//            get_frame_extents_property(&top, &left, &bottom, &right);
+//
+//            geometry.extents.top = top;
+//            geometry.extents.left = left;
+//            geometry.extents.bottom = bottom;
+//            geometry.extents.right = right;
+//
+////            g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+//        }
     }
 }
 
@@ -1221,18 +1228,17 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         return;
     }
 
-    int newW = w > 0 ? w :
-                   cw > 0 ? cw + geometry.extents.right + geometry.extents.left : geometry.current_width;
-
-    int newH = h > 0 ? h :
-                   ch > 0 ? ch + geometry.extents.bottom + geometry.extents.top : geometry.current_height;
-
-//    g_print("extents: r: %d, l: %d, b: %d, t: %d\n", geometry.extents.right, geometry.extents.left,
-//            geometry.extents.bottom, geometry.extents.top);
+    int newW = w > 0 ? w : geometry.current_width;
+    int newH = h > 0 ? h : geometry.current_height;
 
     if (newW != geometry.current_width || newH != geometry.current_height) {
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
-//        g_print("gtk_window_resize(%d, %d)\n", newW, newH);
+    }
+
+    // gtk_container is used to set content size.
+    // -1 will unset it, so it fits well
+    if (cw > 0 || ch > 0) {
+        gtk_widget_set_size_request(gtk_container, cw, ch);
     }
 
     if (xSet || ySet) {
@@ -1240,7 +1246,6 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         int newY = (ySet) ? y : geometry.current_y;
 
         if (newX != geometry.current_x || newY != geometry.current_y) {
-//            g_print("gtk_window_move(%d, %d)\n", newX, newY);
             gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
         }
     }
@@ -1250,9 +1255,9 @@ void WindowContextTop::process_map() {
     map_received = true;
     set_window_resizable(resizable.value);
 
-    if (frame_type == TITLED) {
-        request_frame_extents();
-    }
+//    if (frame_type == TITLED) {
+//        request_frame_extents();
+//    }
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height)
@@ -1398,13 +1403,13 @@ GtkWindow *WindowContextTop::get_gtk_window() {
     return GTK_WINDOW(gtk_widget);
 }
 
-WindowFrameExtents WindowContextTop::get_frame_extents() {
-    return geometry.extents;
+WindowGeometry WindowContextTop::get_geometry() {
+    return geometry;
 }
 
-void WindowContextTop::set_gravity(float x, float y) {
-    //does nothing.
-}
+//void WindowContextTop::set_gravity(float x, float y) {
+//    //does nothing.
+//}
 
 void WindowContextTop::update_ontop_tree(bool on_top) {
     bool effective_on_top = on_top || this->on_top;
