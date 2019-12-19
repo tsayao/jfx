@@ -1804,12 +1804,14 @@ void WindowContextChild::set_bounds(int x, int y, bool xSet, bool ySet, int w, i
 int WindowContextChild::getEmbeddedX() {
     int x;
     gdk_window_get_origin(gdk_window, &x, NULL);
+    g_print("getEmbeddedX: %d\n",x);
     return x;
 }
 
 int WindowContextChild::getEmbeddedY() {
     int y;
     gdk_window_get_origin(gdk_window, NULL, &y);
+    g_print("getEmbeddedY: %d\n",y);
     return y;
 }
 
