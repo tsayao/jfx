@@ -1273,16 +1273,15 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 
     g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
-    int newW = w > 0 ? (w - geometry.extents.left - geometry.extents.right) : -1;
-    int newH = h > 0 ? (h - geometry.extents.top - geometry.extents.bottom) : -1;
+    int newW = w > 0
+        ? (w - geometry.extents.left - geometry.extents.right)
+        : cw;
+    int newH = h > 0
+        ? (h - geometry.extents.top - geometry.extents.bottom)
+        : ch;
 
-    if (cw > 0 || ch > 0) {
-        int newW = cw > 0 ? cw : -1;
-        int newH = ch > 0 ? ch : -1;
-    }
-
-    if (newW != -1 || newH != -1) {
-//            g_print("RESIZE: %d, %d\n", newW, newH);
+    if (newW != -1 && newH != -1) {
+        g_print("RESIZE: %d, %d\n", newW, newH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
     }
 
