@@ -52,12 +52,16 @@ enum request_type {
     REQUEST_NOT_RESIZABLE
 };
 
-//struct WindowFrameExtents {
-//    int top;
-//    int left;
-//    int bottom;
-//    int right;
-//};
+struct WindowFrameExtents {
+    WindowFrameExtents(): top(0),
+                          left(0),
+                          bottom(0),
+                          right(0) {}
+    int top;
+    int left;
+    int bottom;
+    int right;
+};
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
@@ -66,16 +70,26 @@ struct WindowGeometry {
                       current_y(0),
                       current_width(0),
                       current_height(0),
-                      delta_x(0),
-                      delta_y(0) {}
+                      req_bounds_x(-1),
+                      req_bounds_y(-1),
+                      req_bounds_width(-1),
+                      req_bounds_height(-1),
+                      req_bounds_content_width(-1),
+                      req_bounds_content_height(-1){}
 
     int current_x;
     int current_y;
     int current_width;
     int current_height;
 
-    int delta_x;
-    int delta_y;
+    int req_bounds_x;
+    int req_bounds_y;
+    int req_bounds_width;
+    int req_bounds_height;
+    int req_bounds_content_width;
+    int req_bounds_content_height;
+
+    WindowFrameExtents extents;
 
 //FIXME: leak?
     GdkGeometry gdk_geometry;
@@ -92,8 +106,8 @@ public:
     virtual void enableOrResetIME() = 0;
     virtual void disableIME() = 0;
     virtual void paint(void* data, jint width, jint height) = 0;
-    //virtual WindowFrameExtents get_frame_extents() = 0;
-    virtual WindowGeometry get_geometry() = 0;
+    virtual WindowFrameExtents get_frame_extents() = 0;
+//    virtual WindowGeometry get_geometry() = 0;
 
     virtual void enter_fullscreen() = 0;
     virtual void exit_fullscreen() = 0;
@@ -262,9 +276,8 @@ class WindowContextPlug: public WindowContextBase {
 public:
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-    //WindowFrameExtents get_frame_extents() { return WindowFrameExtents{0, 0, 0, 0}; };
-    //WindowFrameExtents get_frame_extents() { WindowFrameExtents ext = {0, 0, 0, 0}; return ext;}
-    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
+    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
+//    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
 
     void enter_fullscreen() {}
     void exit_fullscreen() {}
@@ -310,10 +323,8 @@ public:
 //    void process_mouse_button(GdkEventButton*);
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
-
-    //WindowFrameExtents get_frame_extents() { return WindowFrameExtents{0, 0, 0, 0}; };
-    //WindowFrameExtents get_frame_extents() { WindowFrameExtents ext = {0, 0, 0, 0}; return ext;}
+//    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
+    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
 
     void enter_fullscreen();
     void exit_fullscreen();
@@ -381,9 +392,8 @@ public:
     void process_net_wm_property();
     void process_screen_changed();
 
-    WindowGeometry get_geometry();
-
-    //WindowFrameExtents get_frame_extents();
+    //WindowGeometry get_geometry();
+    WindowFrameExtents get_frame_extents();
 
     void set_minimized(bool);
     void set_maximized(bool);
@@ -416,10 +426,10 @@ public:
 protected:
     void applyShapeMask(void*, uint width, uint height);
 private:
-    //bool get_frame_extents_property(int *, int *, int *, int *);
-    //void request_frame_extents();
+    bool get_frame_extents_property(int *, int *, int *, int *);
+    void request_frame_extents();
     void activate_window();
-    //bool update_frame_extents();
+    bool update_frame_extents();
     //void set_cached_extents(WindowFrameExtents ex);
     //WindowFrameExtents get_cached_extents();
     void update_ontop_tree(bool);
