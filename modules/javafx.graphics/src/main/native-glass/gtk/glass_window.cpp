@@ -53,14 +53,14 @@
 
 // EVENTS
 static gboolean on_configure(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_configure\n");
+//    g_print("on_configure\n");
 
     ((WindowContextBase*)user_data)->process_configure(&event->configure);
     return FALSE;
 }
 
 static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_damage_or_draw\n");
+//    g_print("on_damage_or_draw\n");
 
     ((WindowContextBase*)user_data)->process_draw(&event->expose);
     return FALSE;
@@ -80,14 +80,14 @@ static void redraw_schedule_callback(gpointer data) {
 */
 
 static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_property_notify\n");
+//    g_print("on_property_notify\n");
 
     ((WindowContextBase*)user_data)->process_property_notify(&event->property);
     return FALSE;
 }
 
 static gboolean on_focus_change(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_focus_change\n");
+//    g_print("on_focus_change\n");
 
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
     return FALSE;
@@ -101,21 +101,21 @@ static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data
 }
 
 static gboolean on_window_state(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_window_state\n");
+//    g_print("on_window_state\n");
 
     ((WindowContextBase*)user_data)->process_state(&event->window_state);
     return FALSE;
 }
 
 static gboolean on_device_button(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_device_button\n");
+//    g_print("on_device_button\n");
 
     ((WindowContextBase*)user_data)->process_mouse_button(&event->button);
     return FALSE;
 }
 
 static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_device_motion\n");
+    //g_print("on_device_motion\n");
 
     ((WindowContextBase*)user_data)->process_mouse_motion(&event->motion);
     gdk_event_request_motions(&event->motion);
@@ -123,28 +123,28 @@ static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer us
 }
 
 static gboolean on_device_scroll(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_device_scroll\n");
+//    g_print("on_device_scroll\n");
 
     ((WindowContextBase*)user_data)->process_mouse_scroll(&event->scroll);
     return FALSE;
 }
 
 static gboolean on_enter_or_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_enter_or_leave\n");
+//    g_print("on_enter_or_leave\n");
 
     ((WindowContextBase*)user_data)->process_mouse_cross(&event->crossing);
     return FALSE;
 }
 
 static gboolean on_key_press_or_release(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_key_press_or_release\n");
+//    g_print("on_key_press_or_release\n");
 
     ((WindowContextBase*)user_data)->process_key(&event->key);
     return FALSE;
 }
 
 static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    g_print("on_map\n");
+//    g_print("on_map\n");
 
     ((WindowContextBase*)user_data)->process_map();
     return FALSE;
@@ -201,7 +201,7 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), ctx);
 
     g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), ctx);
-    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_property_notify), ctx);
+    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_focus_change), ctx);
 
     g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), ctx);
 
@@ -418,8 +418,8 @@ void WindowContextBase::process_draw(GdkEventExpose* event) {
         GtkAllocation a;
         gtk_widget_get_allocation(gtk_widget, &a);
 
-        g_print("repaint: %s %d, %d, %d, %d\n", (event->type == GDK_EXPOSE) ? "GDK_EXPOSE" : "GDK_DAMAGE",
-                a.x, a.y, a.width, a.height);
+//        g_print("repaint: %s %d, %d, %d, %d\n", (event->type == GDK_EXPOSE) ? "GDK_EXPOSE" : "GDK_DAMAGE",
+//                a.x, a.y, a.width, a.height);
 
         mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, a.x, a.y, a.width, a.height);
         CHECK_JNI_EXCEPTION(mainEnv)
@@ -888,7 +888,7 @@ WindowContextBase::~WindowContextBase() {
 ////////////////////////////// WindowContextTop /////////////////////////////////
 
 static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
-static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
+//static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
 
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
@@ -1228,6 +1228,8 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         return;
     }
 
+    g_print("set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+
     int newW = w > 0 ? w : geometry.current_width;
     int newH = h > 0 ? h : geometry.current_height;
 
@@ -1404,6 +1406,8 @@ GtkWindow *WindowContextTop::get_gtk_window() {
 }
 
 WindowGeometry WindowContextTop::get_geometry() {
+    g_print("get_geometry: %d, %d, %d, %d\n", geometry.current_x, geometry.current_y, geometry.current_width, geometry.current_height);
+
     return geometry;
 }
 
@@ -1682,7 +1686,12 @@ WindowContextChild::WindowContextChild(jobject _jwindow,
     gtk_widget_realize(gtk_widget);
     gdk_window = gtk_widget_get_window(gtk_widget);
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
-    gdk_window_register_dnd(gdk_window);
+
+    //TODO: DND
+    //gdk_window_register_dnd(gdk_window);
+
+    connect_signals(gtk_widget, this);
+
     g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(child_focus_callback), this);
     g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(child_focus_callback), this);
 }
@@ -1752,6 +1761,9 @@ void WindowContextChild::set_bounds(int x, int y, bool xSet, bool ySet, int w, i
     if (x > 0 || y > 0 || xSet || ySet) {
         gint newX, newY;
         gdk_window_get_origin(gdk_window, &newX, &newY);
+
+        g_print("WindowContextChild::set_bounds: %d, %d\n", newX, newY);
+
         if (jwindow) {
             mainEnv->CallVoidMethod(jwindow,
                     jWindowNotifyMove,
@@ -1799,7 +1811,6 @@ int WindowContextChild::getEmbeddedY() {
     int y;
     gdk_window_get_origin(gdk_window, NULL, &y);
     return y;
-
 }
 
 void WindowContextChild::restack(bool toFront) {
