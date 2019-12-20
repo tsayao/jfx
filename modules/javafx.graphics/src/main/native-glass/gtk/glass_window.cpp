@@ -1112,6 +1112,8 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
                            geometry.req_bounds_w, geometry.req_bounds_h,
                            geometry.req_bounds_cw, geometry.req_bounds_ch);
 
+                apply_geometry();
+
                 g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
             }
         }
@@ -1190,18 +1192,6 @@ void WindowContextTop::process_screen_changed() {
 void WindowContextTop::set_window_resizable(bool res) {
     if (res == resizable.value) {
         return;
-    }
-
-    if (res) {
-        geometry.gdk_geometry.min_width = (resizable.minw > 0) ? resizable.minw : 1;
-        geometry.gdk_geometry.min_height = (resizable.minh > 0) ? resizable.minh : 1;
-        geometry.gdk_geometry.max_width = (resizable.maxw > 0) ? resizable.maxw : G_MAXINT;
-        geometry.gdk_geometry.max_height = (resizable.maxh > 0) ? resizable.maxh : G_MAXINT;
-    } else {
-        geometry.gdk_geometry.min_width = geometry.current_width;
-        geometry.gdk_geometry.min_height = geometry.current_height;
-        geometry.gdk_geometry.max_width = geometry.current_width;
-        geometry.gdk_geometry.max_height = geometry.current_height;
     }
 
     apply_geometry();
@@ -1366,7 +1356,21 @@ void WindowContextTop::set_enabled(bool enabled) {
 }
 
 void WindowContextTop::apply_geometry() {
-    //TODO: leak?
+    gint adjust_w = geometry.extents.left + geometry.extents.right;
+    gint adjust_h = geometry.extents.top + geometry.extents.bottom;
+
+    if (resizable.value) {
+        geometry.gdk_geometry.min_width = (resizable.minw > 0) ? resizable.minw - adjust_w : 1;
+        geometry.gdk_geometry.min_height = (resizable.minh > 0) ? resizable.minh - adjust_h : 1;
+        geometry.gdk_geometry.max_width = (resizable.maxw > 0) ? resizable.maxw  - adjust_w : G_MAXINT;
+        geometry.gdk_geometry.max_height = (resizable.maxh > 0) ? resizable.maxh - adjust_h : G_MAXINT;
+    } else {
+        geometry.gdk_geometry.min_width = geometry.current_width;
+        geometry.gdk_geometry.min_height = geometry.current_height;
+        geometry.gdk_geometry.max_width = geometry.current_width;
+        geometry.gdk_geometry.max_height = geometry.current_height;
+    }
+
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), gtk_widget, &geometry.gdk_geometry,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 }
@@ -1381,9 +1385,6 @@ void WindowContextTop::set_minimum_size(int w, int h) {
     resizable.minw = w;
     resizable.minh = h;
 
-    geometry.gdk_geometry.min_width = w;
-    geometry.gdk_geometry.min_height = h;
-
     apply_geometry();
 }
 
@@ -1396,9 +1397,6 @@ void WindowContextTop::set_maximum_size(int w, int h) {
 
     resizable.maxw = w;
     resizable.maxh = h;
-
-    geometry.gdk_geometry.max_width = w;
-    geometry.gdk_geometry.max_height = h;
 
     apply_geometry();
 }
