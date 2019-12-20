@@ -412,7 +412,7 @@ bool is_window_enabled_for_event(GdkWindow * window, WindowContext *ctx, gint ev
             break;
     }//switch
 
-    if (ctx != NULL ) {
+    if (ctx != NULL) {
         return ctx->isEnabled();
     }
     return TRUE;

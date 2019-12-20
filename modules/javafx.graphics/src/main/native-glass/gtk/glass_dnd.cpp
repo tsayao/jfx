@@ -208,8 +208,7 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
     return (gboolean) result;
 }
 
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time)
-{
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time) {
     if (!enter_ctx.ctx || enter_ctx.just_entered) {
         gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
@@ -229,6 +228,11 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *contex
     gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
 
     return TRUE;
+}
+
+
+void process_dnd_target_data_get(WindowContext *ctx, GdkDragContext *context, GtkSelectionData *data, guint info, guint time) {
+
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
