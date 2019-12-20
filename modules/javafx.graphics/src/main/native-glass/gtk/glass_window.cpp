@@ -184,14 +184,15 @@ static gboolean on_drag_leave(GtkWidget      *widget,
     return FALSE;
 }
 
-static void on_drag_data_get(GtkWidget        *widget,
-                             GdkDragContext   *context,
-                             GtkSelectionData *data,
-                             guint             info,
-                             guint             time,
-                             gpointer          user_data) {
-
-    process_dnd_target_data_get(((WindowContext*)user_data), context, data, info, time);
+static void on_drag_data_received(GtkWidget        *widget,
+                                  GdkDragContext   *context,
+                                  gint              x,
+                                  gint              y,
+                                  GtkSelectionData *data,
+                                  guint             info,
+                                  guint             time,
+                                  gpointer          user_data) {
+    process_dnd_target_data_received(((WindowContext*)user_data), context, x, y, data, info, time);
 }
 
 
@@ -223,7 +224,7 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), ctx);
     g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), ctx);
     g_signal_connect(gtk_widget, "drag-drop", G_CALLBACK(on_drag_drop), ctx);
-    g_signal_connect(gtk_widget, "drag-data-get", G_CALLBACK(on_drag_data_get), ctx);
+    g_signal_connect(gtk_widget, "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
 
 }
 

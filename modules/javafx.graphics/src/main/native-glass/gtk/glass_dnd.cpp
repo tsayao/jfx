@@ -185,6 +185,7 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
         is_dnd_owner = is_in_drag();
         enter_ctx.ctx = context;
         enter_ctx.just_entered = TRUE;
+        g_print("enter_ctx.just_entered = TRUE;\n");
     }
 
     gint x_abs, y_abs;
@@ -200,6 +201,7 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
 
     if (enter_ctx.just_entered) {
+        g_print("enter_ctx.just_entered = FALSE;\n");
         enter_ctx.just_entered = FALSE;
     }
 
@@ -209,11 +211,18 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
 }
 
 gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time) {
-    if (!enter_ctx.ctx || enter_ctx.just_entered) {
-        gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
-        return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
+    g_print("process_dnd_target_drag_drop\n");
+
+//    if (enter_ctx.ctx == NULL || enter_ctx.just_entered) {
+//        g_print("XXXX\n");
+//        return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
+//    }
+
+    if (!gdk_drag_context_list_targets(context)) {
+        return FALSE;
     }
 
+    GdkAtom target = GDK_POINTER_TO_ATOM(gdk_drag_context_list_targets(context));
     GdkDragAction selected = gdk_drag_context_get_selected_action(context);
 
     gint x_abs, y_abs;
@@ -225,14 +234,19 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *contex
             translate_gdk_action_to_glass(selected));
     LOG_EXCEPTION(mainEnv)
 
-    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
+//    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
+
+    gtk_drag_get_data(ctx->get_gtk_widget(), context, target, GDK_CURRENT_TIME);
 
     return TRUE;
 }
 
 
-void process_dnd_target_data_get(WindowContext *ctx, GdkDragContext *context, GtkSelectionData *data, guint info, guint time) {
-
+void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *context, gint x, gint y,
+                                      GtkSelectionData *data, guint info, guint time) {
+    g_print("process_dnd_target_data_received\n");
+    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
+    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
