@@ -72,10 +72,10 @@ struct WindowGeometry {
                       current_height(0),
                       req_bounds_x(-1),
                       req_bounds_y(-1),
-                      req_bounds_width(-1),
-                      req_bounds_height(-1),
-                      req_bounds_content_width(-1),
-                      req_bounds_content_height(-1){}
+                      req_bounds_w(-1),
+                      req_bounds_h(-1),
+                      req_bounds_cw(-1),
+                      req_bounds_ch(-1){}
 
     int current_x;
     int current_y;
@@ -84,10 +84,10 @@ struct WindowGeometry {
 
     int req_bounds_x;
     int req_bounds_y;
-    int req_bounds_width;
-    int req_bounds_height;
-    int req_bounds_content_width;
-    int req_bounds_content_height;
+    int req_bounds_w;
+    int req_bounds_h;
+    int req_bounds_cw;
+    int req_bounds_ch;
 
     WindowFrameExtents extents;
 
@@ -160,6 +160,7 @@ public:
 
     virtual GdkWindow *get_gdk_window() = 0;
     virtual GtkWindow *get_gtk_window() = 0;
+    virtual GtkWidget *get_gtk_widget() = 0;
     virtual jobject get_jview() = 0;
     virtual jobject get_jwindow() = 0;
 
@@ -223,7 +224,7 @@ public:
     void disableIME();
     void paint(void*, jint, jint);
     GdkWindow *get_gdk_window();
-//    WindowGeometry get_geometry() = 0;
+    GtkWidget *get_gtk_widget();
     jobject get_jwindow();
     jobject get_jview();
 

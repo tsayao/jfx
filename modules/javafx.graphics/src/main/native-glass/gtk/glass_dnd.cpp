@@ -153,15 +153,32 @@ static void reset_enter_ctx() {
     memset(&enter_ctx, 0, sizeof(enter_ctx));
 }
 
-void process_dnd_target_drag_leave(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context, guint time) {
+void glass_dnd_attach_context(WindowContext *ctx) {
+    GtkTargetEntry desttargetentries[] =
+    {
+        { (gchar*) "UTF8_STRING",   0, 0 },
+        { (gchar*) "text/plain",    0, 0 },
+        { (gchar*) "COMPOUND_TEXT", 0, 0 },
+        { (gchar*) "STRING",        0, 0 },
+        { (gchar*) "text/uri-list", 0, 0 },
+        { (gchar*) "image/png",     0, 0 },
+        { (gchar*) "image/jpeg",    0, 0 },
+        { (gchar*) "image/tiff",    0, 0 },
+        { (gchar*) "image/bmp",     0, 0 }
+    };
+
+    gtk_drag_dest_set(ctx->get_gtk_widget(), GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
+                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
+}
+
+void process_dnd_target_drag_leave(WindowContext *ctx, GdkDragContext *context, guint time) {
     reset_enter_ctx();
 
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-gboolean process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
-                                        gint x, gint y, guint time) {
+gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time) {
 
     if (enter_ctx.ctx == NULL || (enter_ctx.ctx != context && !enter_ctx.just_entered)) {
         reset_enter_ctx();
@@ -191,12 +208,10 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, G
     return (gboolean) result;
 }
 
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
-                                      gint x, gint y, guint time)
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time)
 {
     if (!enter_ctx.ctx || enter_ctx.just_entered) {
-        gdk_drop_finish(context, FALSE, GDK_CURRENT_TIME);
-        gdk_drop_reply(context, FALSE, GDK_CURRENT_TIME);
+        gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
 
@@ -211,8 +226,7 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, Gdk
             translate_gdk_action_to_glass(selected));
     LOG_EXCEPTION(mainEnv)
 
-    gdk_drop_finish(context, TRUE, GDK_CURRENT_TIME);
-    gdk_drop_reply(context, TRUE, GDK_CURRENT_TIME);
+    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
 
     return TRUE;
 }

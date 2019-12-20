@@ -156,9 +156,7 @@ static gboolean on_drag_motion(GtkWidget      *widget,
                                gint            y,
                                guint           time,
                                gpointer        user_data) {
-    // g_print("on_drag_motion: %d, %d\n", x ,y);
-
-    return process_dnd_target_drag_motion(((WindowContext*)user_data), widget, context, x, y, time);
+    return process_dnd_target_drag_motion(((WindowContext*)user_data),  context, x, y, time);
 }
 
 static void on_screen_changed(GtkWidget *widget,
@@ -174,7 +172,7 @@ static gboolean on_drag_drop(GtkWidget      *widget,
                              guint           time,
                              gpointer        user_data) {
 
-    return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
+    return process_dnd_target_drag_drop(((WindowContext*)user_data), context, x, y, time);
 }
 
 static gboolean on_drag_leave(GtkWidget      *widget,
@@ -182,45 +180,32 @@ static gboolean on_drag_leave(GtkWidget      *widget,
                               guint           time,
                               gpointer        user_data) {
 
-    process_dnd_target_drag_leave(((WindowContext*)user_data), widget, context, time);
-
+    process_dnd_target_drag_leave(((WindowContext*)user_data),  context, time);
     return FALSE;
 }
 
 static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
-    //Signals
     g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), ctx);
-
     g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), ctx);
 #ifdef GLASS_GTK3
     g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), ctx);
 #else
     g_signal_connect(gtk_widget, "expose", G_CALLBACK(on_damage_or_draw), ctx);
 #endif
-
     g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), ctx);
-
     g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), ctx);
     g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_focus_change), ctx);
-
     g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), ctx);
-
     g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(on_window_state), ctx);
-
     g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(on_device_button), ctx);
     g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(on_device_button), ctx);
-
     g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(on_device_motion), ctx);
     g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(on_device_scroll), ctx);
-
     g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(on_device_scroll), ctx);
     g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(on_enter_or_leave), ctx);
-
     g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), ctx);
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), ctx);
-
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), ctx);
-
     g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), ctx);
 
     //DND
@@ -235,6 +220,10 @@ WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
 GdkWindow* WindowContextBase::get_gdk_window(){
     return gdk_window;
+}
+
+GtkWidget* WindowContextBase::get_gtk_widget(){
+    return gtk_widget;
 }
 
 jobject WindowContextBase::get_jview() {
@@ -956,22 +945,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
 
-    //TODO: move to glass_dnd
-    GtkTargetEntry desttargetentries[] =
-    {
-        { (gchar*) "UTF8_STRING",   0, 0 },
-        { (gchar*) "text/plain",    0, 0 },
-        { (gchar*) "COMPOUND_TEXT", 0, 0 },
-        { (gchar*) "STRING",        0, 0 },
-        { (gchar*) "text/uri-list", 0, 0 },
-        { (gchar*) "image/png",     0, 0 },
-        { (gchar*) "image/jpeg",    0, 0 },
-        { (gchar*) "image/tiff",    0, 0 },
-        { (gchar*) "image/bmp",     0, 0 }
-    };
-
-    gtk_drag_dest_set(gtk_widget, GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
-                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
+    glass_dnd_attach_context(this);
 
     gdk_windowManagerFunctions = wmf;
     if (wmf) {
@@ -979,9 +953,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     }
 
     geometry.gdk_geometry.win_gravity = GDK_GRAVITY_NORTH_WEST;
-
     connect_signals(gtk_widget, this);
-//    g_signal_connect(gtk_widget, "map", G_CALLBACK(on_pre_map_event), this);
 
     if (frame_type == TITLED) {
         request_frame_extents();
@@ -1108,9 +1080,7 @@ void WindowContextTop::process_net_wm_property() {
 }
 
 void WindowContextTop::process_property_notify(GdkEventProperty* event) {
-
 //    g_print("process_property_notify: %s\n", gdk_atom_name(event->atom));
-
     if (event->window == gdk_window) {
         if (event->atom == atom_net_wm_state) {
             process_net_wm_property();
@@ -1123,11 +1093,12 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
                 geometry.extents.bottom = bottom;
                 geometry.extents.right = right;
 
-                //ensure bounds
+                // set bounds again to set to correct window size that must
+                // be the total width and height accounting extents
                 set_bounds(-1, -1,
                            false, false,
-                           geometry.req_bounds_width, geometry.req_bounds_height,
-                           geometry.req_bounds_content_width, geometry.req_bounds_content_height);
+                           geometry.req_bounds_w, geometry.req_bounds_h,
+                           geometry.req_bounds_cw, geometry.req_bounds_ch);
 
                 g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
             }
@@ -1256,19 +1227,19 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     }
 
     if (w != -1) {
-        geometry.req_bounds_width = w;
+        geometry.req_bounds_w = w;
     }
 
     if (h != -1) {
-        geometry.req_bounds_height = h;
+        geometry.req_bounds_h = h;
     }
 
     if (cw != -1) {
-        geometry.req_bounds_content_width = cw;
+        geometry.req_bounds_cw = cw;
     }
 
     if (ch != -1) {
-        geometry.req_bounds_content_height = ch;
+        geometry.req_bounds_ch = ch;
     }
 
     g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
@@ -1295,24 +1266,9 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     }
 }
 
-//void WindowContextTop::process_pre_map() {
-//    g_print("pre_map_received!\n");
-//    pre_map_received = true;
-//    set_bounds(geometry.req_bounds_x, geometry.req_bounds_y,
-//               (geometry.req_bounds_x != -1), (geometry.req_bounds_y != -1),
-//               geometry.req_bounds_width, geometry.req_bounds_height,
-//               geometry.req_bounds_content_width, geometry.req_bounds_content_height);
-//}
-
 void WindowContextTop::process_map() {
     map_received = true;
     set_window_resizable(resizable.value);
-
-    g_print("map_received!\n");
-
-//    if (frame_type == TITLED) {
-//        request_frame_extents();
-//    }
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height) {
@@ -1567,7 +1523,7 @@ WindowContextPlug::WindowContextPlug(jobject _jwindow, void* _owner) :
     gdk_window = gtk_widget_get_window(gtk_widget);
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
-//    gdk_window_register_dnd(gdk_window);
+    glass_dnd_attach_context(this);
 
     gtk_container = gtk_fixed_new();
     gtk_container_add (GTK_CONTAINER(gtk_widget), gtk_container);
@@ -1742,9 +1698,7 @@ WindowContextChild::WindowContextChild(jobject _jwindow,
     gdk_window = gtk_widget_get_window(gtk_widget);
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, NULL);
 
-    //TODO: DND
-    //gdk_window_register_dnd(gdk_window);
-
+    glass_dnd_attach_context(this);
     connect_signals(gtk_widget, this);
 
 //    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(child_focus_callback), this);

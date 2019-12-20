@@ -31,11 +31,12 @@
 
 #include <gtk/gtk.h>
 
-gboolean process_dnd_target_drag_motion(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
-                                        gint x, gint y, guint time);
-void process_dnd_target_drag_leave(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context, guint time);
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
-                                      gint x, gint y, guint time);
+void glass_dnd_attach_context(WindowContext *ctx);
+
+gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time);
+void process_dnd_target_drag_leave(WindowContext *ctx, GdkDragContext *context, guint time);
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time);
+
 jint dnd_target_get_supported_actions(JNIEnv *);
 jobjectArray dnd_target_get_mimes(JNIEnv *);
 jobject dnd_target_get_data(JNIEnv *, jstring);
