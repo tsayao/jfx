@@ -225,19 +225,16 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), ctx);
     g_signal_connect(gtk_widget, "drag-drop", G_CALLBACK(on_drag_drop), ctx);
     g_signal_connect(gtk_widget, "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
-
 }
-
-
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
 WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
-GdkWindow* WindowContextBase::get_gdk_window(){
+GdkWindow* WindowContextBase::get_gdk_window() {
     return gdk_window;
 }
 
-GtkWidget* WindowContextBase::get_gtk_widget(){
+GtkWidget* WindowContextBase::get_gtk_widget() {
     return gtk_widget;
 }
 
