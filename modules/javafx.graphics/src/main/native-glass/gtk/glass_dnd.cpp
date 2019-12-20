@@ -167,15 +167,17 @@ void glass_dnd_attach_context(WindowContext *ctx) {
         { (gchar*) "image/bmp",     0, 0 }
     };
 
-    gtk_drag_dest_set(ctx->get_gtk_widget(), GTK_DEST_DEFAULT_ALL, desttargetentries, G_N_ELEMENTS(desttargetentries),
+    gtk_drag_dest_set(ctx->get_gtk_widget(), GTK_DEST_DEFAULT_ALL, desttargetentries,
+                      G_N_ELEMENTS(desttargetentries),
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
 }
 
 void process_dnd_target_drag_leave(WindowContext *ctx, GdkDragContext *context, guint time) {
-    reset_enter_ctx();
-
-    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-    CHECK_JNI_EXCEPTION(mainEnv)
+    g_print("process_dnd_target_drag_leave\n");
+//    reset_enter_ctx();
+//
+//    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
+//    CHECK_JNI_EXCEPTION(mainEnv)
 }
 
 gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time) {
@@ -210,23 +212,31 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
     return (gboolean) result;
 }
 
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time) {
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
+                                     gint x, gint y, guint time) {
     g_print("process_dnd_target_drag_drop\n");
 
-//    if (enter_ctx.ctx == NULL || enter_ctx.just_entered) {
-//        g_print("XXXX\n");
-//        return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
-//    }
+    if (enter_ctx.ctx == NULL || enter_ctx.just_entered) {
+        return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
+    }
 
     if (!gdk_drag_context_list_targets(context)) {
         return FALSE;
     }
 
     GdkAtom target = GDK_POINTER_TO_ATOM(gdk_drag_context_list_targets(context));
-    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
 
+    gtk_drag_get_data(widget, context, target, GDK_CURRENT_TIME);
+
+    return TRUE;
+}
+
+void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *context, gint x, gint y,
+                                      GtkSelectionData *data, guint info, guint time) {
     gint x_abs, y_abs;
     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
+
+    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
 
     mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
             (jint)x, (jint)y,
@@ -234,18 +244,6 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *contex
             translate_gdk_action_to_glass(selected));
     LOG_EXCEPTION(mainEnv)
 
-//    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
-
-    gtk_drag_get_data(ctx->get_gtk_widget(), context, target, GDK_CURRENT_TIME);
-
-    return TRUE;
-}
-
-
-void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *context, gint x, gint y,
-                                      GtkSelectionData *data, guint info, guint time) {
-    g_print("process_dnd_target_data_received\n");
-    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
     gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
 }
 
@@ -332,6 +330,7 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
 
 jint dnd_target_get_supported_actions(JNIEnv *env)
 {
+    g_print("dnd_target_get_supported_actions\n");
     if (check_state_in_drag(env)) {
         return 0;
     }
@@ -340,6 +339,7 @@ jint dnd_target_get_supported_actions(JNIEnv *env)
 
 static void wait_for_selection_data_hook(GdkEvent * event, void * data)
 {
+    g_print("wait_for_selection_data_hook\n");
     selection_data_ctx *ctx = (selection_data_ctx*)data;
     GdkWindow *dest = glass_gdk_drag_context_get_dest_window(enter_ctx.ctx);
     if (event->type == GDK_SELECTION_NOTIFY &&
@@ -353,6 +353,7 @@ static void wait_for_selection_data_hook(GdkEvent * event, void * data)
 
 static gboolean dnd_target_receive_data(JNIEnv *env, GdkAtom target, selection_data_ctx *selection_ctx)
 {
+    g_print("dnd_target_receive_data\n");
     GevlHookRegistration hookReg;
 
     memset(selection_ctx, 0, sizeof(selection_data_ctx));
@@ -380,6 +381,7 @@ static gboolean dnd_target_receive_data(JNIEnv *env, GdkAtom target, selection_d
 
 static jobject dnd_target_get_string(JNIEnv *env)
 {
+    g_print("dnd_target_get_string\n");
     jobject result = NULL;
     selection_data_ctx ctx;
 
@@ -506,6 +508,8 @@ static jobject dnd_target_get_raw(JNIEnv *env, GdkAtom target, gboolean string_d
 
 jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 {
+    g_print("dnd_target_get_data XXXXXXXXXXXXXXX\n");
+
     if (check_state_in_drag(env)) {
         return NULL;
     }

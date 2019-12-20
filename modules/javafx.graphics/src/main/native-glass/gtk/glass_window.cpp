@@ -172,7 +172,7 @@ static gboolean on_drag_drop(GtkWidget      *widget,
                              guint           time,
                              gpointer        user_data) {
 
-    return process_dnd_target_drag_drop(((WindowContext*)user_data), context, x, y, time);
+    return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
 }
 
 static gboolean on_drag_leave(GtkWidget      *widget,
