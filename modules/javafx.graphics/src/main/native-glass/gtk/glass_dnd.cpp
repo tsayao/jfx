@@ -238,6 +238,7 @@ void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *contex
 
     GdkDragAction selected = gdk_drag_context_get_selected_action(context);
 
+    // Delay the notify for when we have the data
     mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
             (jint)x, (jint)y,
             (jint)x_abs, (jint)y_abs,
