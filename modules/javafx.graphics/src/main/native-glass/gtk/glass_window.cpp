@@ -1110,30 +1110,20 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
     gint x, y, w, h, gtk_w, gtk_h;
-
     gboolean was_moved, was_resized;
 
-    if (is_fullscreen) {
-        x = 0;
-        y = 0;
-        gtk_w = w = gdk_window_get_width(gdk_window);
-        gtk_h = h = gdk_window_get_height(gdk_window);
-        was_resized = was_moved = TRUE;
-    } else {
-        g_print("NOT FULSCREEN\n");
-        gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
-        gtk_window_get_size(GTK_WINDOW(gtk_widget), &gtk_w, &gtk_h);
-        w = gtk_w + geometry.extents.left + geometry.extents.right;
-        h = gtk_h + geometry.extents.top + geometry.extents.bottom;
+    gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
+    gtk_window_get_size(GTK_WINDOW(gtk_widget), &gtk_w, &gtk_h);
+    w = gtk_w + geometry.extents.left + geometry.extents.right;
+    h = gtk_h + geometry.extents.top + geometry.extents.bottom;
 
-        was_moved = geometry.current_x != x || geometry.current_y != y;
-        was_resized = geometry.current_width != w || geometry.current_height != h;
+    was_moved = geometry.current_x != x || geometry.current_y != y;
+    was_resized = geometry.current_width != w || geometry.current_height != h;
 
-        geometry.current_x = x;
-        geometry.current_y = y;
-        geometry.current_width = w;
-        geometry.current_height = h;
-    }
+    geometry.current_x = x;
+    geometry.current_y = y;
+    geometry.current_width = w;
+    geometry.current_height = h;
 
     g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
 
