@@ -212,7 +212,7 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
     return (gboolean) result;
 }
 
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, GdkDragContext *context,
+gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context,
                                      gint x, gint y, guint time) {
     g_print("process_dnd_target_drag_drop\n");
 
@@ -226,7 +226,7 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GtkWidget *widget, Gdk
 
     GdkAtom target = GDK_POINTER_TO_ATOM(gdk_drag_context_list_targets(context));
 
-    gtk_drag_get_data(widget, context, target, GDK_CURRENT_TIME);
+    gtk_drag_get_data(ctx->get_gtk_widget(), context, target, GDK_CURRENT_TIME);
 
     return TRUE;
 }

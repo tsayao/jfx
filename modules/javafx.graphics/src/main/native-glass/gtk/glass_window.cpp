@@ -66,19 +66,6 @@ static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer u
     return FALSE;
 }
 
-/*
-static void redraw_schedule_callback(gpointer data) {
-    WindowContextBase * b = (WindowContextBase*) data;
-
-    jobject jview = b->get_jview;
-
-    if (jview) {
-        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
-        CHECK_JNI_EXCEPTION(mainEnv)
-    }
-}
-*/
-
 static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
 //    g_print("on_property_notify\n");
 
@@ -172,7 +159,7 @@ static gboolean on_drag_drop(GtkWidget      *widget,
                              guint           time,
                              gpointer        user_data) {
 
-    return process_dnd_target_drag_drop(((WindowContext*)user_data), widget, context, x, y, time);
+    return process_dnd_target_drag_drop(((WindowContext*)user_data), context, x, y, time);
 }
 
 static gboolean on_drag_leave(GtkWidget      *widget,
@@ -257,6 +244,7 @@ bool WindowContextBase::isEnabled() {
 }
 
 void WindowContextBase::notify_state(jint glass_state) {
+    g_print("WindowContextBase::notify_state\n");
     if (glass_state == com_sun_glass_events_WindowEvent_RESTORE) {
         if (is_maximized) {
             glass_state = com_sun_glass_events_WindowEvent_MAXIMIZE;
@@ -281,6 +269,7 @@ void WindowContextBase::notify_state(jint glass_state) {
 }
 
 void WindowContextBase::process_state(GdkEventWindowState* event) {
+    g_print("WindowContextBase::process_state\n");
     if (event->changed_mask &
             (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED)) {
 
@@ -915,7 +904,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             map_received(false),
             location_assigned(false),
             size_assigned(false),
-            on_top(false)
+            on_top(false),
+            is_fullscreen(false)
 {
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
@@ -970,8 +960,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type == TITLED) {
         request_frame_extents();
     }
-
-    is_fullscreen = FALSE;
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1123,19 +1111,29 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
     gint x, y, w, h, gtk_w, gtk_h;
 
-    gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
-    gtk_window_get_size(GTK_WINDOW(gtk_widget), &gtk_w, &gtk_h);
+    gboolean was_moved, was_resized;
 
-    w = gtk_w + geometry.extents.left + geometry.extents.right;
-    h = gtk_h + geometry.extents.top + geometry.extents.bottom;
+    if (is_fullscreen) {
+        x = 0;
+        y = 0;
+        gtk_w = w = gdk_window_get_width(gdk_window);
+        gtk_h = h = gdk_window_get_height(gdk_window);
+        was_resized = was_moved = TRUE;
+    } else {
+        g_print("NOT FULSCREEN\n");
+        gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
+        gtk_window_get_size(GTK_WINDOW(gtk_widget), &gtk_w, &gtk_h);
+        w = gtk_w + geometry.extents.left + geometry.extents.right;
+        h = gtk_h + geometry.extents.top + geometry.extents.bottom;
 
-    gboolean was_moved = geometry.current_x != x || geometry.current_y != y;
-    gboolean was_resized = geometry.current_width != w || geometry.current_height != h;
+        was_moved = geometry.current_x != x || geometry.current_y != y;
+        was_resized = geometry.current_width != w || geometry.current_height != h;
 
-    geometry.current_x = x;
-    geometry.current_y = y;
-    geometry.current_width = w;
-    geometry.current_height = h;
+        geometry.current_x = x;
+        geometry.current_y = y;
+        geometry.current_width = w;
+        geometry.current_height = h;
+    }
 
     g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
 
@@ -1145,16 +1143,17 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
                     (is_maximized)
                         ? com_sun_glass_events_WindowEvent_MAXIMIZE
                         : com_sun_glass_events_WindowEvent_RESIZE,
-                    geometry.current_width,
-                    geometry.current_height);
+                    w,
+                    h);
             CHECK_JNI_EXCEPTION(mainEnv)
 
-            g_print("JWINDOW SIZE: %d, %d\n", geometry.current_width, geometry.current_height);
+            g_print("JWINDOW SIZE: %d, %d\n", w, h);
         }
 
         if (was_moved) {
-            mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, geometry.current_x, geometry.current_y);
+            mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
             CHECK_JNI_EXCEPTION(mainEnv)
+            g_print("JWINDOW MOVE: %d, %d\n", x, y);
         }
     }
 
@@ -1216,6 +1215,8 @@ void WindowContextTop::set_visible(bool visible)
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
+    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+
     if (is_maximized || is_fullscreen) {
         return;
     }
@@ -1243,8 +1244,6 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     if (ch != -1) {
         geometry.req_bounds_ch = ch;
     }
-
-    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
     int newW = w > 0
         ? (w - geometry.extents.left - geometry.extents.right)
@@ -1426,10 +1425,6 @@ GtkWindow *WindowContextTop::get_gtk_window() {
 WindowFrameExtents WindowContextTop::get_frame_extents() {
     return geometry.extents;
 }
-
-//void WindowContextTop::set_gravity(float x, float y) {
-//    //does nothing.
-//}
 
 void WindowContextTop::update_ontop_tree(bool on_top) {
     bool effective_on_top = on_top || this->on_top;
