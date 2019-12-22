@@ -398,10 +398,11 @@ static jobject dnd_target_get_string(JNIEnv *env)
 static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 {
     jobject result = NULL;
-    GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
+    GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     const guchar* data = gtk_selection_data_get_data(target_ctx.data);
 
     if (atom == TARGET_MIME_URI_LIST_ATOM) {
+        g_print("LALALA\n");
         result = uris_to_java(env, g_uri_list_extract_uris((gchar *)data), files);
     }
 
