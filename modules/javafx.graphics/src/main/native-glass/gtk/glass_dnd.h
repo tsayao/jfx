@@ -36,6 +36,7 @@ void glass_dnd_attach_context(WindowContext *ctx);
 //gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time);
 //gboolean process_dnd_target_drag_drop(WindowContext *ctx,  GdkDragContext *context, gint x, gint y, guint time);
 //void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *context, gint x, gint y, GtkSelectionData *data, guint info, guint time);
+void on_drag_leave(WindowContext* ctx);
 
 jint dnd_target_get_supported_actions(JNIEnv *);
 jobjectArray dnd_target_get_mimes(JNIEnv *);

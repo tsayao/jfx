@@ -447,6 +447,10 @@ static void process_events(GdkEvent* event, gpointer data)
     if (ctx != NULL) {
         EventsCounterHelper helper(ctx);
         gtk_main_do_event(event);
+
+        if (event->type == GDK_DRAG_LEAVE) {
+            on_drag_leave(ctx);
+        }
     } else {
         if (window == gdk_screen_get_root_window(gdk_screen_get_default())) {
             if (event->any.type == GDK_PROPERTY_NOTIFY) {

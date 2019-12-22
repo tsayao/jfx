@@ -140,7 +140,6 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
-    g_print("reset_target_ctx()\n");
     if (target_ctx.mimes != NULL) {
         mainEnv->DeleteGlobalRef(target_ctx.mimes);
     }
@@ -156,14 +155,13 @@ static gboolean on_drag_motion(GtkWidget      *widget,
                                guint           time,
                                gpointer        user_data) {
 
-    WindowContextBase* ctx = (WindowContextBase*)user_data;
+    WindowContext* ctx = (WindowContext*)user_data;
 
     if (target_ctx.ctx == NULL || (target_ctx.ctx != context && !target_ctx.just_entered)) {
         reset_target_ctx();
         is_dnd_owner = is_in_drag();
         target_ctx.ctx = context;
         target_ctx.just_entered = TRUE;
-        g_print("==> START\n");
     }
 
     gint x_abs, y_abs;
@@ -178,16 +176,21 @@ static gboolean on_drag_motion(GtkWidget      *widget,
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
 
-
+//    g_print("%d, %d, %d, %d\n", x, y, x_abs, y_abs);
+    if (target_ctx.action && !result) {
+        g_print("==> LEAVE\n");
+        mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
+        CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
+        reset_target_ctx();
+    } else {
+        target_ctx.action = result;
+    }
 
     if (target_ctx.just_entered) {
         target_ctx.just_entered = FALSE;
     }
 
-    g_print("suggested: %d\n", suggested);
-    g_print("result: %d\n", result);
     gdk_drag_status(context, result, GDK_CURRENT_TIME);
-    target_ctx.action = result;
 
     return (gboolean) result;
 }
@@ -199,9 +202,6 @@ static gboolean on_drag_drop(GtkWidget      *widget,
                              guint           time,
                              gpointer        user_data) {
 
-    WindowContextBase* ctx = (WindowContextBase*)user_data;
-
-    g_print("====> DROPPED;\n");
     if (target_ctx.ctx == NULL || target_ctx.just_entered) {
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
@@ -210,8 +210,8 @@ static gboolean on_drag_drop(GtkWidget      *widget,
         return FALSE;
     }
 
-    GdkAtom target = gtk_drag_dest_find_target(ctx->get_gtk_widget(), context, NULL);
-    gtk_drag_get_data(ctx->get_gtk_widget(), context, target, GDK_CURRENT_TIME);
+    GdkAtom target = gtk_drag_dest_find_target(widget, context, NULL);
+    gtk_drag_get_data(widget, context, target, GDK_CURRENT_TIME);
 
     return TRUE;
 }
@@ -225,38 +225,34 @@ static void on_drag_data_received(GtkWidget        *widget,
                                   guint             time,
                                   gpointer          user_data)
 {
-    WindowContextBase* ctx = (WindowContextBase*)user_data;
+    WindowContext* ctx = (WindowContext*)user_data;
 
-     if (gtk_selection_data_get_length(data) == 0) {
-         gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
-         reset_target_ctx();
-         return;
-     }
+    if (gtk_selection_data_get_length(data) == 0) {
+        gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
+        reset_target_ctx();
+        return;
+    }
 
-     gint x_abs, y_abs;
-     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
-     GdkDragAction selected = gdk_drag_context_get_selected_action(context);
-     target_ctx.data = data;
+    gint x_abs, y_abs;
+    gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
+    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
+    target_ctx.data = data;
 
-     // Delay the notify for when we have the data
-     mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
-             (jint)x, (jint)y,
-             (jint)x_abs, (jint)y_abs,
-             translate_gdk_action_to_glass(selected));
-     LOG_EXCEPTION(mainEnv)
+    // Delay the notify for when we have the data
+    mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
+                           (jint)x, (jint)y,
+                           (jint)x_abs, (jint)y_abs,
+                           translate_gdk_action_to_glass(selected));
+    LOG_EXCEPTION(mainEnv)
+
+    gtk_drag_finish(context, selected, selected == GDK_ACTION_MOVE, GDK_CURRENT_TIME);
 }
 
-static void on_drag_leave (GtkWidget      *widget,
-                           GdkDragContext *context,
-                           guint           time,
-                           gpointer        user_data) {
-
-    if (!target_ctx.action) {
-        WindowContextBase* ctx = (WindowContextBase*)user_data;
-        mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-        CHECK_JNI_EXCEPTION(mainEnv)
-        reset_target_ctx();
-    }
+void on_drag_leave(WindowContext* ctx) {
+    g_print("ON LEAVE GDK\n");
+    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
+    CHECK_JNI_EXCEPTION(mainEnv)
+    reset_target_ctx();
 }
 
 void glass_dnd_attach_context(WindowContext *ctx) {
@@ -279,7 +275,6 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
-    g_signal_connect(ctx->get_gtk_widget(), "drag-leave", G_CALLBACK(on_drag_leave), ctx);
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
@@ -297,7 +292,6 @@ static gboolean check_state_in_drag(JNIEnv *env)
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
-//    g_print("dnd_target_get_mimes\n");
     if (check_state_in_drag(env)) {
         return NULL;
     }
@@ -311,7 +305,6 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
         while (targets) {
             GdkAtom target = GDK_POINTER_TO_ATOM(targets->data);
             if (target_is_text(target)) {
-//                g_print("target_is_text\n");
                 jstring jStr = env->NewStringUTF("text/plain");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
@@ -510,9 +503,6 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     }
     LOG_EXCEPTION(env)
     env->ReleaseStringUTFChars(mime, cmime);
-
-    gtk_drag_finish(target_ctx.ctx, ret != NULL, (ret != NULL && target_ctx.action == GDK_ACTION_MOVE),
-                    GDK_CURRENT_TIME);
 
     reset_target_ctx();
 
