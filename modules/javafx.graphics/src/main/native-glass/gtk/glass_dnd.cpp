@@ -94,7 +94,8 @@ static gboolean target_is_text(GdkAtom target)
 
     return (target == TARGET_UTF8_STRING_ATOM ||
             target == TARGET_STRING_ATOM ||
-            target == TARGET_MIME_TEXT_PLAIN_ATOM);
+            target == TARGET_MIME_TEXT_PLAIN_ATOM ||
+            target == TARGET_COMPOUND_TEXT_ATOM);
 }
 
 static gboolean target_is_uri(GdkAtom target)
@@ -122,12 +123,13 @@ static jint dnd_get_performed_action();
 
 /************************* TARGET *********************************************/
 
+
 static struct {
     GdkDragContext *ctx;
     GtkSelectionData *data;
     gboolean just_entered;
     jobjectArray mimes;
-} target_ctx = {NULL, NULL, FALSE, NULL,};
+} target_ctx = {NULL, NULL, FALSE, NULL};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -137,6 +139,7 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
+    g_print("reset_target_ctx()\n");
     if (target_ctx.mimes != NULL) {
         mainEnv->DeleteGlobalRef(target_ctx.mimes);
     }
@@ -144,29 +147,22 @@ static void reset_target_ctx() {
     memset(&target_ctx, 0, sizeof(target_ctx));
 }
 
-void glass_dnd_attach_context(WindowContext *ctx)
-{
-    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, NULL, 0,
-                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
-//    gtk_drag_source_add_text_targets(ctx->get_gtk_widget());
-//    gtk_drag_source_add_image_targets(ctx->get_gtk_widget());
-//    gtk_drag_source_add_uri_targets(ctx->get_gtk_widget());
-}
 
-void process_dnd_target_drag_leave(WindowContext *ctx, GdkDragContext *context, guint time)
-{
-    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-    CHECK_JNI_EXCEPTION(mainEnv)
-}
+static gboolean on_drag_motion(GtkWidget      *widget,
+                               GdkDragContext *context,
+                               gint            x,
+                               gint            y,
+                               guint           time,
+                               gpointer        user_data) {
 
-gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *context, gint x, gint y, guint time)
-{
+    WindowContextBase* ctx = (WindowContextBase*)user_data;
 
     if (target_ctx.ctx == NULL || (target_ctx.ctx != context && !target_ctx.just_entered)) {
         reset_target_ctx();
         is_dnd_owner = is_in_drag();
         target_ctx.ctx = context;
         target_ctx.just_entered = TRUE;
+        g_print("==> START\n");
     }
 
     gint x_abs, y_abs;
@@ -181,18 +177,31 @@ gboolean process_dnd_target_drag_motion(WindowContext *ctx, GdkDragContext *cont
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
 
+//    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
+//    CHECK_JNI_EXCEPTION(mainEnv)
+//    reset_target_ctx();
+
     if (target_ctx.just_entered) {
         target_ctx.just_entered = FALSE;
     }
 
+    g_print("suggested: %d\n", suggested);
+    g_print("result: %d\n", result);
     gdk_drag_status(context, result, GDK_CURRENT_TIME);
 
     return (gboolean) result;
 }
 
-gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *context,
-                                     gint x, gint y, guint time)
-{
+static gboolean on_drag_drop(GtkWidget      *widget,
+                             GdkDragContext *context,
+                             gint            x,
+                             gint            y,
+                             guint           time,
+                             gpointer        user_data) {
+
+    WindowContextBase* ctx = (WindowContextBase*)user_data;
+
+    g_print("====> DROPPED;\n");
     if (target_ctx.ctx == NULL || target_ctx.just_entered) {
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
@@ -201,31 +210,77 @@ gboolean process_dnd_target_drag_drop(WindowContext *ctx, GdkDragContext *contex
         return FALSE;
     }
 
-    GdkAtom target = GDK_POINTER_TO_ATOM(gdk_drag_context_list_targets(context));
+    GdkAtom target = gtk_drag_dest_find_target(ctx->get_gtk_widget(), context, NULL);
     gtk_drag_get_data(ctx->get_gtk_widget(), context, target, GDK_CURRENT_TIME);
 
     return TRUE;
 }
 
-void process_dnd_target_data_received(WindowContext *ctx, GdkDragContext *context, gint x, gint y,
-                                      GtkSelectionData *data, guint info, guint time)
+static void on_drag_data_received(GtkWidget        *widget,
+                                  GdkDragContext   *context,
+                                  gint              x,
+                                  gint              y,
+                                  GtkSelectionData *data,
+                                  guint             info,
+                                  guint             time,
+                                  gpointer          user_data)
 {
-    g_print("process_dnd_target_data_received\n");
-    gint x_abs, y_abs;
-    gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
+    WindowContextBase* ctx = (WindowContextBase*)user_data;
 
-    GdkDragAction selected = gdk_drag_context_get_selected_action(context);
+     if (gtk_selection_data_get_length(data) == 0) {
+         gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
+         reset_target_ctx();
+         return;
+     }
 
-    target_ctx.data = data;
+     gint x_abs, y_abs;
+     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
+     GdkDragAction selected = gdk_drag_context_get_selected_action(context);
+     target_ctx.data = data;
 
-    // Delay the notify for when we have the data
-    mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
-            (jint)x, (jint)y,
-            (jint)x_abs, (jint)y_abs,
-            translate_gdk_action_to_glass(selected));
-    LOG_EXCEPTION(mainEnv)
+     // Delay the notify for when we have the data
+     mainEnv->CallIntMethod(ctx->get_jview(), jViewNotifyDragDrop,
+             (jint)x, (jint)y,
+             (jint)x_abs, (jint)y_abs,
+             translate_gdk_action_to_glass(selected));
+     LOG_EXCEPTION(mainEnv)
 
-    gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
+     gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
+}
+
+static gboolean on_event (GtkWidget *widget, GdkEvent  *event, gpointer user_data)
+{
+    if (event->type == GDK_DRAG_LEAVE) {
+        g_print("DRAG LEAVE!\n");
+    } else if (event->type == GDK_DRAG_MOTION) {
+        g_print("MOTION!\n");
+    }
+
+    return FALSE;
+}
+
+void glass_dnd_attach_context(WindowContext *ctx) {
+     static GtkTargetEntry target_table[] = {
+        { (gchar *) "UTF8_STRING", 0, 0 },
+        { (gchar *) "text/plain", 0, 0 },
+        { (gchar *) "COMPOUND_TEXT", 0, 0 },
+        { (gchar *) "STRING", 0, 0 },
+        { (gchar *) "text/uri-list", 0, 0 },
+        { (gchar *) "image/png", 0, 0 },
+        { (gchar *) "image/jpeg", 0, 0 },
+        { (gchar *) "image/tiff", 0, 0 },
+        { (gchar *) "image/bmp", 0, 0 }
+    };
+
+    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, target_table, G_N_ELEMENTS(target_table),
+                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
+    gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
+
+//    gdk_window_register_dnd(ctx->get_gdk_window());
+    g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "event", G_CALLBACK(on_event), ctx);
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
@@ -243,12 +298,12 @@ static gboolean check_state_in_drag(JNIEnv *env)
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
-    g_print("dnd_target_get_mimes\n");
+//    g_print("dnd_target_get_mimes\n");
     if (check_state_in_drag(env)) {
         return NULL;
     }
 
-    //if (!target_ctx.mimes) {
+    if (!target_ctx.mimes) {
         jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
         EXCEPTION_OCCURED(env);
 
@@ -257,8 +312,7 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
         while (targets) {
             GdkAtom target = GDK_POINTER_TO_ATOM(targets->data);
             if (target_is_text(target)) {
-                g_print("target_is_text\n");
-
+//                g_print("target_is_text\n");
                 jstring jStr = env->NewStringUTF("text/plain");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
@@ -266,7 +320,7 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
             }
 
             if (target_is_image(target)) {
-                g_print("target_is_image\n");
+//                g_print("target_is_image\n");
                 jstring jStr = env->NewStringUTF("application/x-java-rawimage");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
@@ -296,6 +350,7 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
                 EXCEPTION_OCCURED(env);
                 g_free(name);
             }
+
             targets = targets->next;
         }
 
@@ -304,7 +359,8 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
         EXCEPTION_OCCURED(env);
         target_ctx.mimes = (jobjectArray)env->CallObjectMethod(set, jSetToArray, target_ctx.mimes, NULL);
         target_ctx.mimes = (jobjectArray)env->NewGlobalRef(target_ctx.mimes);
-    //}
+    }
+
     return target_ctx.mimes;
 }
 
@@ -321,7 +377,7 @@ static jobject dnd_target_get_string(JNIEnv *env)
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
-    const guchar* data = gtk_selection_data_get_data(target_ctx.data);
+    guchar* data = gtk_selection_data_get_text(target_ctx.data);
 
     if (atom == TARGET_UTF8_STRING_ATOM) {
         result = env->NewStringUTF((char *)data);
@@ -334,14 +390,15 @@ static jobject dnd_target_get_string(JNIEnv *env)
     }
 
     if (!result && atom == TARGET_STRING_ATOM) {
-        gchar *str;
-        str = g_convert((gchar *)data, -1, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
+        gchar *str = g_convert((gchar *)data, -1, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
         if (str != NULL) {
             result = env->NewStringUTF(str);
             EXCEPTION_OCCURED(env);
             g_free(str);
         }
     }
+
+    g_free(data);
 
     return result;
 }

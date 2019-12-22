@@ -113,51 +113,11 @@ static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     return FALSE;
 }
 
-static gboolean on_drag_motion(GtkWidget      *widget,
-                               GdkDragContext *context,
-                               gint            x,
-                               gint            y,
-                               guint           time,
-                               gpointer        user_data) {
-    return process_dnd_target_drag_motion(((WindowContext*)user_data),  context, x, y, time);
-}
-
 static void on_screen_changed(GtkWidget *widget,
                               GdkScreen *previous_screen,
                               gpointer   user_data) {
     ((WindowContextBase*)user_data)->process_screen_changed();
 }
-
-static gboolean on_drag_drop(GtkWidget      *widget,
-                             GdkDragContext *context,
-                             gint            x,
-                             gint            y,
-                             guint           time,
-                             gpointer        user_data) {
-
-    return process_dnd_target_drag_drop(((WindowContext*)user_data), context, x, y, time);
-}
-
-static gboolean on_drag_leave(GtkWidget      *widget,
-                              GdkDragContext *context,
-                              guint           time,
-                              gpointer        user_data) {
-
-    process_dnd_target_drag_leave(((WindowContext*)user_data),  context, time);
-    return FALSE;
-}
-
-static void on_drag_data_received(GtkWidget        *widget,
-                                  GdkDragContext   *context,
-                                  gint              x,
-                                  gint              y,
-                                  GtkSelectionData *data,
-                                  guint             info,
-                                  guint             time,
-                                  gpointer          user_data) {
-    process_dnd_target_data_received(((WindowContext*)user_data), context, x, y, data, info, time);
-}
-
 
 static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), ctx);
@@ -182,12 +142,6 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), ctx);
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), ctx);
     g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), ctx);
-
-    //DND
-    g_signal_connect(gtk_widget, "drag-motion", G_CALLBACK(on_drag_motion), ctx);
-    g_signal_connect(gtk_widget, "drag-leave", G_CALLBACK(on_drag_leave), ctx);
-    g_signal_connect(gtk_widget, "drag-drop", G_CALLBACK(on_drag_drop), ctx);
-    g_signal_connect(gtk_widget, "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
 }
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
