@@ -129,7 +129,8 @@ static struct {
     GtkSelectionData *data;
     gboolean just_entered;
     jobjectArray mimes;
-} target_ctx = {NULL, NULL, FALSE, NULL};
+    GdkDragAction action;
+} target_ctx = {NULL, NULL, FALSE, NULL, (GdkDragAction)0 };
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -177,9 +178,7 @@ static gboolean on_drag_motion(GtkWidget      *widget,
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
 
-//    mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-//    CHECK_JNI_EXCEPTION(mainEnv)
-//    reset_target_ctx();
+
 
     if (target_ctx.just_entered) {
         target_ctx.just_entered = FALSE;
@@ -188,6 +187,7 @@ static gboolean on_drag_motion(GtkWidget      *widget,
     g_print("suggested: %d\n", suggested);
     g_print("result: %d\n", result);
     gdk_drag_status(context, result, GDK_CURRENT_TIME);
+    target_ctx.action = result;
 
     return (gboolean) result;
 }
@@ -246,6 +246,19 @@ static void on_drag_data_received(GtkWidget        *widget,
      LOG_EXCEPTION(mainEnv)
 }
 
+static void on_drag_leave (GtkWidget      *widget,
+                           GdkDragContext *context,
+                           guint           time,
+                           gpointer        user_data) {
+
+    if (!target_ctx.action) {
+        WindowContextBase* ctx = (WindowContextBase*)user_data;
+        mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
+        CHECK_JNI_EXCEPTION(mainEnv)
+        reset_target_ctx();
+    }
+}
+
 void glass_dnd_attach_context(WindowContext *ctx) {
      static GtkTargetEntry target_table[] = {
         { (gchar *) "UTF8_STRING", 0, 0 },
@@ -266,6 +279,7 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-leave", G_CALLBACK(on_drag_leave), ctx);
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
@@ -470,39 +484,35 @@ static jobject dnd_target_get_raw(JNIEnv *env, GdkAtom target, gboolean string_d
 
 jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 {
-    g_print("dnd_target_get_data\n");
     jobject ret = NULL;
 
-    try {
-        if (check_state_in_drag(env)) {
-            g_print("return NULL\n");
-            return NULL;
-        }
-        const char *cmime = env->GetStringUTFChars(mime, NULL);
-
-        init_target_atoms();
-
-        g_print("%s\n", cmime);
-
-        if (g_strcmp0(cmime, "text/plain") == 0) {
-            ret = dnd_target_get_string(env);
-        } else if (g_strcmp0(cmime, "text/uri-list") == 0) {
-            ret = dnd_target_get_list(env, FALSE);
-        } else if (g_str_has_prefix(cmime, "text/")) {
-            ret = dnd_target_get_raw(env, gdk_atom_intern(cmime, FALSE), TRUE);
-        } else if (g_strcmp0(cmime, "application/x-java-file-list") == 0) {
-            ret = dnd_target_get_list(env, TRUE);
-        } else if (g_strcmp0(cmime, "application/x-java-rawimage") == 0 ) {
-            ret = dnd_target_get_image(env);
-        } else {
-            ret = dnd_target_get_raw(env, gdk_atom_intern(cmime, FALSE), FALSE);
-        }
-        LOG_EXCEPTION(env)
-        env->ReleaseStringUTFChars(mime, cmime);
-        gtk_drag_finish(context, TRUE, (selected == GDK_ACTION_MOVE), GDK_CURRENT_TIME);
-    } catch {
-        gtk_drag_finish(context, FALSE, FALSE, GDK_CURRENT_TIME);
+    if (check_state_in_drag(env)) {
+        return NULL;
     }
+    const char *cmime = env->GetStringUTFChars(mime, NULL);
+
+    init_target_atoms();
+
+    g_print("%s\n", cmime);
+
+    if (g_strcmp0(cmime, "text/plain") == 0) {
+        ret = dnd_target_get_string(env);
+    } else if (g_strcmp0(cmime, "text/uri-list") == 0) {
+        ret = dnd_target_get_list(env, FALSE);
+    } else if (g_str_has_prefix(cmime, "text/")) {
+        ret = dnd_target_get_raw(env, gdk_atom_intern(cmime, FALSE), TRUE);
+    } else if (g_strcmp0(cmime, "application/x-java-file-list") == 0) {
+        ret = dnd_target_get_list(env, TRUE);
+    } else if (g_strcmp0(cmime, "application/x-java-rawimage") == 0 ) {
+        ret = dnd_target_get_image(env);
+    } else {
+        ret = dnd_target_get_raw(env, gdk_atom_intern(cmime, FALSE), FALSE);
+    }
+    LOG_EXCEPTION(env)
+    env->ReleaseStringUTFChars(mime, cmime);
+
+    gtk_drag_finish(target_ctx.ctx, ret != NULL, (ret != NULL && target_ctx.action == GDK_ACTION_MOVE),
+                    GDK_CURRENT_TIME);
 
     reset_target_ctx();
 
