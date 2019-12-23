@@ -156,6 +156,7 @@ static gboolean on_drag_motion(GtkWidget      *widget,
     WindowContext* ctx = (WindowContext*)user_data;
 
     if (target_ctx.ctx == NULL || (target_ctx.ctx != context && !target_ctx.just_entered)) {
+        g_print("on_drag_motion -> ENTERED\n");
         reset_target_ctx();
         is_dnd_owner = is_in_drag();
         target_ctx.ctx = context;
@@ -189,6 +190,7 @@ static gboolean on_drag_drop(GtkWidget      *widget,
                              gint            y,
                              guint           time,
                              gpointer        user_data) {
+    g_print("on_drag_drop\n");
 
     if (target_ctx.ctx == NULL || target_ctx.just_entered) {
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
@@ -213,6 +215,7 @@ static void on_drag_data_received(GtkWidget        *widget,
                                   guint             time,
                                   gpointer          user_data)
 {
+    g_print("on_drag_data_received\n");
     WindowContext* ctx = (WindowContext*)user_data;
 
     if (gtk_selection_data_get_length(data) == 0) {
@@ -237,6 +240,8 @@ static void on_drag_data_received(GtkWidget        *widget,
 }
 
 void on_drag_leave(WindowContext* ctx) {
+    g_print("on_drag_leave\n");
+
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
     reset_target_ctx();
@@ -317,9 +322,9 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
                 EXCEPTION_OCCURED(env);
 
-                jStr = env->NewStringUTF("text/uri-list");
+                jstring jStr2 = env->NewStringUTF("text/uri-list");
                 EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+                env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
                 EXCEPTION_OCCURED(env);
             }
             else {
