@@ -123,14 +123,12 @@ static jint dnd_get_performed_action();
 
 /************************* TARGET *********************************************/
 
-
 static struct {
     GdkDragContext *ctx;
     GtkSelectionData *data;
     gboolean just_entered;
     jobjectArray mimes;
-    GdkDragAction action;
-} target_ctx = {NULL, NULL, FALSE, NULL, (GdkDragAction)0 };
+} target_ctx = {NULL, NULL, FALSE, NULL};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -175,16 +173,6 @@ static gboolean on_drag_motion(GtkWidget      *widget,
             (jint)x_abs, (jint)y_abs,
             translate_gdk_action_to_glass(suggested)));
     CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
-
-//    g_print("%d, %d, %d, %d\n", x, y, x_abs, y_abs);
-    if (target_ctx.action && !result) {
-        g_print("==> LEAVE\n");
-        mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
-        CHECK_JNI_EXCEPTION_RET(mainEnv, FALSE)
-        reset_target_ctx();
-    } else {
-        target_ctx.action = result;
-    }
 
     if (target_ctx.just_entered) {
         target_ctx.just_entered = FALSE;
@@ -249,7 +237,6 @@ static void on_drag_data_received(GtkWidget        *widget,
 }
 
 void on_drag_leave(WindowContext* ctx) {
-    g_print("ON LEAVE GDK\n");
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
     reset_target_ctx();
@@ -320,6 +307,7 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
             }
 
             if (target_is_uri(target)) {
+                //FIXME
                 gchar *name = gdk_atom_name(target);
                 g_print("target_is_uri: %s\n", name);
                 g_free(name);
@@ -399,12 +387,14 @@ static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 {
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
-    const guchar* data = gtk_selection_data_get_data(target_ctx.data);
+    gchar** data = gtk_selection_data_get_uris(target_ctx.data);
 
     if (atom == TARGET_MIME_URI_LIST_ATOM) {
-        g_print("LALALA\n");
-        result = uris_to_java(env, g_uri_list_extract_uris((gchar *)data), files);
+        result = uris_to_java(env, data, files);
     }
+
+
+    g_strfreev(data);
 
     return result;
 }
@@ -413,7 +403,7 @@ static jobject dnd_target_get_image(JNIEnv *env)
 {
     jobject result = NULL;
 
-    GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
+    GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     gint length = gtk_selection_data_get_length(target_ctx.data);
 
     GdkPixbuf* buf = gtk_selection_data_get_pixbuf(target_ctx.data);
@@ -456,7 +446,7 @@ static jobject dnd_target_get_image(JNIEnv *env)
 static jobject dnd_target_get_raw(JNIEnv *env, GdkAtom target, gboolean string_data)
 {
     jobject result = NULL;
-    GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
+    GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     const guchar* data = gtk_selection_data_get_data(target_ctx.data);
 
     if (string_data) {
@@ -486,8 +476,6 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     const char *cmime = env->GetStringUTFChars(mime, NULL);
 
     init_target_atoms();
-
-    g_print("%s\n", cmime);
 
     if (g_strcmp0(cmime, "text/plain") == 0) {
         ret = dnd_target_get_string(env);
