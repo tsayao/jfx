@@ -54,7 +54,7 @@ static GdkDragAction translate_glass_action_to_gdk(jint action)
     result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_REFERENCE) ? GDK_ACTION_LINK : 0;
     return static_cast<GdkDragAction>(result);
 }
-
+/*
 static gboolean target_atoms_initialized = FALSE;
 static GdkAtom TARGET_UTF8_STRING_ATOM;
 static GdkAtom TARGET_MIME_TEXT_PLAIN_ATOM;
@@ -112,6 +112,7 @@ static gboolean target_is_image(GdkAtom target)
             target == TARGET_MIME_TIFF_ATOM ||
             target == TARGET_MIME_BMP_ATOM);
 }
+*/
 
 static void clear_global_ref(gpointer data)
 {
@@ -127,8 +128,8 @@ static struct {
     GdkDragContext *ctx;
     GtkSelectionData *data;
     gboolean just_entered;
-    jobjectArray mimes;
-} target_ctx = {NULL, NULL, FALSE, NULL};
+    //jobjectArray mimes;
+} target_ctx = {NULL, NULL, FALSE};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -138,9 +139,9 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
-    if (target_ctx.mimes != NULL) {
-        mainEnv->DeleteGlobalRef(target_ctx.mimes);
-    }
+//    if (target_ctx.mimes != NULL) {
+//        mainEnv->DeleteGlobalRef(target_ctx.mimes);
+//    }
 
     memset(&target_ctx, 0, sizeof(target_ctx));
 }
@@ -248,27 +249,34 @@ void on_drag_leave(WindowContext* ctx) {
 }
 
 void glass_dnd_attach_context(WindowContext *ctx) {
-     static GtkTargetEntry target_table[] = {
-        { (gchar *) "UTF8_STRING", 0, 0 },
-        { (gchar *) "text/plain", 0, 0 },
-        { (gchar *) "COMPOUND_TEXT", 0, 0 },
-        { (gchar *) "STRING", 0, 0 },
-        { (gchar *) "text/uri-list", 0, 0 },
-        { (gchar *) "image/png", 0, 0 },
-        { (gchar *) "image/jpeg", 0, 0 },
-        { (gchar *) "image/tiff", 0, 0 },
-        { (gchar *) "image/bmp", 0, 0 }
-    };
+//     static GtkTargetEntry target_table[] = {
+//        { (gchar *) "UTF8_STRING", 0, 0 },
+//        { (gchar *) "text/plain", 0, 0 },
+//        { (gchar *) "COMPOUND_TEXT", 0, 0 },
+//        { (gchar *) "STRING", 0, 0 },
+//        { (gchar *) "text/uri-list", 0, 0 },
+//        //FIXME: supported formats varies
+//        { (gchar *) "image/png", 0, 0 },
+//        { (gchar *) "image/jpeg", 0, 0 },
+//        { (gchar *) "image/tiff", 0, 0 },
+//        { (gchar *) "image/bmp", 0, 0 }
+//    };
 
-    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, target_table, G_N_ELEMENTS(target_table),
+    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, NULL, 0,
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
+//    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, target_table, G_N_ELEMENTS(target_table),
+//                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
     gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
+    gtk_drag_dest_add_text_targets(ctx->get_gtk_widget());
+    gtk_drag_dest_add_uri_targets(ctx->get_gtk_widget());
+    gtk_drag_dest_add_image_targets(ctx->get_gtk_widget());
 
     g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
 }
 
+/*
 static gboolean check_state_in_drag(JNIEnv *env)
 {
     if (!target_ctx.ctx) {
@@ -280,14 +288,51 @@ static gboolean check_state_in_drag(JNIEnv *env)
         return TRUE;
     }
     return FALSE;
-}
+}*/
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
-    if (check_state_in_drag(env)) {
-        return NULL;
+//    if (check_state_in_drag(env)) {
+//        return NULL;
+//    }
+
+    jobjectArray mimes;
+    jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
+    EXCEPTION_OCCURED(env);
+
+    if (gtk_selection_data_targets_include_text(target_ctx.data)) {
+        jstring jStr = env->NewStringUTF("text/plain");
+        EXCEPTION_OCCURED(env);
+        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+        EXCEPTION_OCCURED(env);
     }
 
+    if (gtk_selection_data_targets_include_image (target_ctx.data, TRUE)) {
+        jstring jStr = env->NewStringUTF("application/x-java-rawimage");
+        EXCEPTION_OCCURED(env);
+        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+        EXCEPTION_OCCURED(env);
+    }
+
+    if (gtk_selection_data_targets_include_uri(target_ctx.data)) {
+//        jstring jStr = env->NewStringUTF("application/x-java-file-list");
+//        EXCEPTION_OCCURED(env);
+//        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+//        EXCEPTION_OCCURED(env);
+
+        jstring jStr2 = env->NewStringUTF("text/uri-list");
+        EXCEPTION_OCCURED(env);
+        env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
+        EXCEPTION_OCCURED(env);
+    }
+
+    mimes = env->NewObjectArray(env->CallIntMethod(set, jSetSize, NULL), jStringCls, NULL);
+    EXCEPTION_OCCURED(env);
+    mimes = (jobjectArray)env->CallObjectMethod(set, jSetToArray, mimes, NULL);
+
+    return mimes;
+
+/*
     if (!target_ctx.mimes) {
         jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
         EXCEPTION_OCCURED(env);
@@ -347,13 +392,14 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
     }
 
     return target_ctx.mimes;
+    */
 }
 
 jint dnd_target_get_supported_actions(JNIEnv *env)
 {
-    if (check_state_in_drag(env)) {
-        return 0;
-    }
+//    if (check_state_in_drag(env)) {
+//        return 0;
+//    }
     return translate_gdk_action_to_glass(gdk_drag_context_get_actions(target_ctx.ctx));
 }
 
@@ -364,24 +410,8 @@ static jobject dnd_target_get_string(JNIEnv *env)
     GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
     guchar* data = gtk_selection_data_get_text(target_ctx.data);
 
-    if (atom == TARGET_UTF8_STRING_ATOM) {
-        result = env->NewStringUTF((char *)data);
-        EXCEPTION_OCCURED(env);
-    }
-
-    if (!result && atom == TARGET_MIME_TEXT_PLAIN_ATOM) {
-        result = env->NewStringUTF((char *)data);
-        EXCEPTION_OCCURED(env);
-    }
-
-    if (!result && atom == TARGET_STRING_ATOM) {
-        gchar *str = g_convert((gchar *)data, -1, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
-        if (str != NULL) {
-            result = env->NewStringUTF(str);
-            EXCEPTION_OCCURED(env);
-            g_free(str);
-        }
-    }
+    result = env->NewStringUTF((char *)data);
+    EXCEPTION_OCCURED(env);
 
     g_free(data);
 
@@ -394,10 +424,9 @@ static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     gchar** data = gtk_selection_data_get_uris(target_ctx.data);
 
-    if (atom == TARGET_MIME_URI_LIST_ATOM) {
+    if (data) {
         result = uris_to_java(env, data, files);
     }
-
 
     g_strfreev(data);
 
@@ -475,12 +504,12 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 {
     jobject ret = NULL;
 
-    if (check_state_in_drag(env)) {
-        return NULL;
-    }
+//    if (check_state_in_drag(env)) {
+//        return NULL;
+//    }
     const char *cmime = env->GetStringUTFChars(mime, NULL);
 
-    init_target_atoms();
+//    init_target_atoms();
 
     if (g_strcmp0(cmime, "text/plain") == 0) {
         ret = dnd_target_get_string(env);
@@ -541,17 +570,20 @@ static void add_gtk_target_from_jstring(JNIEnv *env, GtkTargetList **list, jstri
     const char *gstring = env->GetStringUTFChars(string, NULL);
 
     if (g_strcmp0(gstring, "text/plain") == 0) {
-        gtk_target_list_add(*list, TARGET_UTF8_STRING_ATOM, flags, 0);
-        gtk_target_list_add(*list, TARGET_MIME_TEXT_PLAIN_ATOM, flags, 0);
-        gtk_target_list_add(*list, TARGET_STRING_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_UTF8_STRING_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_TEXT_PLAIN_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_STRING_ATOM, flags, 0);
         //gtk_target_list_add(*list, TARGET_COMPOUND_TEXT_ATOM, flags, ??);
+        gtk_target_list_add_text_targets(*list, 0);
     } else if (g_strcmp0(gstring, "application/x-java-rawimage") == 0) {
-        gtk_target_list_add(*list, TARGET_MIME_PNG_ATOM, flags, 0);
-        gtk_target_list_add(*list, TARGET_MIME_JPEG_ATOM, flags, 0);
-        gtk_target_list_add(*list, TARGET_MIME_TIFF_ATOM, flags, 0);
-        gtk_target_list_add(*list, TARGET_MIME_BMP_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_PNG_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_JPEG_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_TIFF_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_BMP_ATOM, flags, 0);
+        gtk_target_list_add_image_targets(*list, 0, TRUE);
     } else if (g_strcmp0(gstring, "application/x-java-file-list") == 0) {
-        gtk_target_list_add(*list, TARGET_MIME_URI_LIST_ATOM, flags, 0);
+//        gtk_target_list_add(*list, TARGET_MIME_URI_LIST_ATOM, flags, 0);
+        gtk_target_list_add_uri_targets(*list, 0);
     } else if (g_strcmp0(gstring, "application/x-java-drag-image") == 0
         || g_strcmp0(gstring, "application/x-java-drag-image-offset") == 0) {
         // do nothing - those are DragView information
@@ -573,7 +605,7 @@ static GtkTargetList* data_to_gtk_target_list(JNIEnv *env, jobject data)
 
     GtkTargetList *tlist = gtk_target_list_new (NULL, 0);
 
-    init_target_atoms();
+//    init_target_atoms();
 
     gint added_count = 0;
 
@@ -601,16 +633,17 @@ static gboolean dnd_source_set_string(GtkWidget *widget, GtkSelectionData *data,
 
     const char *cstring = mainEnv->GetStringUTFChars(string, NULL);
     if (cstring) {
-        if (atom == TARGET_MIME_TEXT_PLAIN_ATOM) {
-            gchar *res_str = g_convert((gchar *) cstring, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL);
-            if (res_str) {
-                is_data_set = gtk_selection_data_set_text(data, res_str, strlen(res_str));
-                g_free(res_str);
-            }
-        } else {
+// FIXME
+//        if (atom == TARGET_MIME_TEXT_PLAIN_ATOM) {
+//            gchar *res_str = g_convert((gchar *) cstring, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL);
+//            if (res_str) {
+//                is_data_set = gtk_selection_data_set_text(data, res_str, strlen(res_str));
+//                g_free(res_str);
+//            }
+//        } else {
             gint size = strlen(cstring);
             is_data_set = gtk_selection_data_set_text(data, (gchar *) cstring, size);
-        }
+//        }
     }
 
     mainEnv->ReleaseStringUTFChars(string, cstring);
@@ -765,7 +798,7 @@ static void dnd_data_get_callback(GtkWidget *widget,
                                   gpointer user_data)
 {
     GdkAtom atom = gtk_selection_data_get_target(data);
-
+/*
     if (target_is_text(atom)) {
         dnd_source_set_string(widget, data, atom);
     } else if (target_is_image(atom)) {
@@ -775,6 +808,17 @@ static void dnd_data_get_callback(GtkWidget *widget,
     } else {
         dnd_source_set_raw(widget, data, atom);
     }
+*/
+    if (gtk_selection_data_targets_include_text(data)) {
+        dnd_source_set_string(widget, data, atom);
+    } else if (gtk_selection_data_targets_include_image(data, TRUE)) {
+        dnd_source_set_image(widget, data, atom);
+    } else if (gtk_selection_data_targets_include_uri(data)) {
+        dnd_source_set_uri(widget, data, atom);
+    } else {
+        dnd_source_set_raw(widget, data, atom);
+    }
+
 }
 
 static void dnd_drag_begin_callback(GtkWidget *widget,
