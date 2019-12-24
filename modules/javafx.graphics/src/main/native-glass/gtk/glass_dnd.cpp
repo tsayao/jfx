@@ -128,8 +128,8 @@ static struct {
     GdkDragContext *ctx;
     GtkSelectionData *data;
     gboolean just_entered;
-    //jobjectArray mimes;
-} target_ctx = {NULL, NULL, FALSE};
+    jobjectArray mimes;
+} target_ctx = {NULL, NULL, FALSE, NULL};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -139,9 +139,9 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
-//    if (target_ctx.mimes != NULL) {
-//        mainEnv->DeleteGlobalRef(target_ctx.mimes);
-//    }
+    if (target_ctx.mimes != NULL) {
+        mainEnv->DeleteGlobalRef(target_ctx.mimes);
+    }
 
     memset(&target_ctx, 0, sizeof(target_ctx));
 }
@@ -276,7 +276,6 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
 }
 
-/*
 static gboolean check_state_in_drag(JNIEnv *env)
 {
     if (!target_ctx.ctx) {
@@ -288,100 +287,66 @@ static gboolean check_state_in_drag(JNIEnv *env)
         return TRUE;
     }
     return FALSE;
-}*/
+}
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
-//    if (check_state_in_drag(env)) {
-//        return NULL;
-//    }
+    g_print("===============> dnd_target_get_mimes\n");
 
-    jobjectArray mimes;
-    jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
-    EXCEPTION_OCCURED(env);
-
-    if (gtk_selection_data_targets_include_text(target_ctx.data)) {
-        jstring jStr = env->NewStringUTF("text/plain");
-        EXCEPTION_OCCURED(env);
-        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-        EXCEPTION_OCCURED(env);
+    if (check_state_in_drag(env)) {
+        return NULL;
     }
-
-    if (gtk_selection_data_targets_include_image (target_ctx.data, TRUE)) {
-        jstring jStr = env->NewStringUTF("application/x-java-rawimage");
-        EXCEPTION_OCCURED(env);
-        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-        EXCEPTION_OCCURED(env);
-    }
-
-    if (gtk_selection_data_targets_include_uri(target_ctx.data)) {
-//        jstring jStr = env->NewStringUTF("application/x-java-file-list");
-//        EXCEPTION_OCCURED(env);
-//        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-//        EXCEPTION_OCCURED(env);
-
-        jstring jStr2 = env->NewStringUTF("text/uri-list");
-        EXCEPTION_OCCURED(env);
-        env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
-        EXCEPTION_OCCURED(env);
-    }
-
-    mimes = env->NewObjectArray(env->CallIntMethod(set, jSetSize, NULL), jStringCls, NULL);
-    EXCEPTION_OCCURED(env);
-    mimes = (jobjectArray)env->CallObjectMethod(set, jSetToArray, mimes, NULL);
-
-    return mimes;
-
-/*
     if (!target_ctx.mimes) {
+
         jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
         EXCEPTION_OCCURED(env);
 
+        gboolean was_set = FALSE;
         GList* targets = gdk_drag_context_list_targets(target_ctx.ctx);
 
         while (targets) {
             GdkAtom target = GDK_POINTER_TO_ATOM(targets->data);
-            if (target_is_text(target)) {
+
+            if (gtk_targets_include_text(&target, 1)) {
                 jstring jStr = env->NewStringUTF("text/plain");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
                 EXCEPTION_OCCURED(env);
-            }
-
-            if (target_is_image(target)) {
-//                g_print("target_is_image\n");
+                was_set = TRUE;
+            } else if (gtk_targets_include_image(&target, 1, TRUE)) {
                 jstring jStr = env->NewStringUTF("application/x-java-rawimage");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
                 EXCEPTION_OCCURED(env);
-            }
-
-            if (target_is_uri(target)) {
-                //FIXME
-                gchar *name = gdk_atom_name(target);
-                g_print("target_is_uri: %s\n", name);
-                g_free(name);
-
-                jstring jStr = env->NewStringUTF("application/x-java-file-list");
-                EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-                EXCEPTION_OCCURED(env);
+                was_set = TRUE;
+            } else if (gtk_targets_include_uri(&target, 1)) {
+        //        jstring jStr = env->NewStringUTF("application/x-java-file-list");
+        //        EXCEPTION_OCCURED(env);
+        //        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+        //        EXCEPTION_OCCURED(env);
 
                 jstring jStr2 = env->NewStringUTF("text/uri-list");
                 EXCEPTION_OCCURED(env);
                 env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
                 EXCEPTION_OCCURED(env);
-            }
-            else {
-                gchar *name = gdk_atom_name(target);
-                jstring jStr = env->NewStringUTF(name);
-                EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-                EXCEPTION_OCCURED(env);
-                g_free(name);
+                was_set = TRUE;
             }
 
             targets = targets->next;
+        }
+
+        g_list_free(targets);
+
+        if (!was_set) {
+            GdkAtom target = gtk_selection_data_get_target(target_ctx.data);
+            gchar *name = gdk_atom_name(target);
+            g_print("added: %s\n", name);
+
+            jstring jStr = env->NewStringUTF(name);
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+            EXCEPTION_OCCURED(env);
+            g_free(name);
         }
 
         target_ctx.mimes = env->NewObjectArray(env->CallIntMethod(set, jSetSize, NULL),
@@ -392,7 +357,6 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
     }
 
     return target_ctx.mimes;
-    */
 }
 
 jint dnd_target_get_supported_actions(JNIEnv *env)
@@ -631,11 +595,13 @@ static gboolean dnd_source_set_string(GtkWidget *widget, GtkSelectionData *data,
         return FALSE;
     }
 
+//    GdkAtom tp_atom = gdk_atom_intern_static_string("text/plain");
     const char *cstring = mainEnv->GetStringUTFChars(string, NULL);
-    if (cstring) {
-// FIXME
-//        if (atom == TARGET_MIME_TEXT_PLAIN_ATOM) {
+// FIXME: may not be necessary because GetStringUTFChars already converts
+//    if (cstring) {
+//        if (atom == tp_atom) {
 //            gchar *res_str = g_convert((gchar *) cstring, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL);
+////            gchar *rest_str = g_locale_to_utf8((gchar *) csting, -1, NULL, NULL, NULL);
 //            if (res_str) {
 //                is_data_set = gtk_selection_data_set_text(data, res_str, strlen(res_str));
 //                g_free(res_str);
@@ -644,7 +610,7 @@ static gboolean dnd_source_set_string(GtkWidget *widget, GtkSelectionData *data,
             gint size = strlen(cstring);
             is_data_set = gtk_selection_data_set_text(data, (gchar *) cstring, size);
 //        }
-    }
+//    }
 
     mainEnv->ReleaseStringUTFChars(string, cstring);
 
@@ -818,7 +784,6 @@ static void dnd_data_get_callback(GtkWidget *widget,
     } else {
         dnd_source_set_raw(widget, data, atom);
     }
-
 }
 
 static void dnd_drag_begin_callback(GtkWidget *widget,
