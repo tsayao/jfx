@@ -54,65 +54,6 @@ static GdkDragAction translate_glass_action_to_gdk(jint action)
     result |= (action & com_sun_glass_ui_gtk_GtkDnDClipboard_ACTION_REFERENCE) ? GDK_ACTION_LINK : 0;
     return static_cast<GdkDragAction>(result);
 }
-/*
-static gboolean target_atoms_initialized = FALSE;
-static GdkAtom TARGET_UTF8_STRING_ATOM;
-static GdkAtom TARGET_MIME_TEXT_PLAIN_ATOM;
-static GdkAtom TARGET_COMPOUND_TEXT_ATOM;
-static GdkAtom TARGET_STRING_ATOM;
-
-static GdkAtom TARGET_MIME_URI_LIST_ATOM;
-
-static GdkAtom TARGET_MIME_PNG_ATOM;
-static GdkAtom TARGET_MIME_JPEG_ATOM;
-static GdkAtom TARGET_MIME_TIFF_ATOM;
-static GdkAtom TARGET_MIME_BMP_ATOM;
-
-static void init_target_atoms()
-{
-    if (target_atoms_initialized) {
-        return;
-    }
-    TARGET_UTF8_STRING_ATOM = gdk_atom_intern_static_string("UTF8_STRING");
-    TARGET_MIME_TEXT_PLAIN_ATOM = gdk_atom_intern_static_string("text/plain");
-    TARGET_COMPOUND_TEXT_ATOM = gdk_atom_intern_static_string("COMPOUND_TEXT");
-    TARGET_STRING_ATOM = gdk_atom_intern_static_string("STRING");
-
-    TARGET_MIME_URI_LIST_ATOM = gdk_atom_intern_static_string("text/uri-list");
-
-    TARGET_MIME_PNG_ATOM = gdk_atom_intern_static_string("image/png");
-    TARGET_MIME_JPEG_ATOM = gdk_atom_intern_static_string("image/jpeg");
-    TARGET_MIME_TIFF_ATOM = gdk_atom_intern_static_string("image/tiff");
-    TARGET_MIME_BMP_ATOM = gdk_atom_intern_static_string("image/bmp");
-
-    target_atoms_initialized = TRUE;
-}
-
-static gboolean target_is_text(GdkAtom target)
-{
-    init_target_atoms();
-
-    return (target == TARGET_UTF8_STRING_ATOM ||
-            target == TARGET_STRING_ATOM ||
-            target == TARGET_MIME_TEXT_PLAIN_ATOM ||
-            target == TARGET_COMPOUND_TEXT_ATOM);
-}
-
-static gboolean target_is_uri(GdkAtom target)
-{
-    init_target_atoms();
-    return target == TARGET_MIME_URI_LIST_ATOM;
-}
-
-static gboolean target_is_image(GdkAtom target)
-{
-    init_target_atoms();
-    return (target == TARGET_MIME_PNG_ATOM ||
-            target == TARGET_MIME_JPEG_ATOM ||
-            target == TARGET_MIME_TIFF_ATOM ||
-            target == TARGET_MIME_BMP_ATOM);
-}
-*/
 
 static void clear_global_ref(gpointer data)
 {
@@ -361,9 +302,9 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
 
 jint dnd_target_get_supported_actions(JNIEnv *env)
 {
-//    if (check_state_in_drag(env)) {
-//        return 0;
-//    }
+    if (check_state_in_drag(env)) {
+        return 0;
+    }
     return translate_gdk_action_to_glass(gdk_drag_context_get_actions(target_ctx.ctx));
 }
 
@@ -468,12 +409,10 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 {
     jobject ret = NULL;
 
-//    if (check_state_in_drag(env)) {
-//        return NULL;
-//    }
+    if (check_state_in_drag(env)) {
+        return NULL;
+    }
     const char *cmime = env->GetStringUTFChars(mime, NULL);
-
-//    init_target_atoms();
 
     if (g_strcmp0(cmime, "text/plain") == 0) {
         ret = dnd_target_get_string(env);
