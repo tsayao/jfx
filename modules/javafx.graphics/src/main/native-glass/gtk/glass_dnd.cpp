@@ -213,9 +213,9 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
 
     GtkTargetList *target_list = gtk_target_list_new (NULL, 0);
-    gtk_target_list_add_text_targets(target_list, TARGET_TEXT);
     gtk_target_list_add_image_targets(target_list, TARGET_IMAGE, TRUE);
     gtk_target_list_add_uri_targets(target_list, TARGET_URI);
+    gtk_target_list_add_text_targets(target_list, TARGET_TEXT);
     gtk_target_list_add(target_list, gdk_atom_intern_static_string(""), 0, TARGET_RAW);
 
     gtk_drag_dest_set_target_list(ctx->get_gtk_widget(), target_list);
@@ -268,19 +268,13 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
         gint size;
         GdkAtom *targets = get_target_ctx_target_atoms(&size);
 
-        if (gtk_targets_include_text(targets, size)) {
-            jstring jStr = env->NewStringUTF("text/plain");
-            EXCEPTION_OCCURED(env);
-            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-            EXCEPTION_OCCURED(env);
-            was_set = TRUE;
-        } else if (gtk_targets_include_image(targets, size, TRUE)) {
+        if (gtk_targets_include_image(targets, size, TRUE)) {
             jstring jStr = env->NewStringUTF("application/x-java-rawimage");
             EXCEPTION_OCCURED(env);
             env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
             EXCEPTION_OCCURED(env);
             was_set = TRUE;
-        } else if (gtk_targets_include_uri(targets, size)) {
+        }  if (gtk_targets_include_uri(targets, size)) {
             // it's a possibility
             jstring jStr = env->NewStringUTF("application/x-java-file-list");
             EXCEPTION_OCCURED(env);
@@ -290,6 +284,12 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
             jstring jStr2 = env->NewStringUTF("text/uri-list");
             EXCEPTION_OCCURED(env);
             env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
+            EXCEPTION_OCCURED(env);
+            was_set = TRUE;
+        } else if (gtk_targets_include_text(targets, size)) {
+            jstring jStr = env->NewStringUTF("text/plain");
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
             EXCEPTION_OCCURED(env);
             was_set = TRUE;
         }
