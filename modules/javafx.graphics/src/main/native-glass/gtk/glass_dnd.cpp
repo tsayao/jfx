@@ -77,7 +77,8 @@ static struct {
     GtkSelectionData *data;
     gboolean just_entered;
     jobjectArray mimes;
-} target_ctx = {NULL, NULL, FALSE, NULL};
+    guint info;
+} target_ctx = {NULL, NULL, FALSE, NULL, 0};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -150,11 +151,12 @@ static gboolean on_drag_drop(GtkWidget      *widget,
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
 
-    if (!gdk_drag_context_list_targets(context)) {
+    GdkAtom target = gtk_drag_dest_find_target(widget, context, NULL);
+
+    if (target == GDK_NONE) {
         return FALSE;
     }
 
-    GdkAtom target = gtk_drag_dest_find_target(widget, context, NULL);
     gtk_drag_get_data(widget, context, target, GDK_CURRENT_TIME);
 
     return TRUE;
@@ -177,6 +179,8 @@ static void on_drag_data_received(GtkWidget        *widget,
         reset_target_ctx();
         return;
     }
+
+    target_ctx.info = info;
 
     gint x_abs, y_abs;
     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
@@ -206,9 +210,13 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, NULL, 0,
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
     gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
-    gtk_drag_dest_add_text_targets(ctx->get_gtk_widget());
-    gtk_drag_dest_add_uri_targets(ctx->get_gtk_widget());
-    gtk_drag_dest_add_image_targets(ctx->get_gtk_widget());
+
+    GtkTargetList *target_list = gtk_target_list_new (NULL, 0);
+    gtk_target_list_add_text_targets(target_list, TARGET_TEXT);
+    gtk_target_list_add_image_targets(target_list, TARGET_IMAGE, TRUE);
+    gtk_target_list_add_uri_targets(target_list, TARGET_URI);
+
+    gtk_drag_dest_set_target_list(ctx->get_gtk_widget(), target_list);
 
     g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
     g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
@@ -251,7 +259,6 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
     }
 
     if (!target_ctx.mimes) {
-
         jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
         EXCEPTION_OCCURED(env);
 
@@ -425,6 +432,7 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     if (check_state_in_drag(env)) {
         return NULL;
     }
+
     const char *cmime = env->GetStringUTFChars(mime, NULL);
 
     if (g_strcmp0(cmime, "text/plain") == 0) {
