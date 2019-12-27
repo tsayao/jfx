@@ -154,7 +154,8 @@ static gboolean on_drag_drop(GtkWidget      *widget,
     GdkAtom target = gtk_drag_dest_find_target(widget, context, NULL);
 
     if (target == GDK_NONE) {
-        return FALSE;
+        // used for RAW
+        target = gdk_atom_intern_static_string("");
     }
 
     gtk_drag_get_data(widget, context, target, GDK_CURRENT_TIME);
@@ -215,6 +216,7 @@ void glass_dnd_attach_context(WindowContext *ctx) {
     gtk_target_list_add_text_targets(target_list, TARGET_TEXT);
     gtk_target_list_add_image_targets(target_list, TARGET_IMAGE, TRUE);
     gtk_target_list_add_uri_targets(target_list, TARGET_URI);
+    gtk_target_list_add(target_list, gdk_atom_intern_static_string(""), 0, TARGET_RAW);
 
     gtk_drag_dest_set_target_list(ctx->get_gtk_widget(), target_list);
 
@@ -325,6 +327,8 @@ jint dnd_target_get_supported_actions(JNIEnv *env)
 
 static jobject dnd_target_get_string(JNIEnv *env)
 {
+    g_print("dnd_target_get_string\n");
+
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
@@ -340,6 +344,8 @@ static jobject dnd_target_get_string(JNIEnv *env)
 
 static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 {
+    g_print("dnd_target_get_list\n");
+
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     gchar** data = gtk_selection_data_get_uris(target_ctx.data);
@@ -355,6 +361,8 @@ static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 
 static jobject dnd_target_get_image(JNIEnv *env)
 {
+    g_print("dnd_target_get_image\n");
+
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
@@ -404,6 +412,7 @@ static jobject dnd_target_get_image(JNIEnv *env)
 
 static jobject dnd_target_get_raw(JNIEnv *env, GdkAtom target, gboolean string_data)
 {
+    g_print("dnd_target_get_raw\n");
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     const guchar* data = gtk_selection_data_get_data(target_ctx.data);
@@ -434,6 +443,8 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     }
 
     const char *cmime = env->GetStringUTFChars(mime, NULL);
+
+    g_print("dnd_target_get_data() mime: %s\n", cmime);
 
     if (g_strcmp0(cmime, "text/plain") == 0) {
         ret = dnd_target_get_string(env);
@@ -493,16 +504,22 @@ static void add_gtk_target_from_jstring(JNIEnv *env, GtkTargetList **list, jstri
 {
     const char *gstring = env->GetStringUTFChars(string, NULL);
 
+    g_print("add_gtk_target_from_jstring()\n");
+
     if (g_strcmp0(gstring, "text/plain") == 0) {
+        g_print("gtk_target_list_add_text_targets\n");
         gtk_target_list_add_text_targets(*list, TARGET_TEXT);
     } else if (g_strcmp0(gstring, "application/x-java-rawimage") == 0) {
+        g_print("gtk_target_list_add_image_targets\n");
         gtk_target_list_add_image_targets(*list, TARGET_IMAGE, TRUE);
     } else if (g_strcmp0(gstring, "application/x-java-file-list") == 0) {
+        g_print("gtk_target_list_add_uri_targets\n");
         gtk_target_list_add_uri_targets(*list, TARGET_URI);
     } else if (g_strcmp0(gstring, "application/x-java-drag-image") == 0
         || g_strcmp0(gstring, "application/x-java-drag-image-offset") == 0) {
         // do nothing - those are DragView information
     } else {
+        g_print("-->raw\n");
         GdkAtom atom = gdk_atom_intern(gstring, FALSE);
         gtk_target_list_add(*list, atom, flags, TARGET_RAW);
     }
@@ -702,18 +719,24 @@ static void dnd_data_get_callback(GtkWidget *widget,
 {
     GdkAtom atom = gtk_selection_data_get_target(data);
 
+    g_print("dnd_data_get_callback()\n");
+
     switch (info) {
         case TARGET_TEXT:
+            g_print("TARGET_TEXT\n");
             dnd_source_set_string(widget, data, atom);
             break;
         case TARGET_IMAGE:
+            g_print("TARGET_IMAGE\n");
             dnd_source_set_image(widget, data, atom);
             break;
         case TARGET_URI:
+            g_print("TARGET_URI\n");
             dnd_source_set_uri(widget, data, atom);
             break;
         default:
-          dnd_source_set_raw(widget, data, atom);
+            g_print("TARGET_RAW\n");
+            dnd_source_set_raw(widget, data, atom);
     }
 }
 
