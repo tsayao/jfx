@@ -63,6 +63,13 @@ static void clear_global_ref(gpointer data)
 static void dnd_set_performed_action(jint performed_action);
 static jint dnd_get_performed_action();
 
+enum {
+  TARGET_TEXT,
+  TARGET_IMAGE,
+  TARGET_URI,
+  TARGET_RAW
+};
+
 /************************* TARGET *********************************************/
 
 static struct {
@@ -80,6 +87,7 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
+    g_print("reset_target_ctx()\n");
     if (target_ctx.mimes != NULL) {
         mainEnv->DeleteGlobalRef(target_ctx.mimes);
     }
@@ -87,6 +95,10 @@ static void reset_target_ctx() {
     memset(&target_ctx, 0, sizeof(target_ctx));
 }
 
+static gboolean reset_target_ctx_callback(gpointer) {
+    reset_target_ctx();
+    return FALSE;
+}
 
 static gboolean on_drag_motion(GtkWidget      *widget,
                                GdkDragContext *context,
@@ -186,27 +198,13 @@ void on_drag_leave(WindowContext* ctx) {
 
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
-    reset_target_ctx();
+
+    gdk_threads_add_idle((GSourceFunc) reset_target_ctx_callback, NULL);
 }
 
 void glass_dnd_attach_context(WindowContext *ctx) {
-//     static GtkTargetEntry target_table[] = {
-//        { (gchar *) "UTF8_STRING", 0, 0 },
-//        { (gchar *) "text/plain", 0, 0 },
-//        { (gchar *) "COMPOUND_TEXT", 0, 0 },
-//        { (gchar *) "STRING", 0, 0 },
-//        { (gchar *) "text/uri-list", 0, 0 },
-//        //FIXME: supported formats varies
-//        { (gchar *) "image/png", 0, 0 },
-//        { (gchar *) "image/jpeg", 0, 0 },
-//        { (gchar *) "image/tiff", 0, 0 },
-//        { (gchar *) "image/bmp", 0, 0 }
-//    };
-
     gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, NULL, 0,
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
-//    gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, target_table, G_N_ELEMENTS(target_table),
-//                      (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
     gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
     gtk_drag_dest_add_text_targets(ctx->get_gtk_widget());
     gtk_drag_dest_add_uri_targets(ctx->get_gtk_widget());
@@ -230,6 +228,20 @@ static gboolean check_state_in_drag(JNIEnv *env)
     return FALSE;
 }
 
+static GdkAtom* get_target_ctx_target_atoms(gint *size) {
+    GList* targets = gdk_drag_context_list_targets(target_ctx.ctx);
+    gint s = (gint)g_list_length(targets);
+    GdkAtom* atoms = (GdkAtom*) g_try_malloc0(sizeof(GdkAtom)*s);
+
+    int i = 0;
+    for (; targets != NULL; targets = targets->next) {
+        atoms[i++] = (GdkAtom)targets->data;
+    }
+
+    *size = s;
+    return atoms;
+}
+
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
     g_print("===============> dnd_target_get_mimes\n");
@@ -237,51 +249,47 @@ jobjectArray dnd_target_get_mimes(JNIEnv *env)
     if (check_state_in_drag(env)) {
         return NULL;
     }
+
     if (!target_ctx.mimes) {
 
         jobject set = env->NewObject(jHashSetCls, jHashSetInit, NULL);
         EXCEPTION_OCCURED(env);
 
         gboolean was_set = FALSE;
-        GList* targets = gdk_drag_context_list_targets(target_ctx.ctx);
+        gint size;
+        GdkAtom *targets = get_target_ctx_target_atoms(&size);
 
-        while (targets) {
-            GdkAtom target = GDK_POINTER_TO_ATOM(targets->data);
+        if (gtk_targets_include_text(targets, size)) {
+            jstring jStr = env->NewStringUTF("text/plain");
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+            EXCEPTION_OCCURED(env);
+            was_set = TRUE;
+        } else if (gtk_targets_include_image(targets, size, TRUE)) {
+            jstring jStr = env->NewStringUTF("application/x-java-rawimage");
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+            EXCEPTION_OCCURED(env);
+            was_set = TRUE;
+        } else if (gtk_targets_include_uri(targets, size)) {
+            // it's a possibility
+            jstring jStr = env->NewStringUTF("application/x-java-file-list");
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
+            EXCEPTION_OCCURED(env);
 
-            if (gtk_targets_include_text(&target, 1)) {
-                jstring jStr = env->NewStringUTF("text/plain");
-                EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-                EXCEPTION_OCCURED(env);
-                was_set = TRUE;
-            } else if (gtk_targets_include_image(&target, 1, TRUE)) {
-                jstring jStr = env->NewStringUTF("application/x-java-rawimage");
-                EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-                EXCEPTION_OCCURED(env);
-                was_set = TRUE;
-            } else if (gtk_targets_include_uri(&target, 1)) {
-        //        jstring jStr = env->NewStringUTF("application/x-java-file-list");
-        //        EXCEPTION_OCCURED(env);
-        //        env->CallBooleanMethod(set, jSetAdd, jStr, NULL);
-        //        EXCEPTION_OCCURED(env);
-
-                jstring jStr2 = env->NewStringUTF("text/uri-list");
-                EXCEPTION_OCCURED(env);
-                env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
-                EXCEPTION_OCCURED(env);
-                was_set = TRUE;
-            }
-
-            targets = targets->next;
+            jstring jStr2 = env->NewStringUTF("text/uri-list");
+            EXCEPTION_OCCURED(env);
+            env->CallBooleanMethod(set, jSetAdd, jStr2, NULL);
+            EXCEPTION_OCCURED(env);
+            was_set = TRUE;
         }
 
-        g_list_free(targets);
+        g_free(targets);
 
         if (!was_set) {
             GdkAtom target = gtk_selection_data_get_target(target_ctx.data);
             gchar *name = gdk_atom_name(target);
-            g_print("added: %s\n", name);
 
             jstring jStr = env->NewStringUTF(name);
             EXCEPTION_OCCURED(env);
@@ -343,9 +351,14 @@ static jobject dnd_target_get_image(JNIEnv *env)
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
-    gint length = gtk_selection_data_get_length(target_ctx.data);
-
     GdkPixbuf* buf = gtk_selection_data_get_pixbuf(target_ctx.data);
+
+    if (buf == NULL) {
+        g_error("NULL Pixbuf\n");
+        return NULL;
+    }
+
+    gint length = gtk_selection_data_get_length(target_ctx.data);
 
     if (!gdk_pixbuf_get_has_alpha(buf)) {
         GdkPixbuf *tmp_buf = gdk_pixbuf_add_alpha(buf, FALSE, 0, 0, 0);
@@ -430,7 +443,7 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     LOG_EXCEPTION(env)
     env->ReleaseStringUTFChars(mime, cmime);
 
-    reset_target_ctx();
+    gdk_threads_add_idle((GSourceFunc) reset_target_ctx_callback, NULL);
 
     return ret;
 }
@@ -473,26 +486,17 @@ static void add_gtk_target_from_jstring(JNIEnv *env, GtkTargetList **list, jstri
     const char *gstring = env->GetStringUTFChars(string, NULL);
 
     if (g_strcmp0(gstring, "text/plain") == 0) {
-//        gtk_target_list_add(*list, TARGET_UTF8_STRING_ATOM, flags, 0);
-//        gtk_target_list_add(*list, TARGET_MIME_TEXT_PLAIN_ATOM, flags, 0);
-//        gtk_target_list_add(*list, TARGET_STRING_ATOM, flags, 0);
-        //gtk_target_list_add(*list, TARGET_COMPOUND_TEXT_ATOM, flags, ??);
-        gtk_target_list_add_text_targets(*list, 0);
+        gtk_target_list_add_text_targets(*list, TARGET_TEXT);
     } else if (g_strcmp0(gstring, "application/x-java-rawimage") == 0) {
-//        gtk_target_list_add(*list, TARGET_MIME_PNG_ATOM, flags, 0);
-//        gtk_target_list_add(*list, TARGET_MIME_JPEG_ATOM, flags, 0);
-//        gtk_target_list_add(*list, TARGET_MIME_TIFF_ATOM, flags, 0);
-//        gtk_target_list_add(*list, TARGET_MIME_BMP_ATOM, flags, 0);
-        gtk_target_list_add_image_targets(*list, 0, TRUE);
+        gtk_target_list_add_image_targets(*list, TARGET_IMAGE, TRUE);
     } else if (g_strcmp0(gstring, "application/x-java-file-list") == 0) {
-//        gtk_target_list_add(*list, TARGET_MIME_URI_LIST_ATOM, flags, 0);
-        gtk_target_list_add_uri_targets(*list, 0);
+        gtk_target_list_add_uri_targets(*list, TARGET_URI);
     } else if (g_strcmp0(gstring, "application/x-java-drag-image") == 0
         || g_strcmp0(gstring, "application/x-java-drag-image-offset") == 0) {
         // do nothing - those are DragView information
     } else {
         GdkAtom atom = gdk_atom_intern(gstring, FALSE);
-        gtk_target_list_add(*list, atom, flags, 0);
+        gtk_target_list_add(*list, atom, flags, TARGET_RAW);
     }
 
     env->ReleaseStringUTFChars(string, gstring);
@@ -507,8 +511,6 @@ static GtkTargetList* data_to_gtk_target_list(JNIEnv *env, jobject data)
     jstring next;
 
     GtkTargetList *tlist = gtk_target_list_new (NULL, 0);
-
-//    init_target_atoms();
 
     gint added_count = 0;
 
@@ -534,22 +536,9 @@ static gboolean dnd_source_set_string(GtkWidget *widget, GtkSelectionData *data,
         return FALSE;
     }
 
-//    GdkAtom tp_atom = gdk_atom_intern_static_string("text/plain");
     const char *cstring = mainEnv->GetStringUTFChars(string, NULL);
-// FIXME: may not be necessary because GetStringUTFChars already converts
-//    if (cstring) {
-//        if (atom == tp_atom) {
-//            gchar *res_str = g_convert((gchar *) cstring, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL);
-////            gchar *rest_str = g_locale_to_utf8((gchar *) csting, -1, NULL, NULL, NULL);
-//            if (res_str) {
-//                is_data_set = gtk_selection_data_set_text(data, res_str, strlen(res_str));
-//                g_free(res_str);
-//            }
-//        } else {
-            gint size = strlen(cstring);
-            is_data_set = gtk_selection_data_set_text(data, (gchar *) cstring, size);
-//        }
-//    }
+    gint size = strlen(cstring);
+    is_data_set = gtk_selection_data_set_text(data, (gchar *) cstring, size);
 
     mainEnv->ReleaseStringUTFChars(string, cstring);
 
@@ -560,6 +549,7 @@ static gboolean dnd_source_set_image(GtkWidget *widget, GtkSelectionData *data, 
 {
     jobject pixels = dnd_source_get_data(widget, "application/x-java-rawimage");
     if (!pixels) {
+        g_warning("DND source failed to set image\n");
         return FALSE;
     }
 
@@ -703,25 +693,19 @@ static void dnd_data_get_callback(GtkWidget *widget,
                                   gpointer user_data)
 {
     GdkAtom atom = gtk_selection_data_get_target(data);
-/*
-    if (target_is_text(atom)) {
-        dnd_source_set_string(widget, data, atom);
-    } else if (target_is_image(atom)) {
-        dnd_source_set_image(widget, data, atom);
-    } else if (target_is_uri(atom)) {
-        dnd_source_set_uri(widget, data, atom);
-    } else {
-        dnd_source_set_raw(widget, data, atom);
-    }
-*/
-    if (gtk_selection_data_targets_include_text(data)) {
-        dnd_source_set_string(widget, data, atom);
-    } else if (gtk_selection_data_targets_include_image(data, TRUE)) {
-        dnd_source_set_image(widget, data, atom);
-    } else if (gtk_selection_data_targets_include_uri(data)) {
-        dnd_source_set_uri(widget, data, atom);
-    } else {
-        dnd_source_set_raw(widget, data, atom);
+
+    switch (info) {
+        case TARGET_TEXT:
+            dnd_source_set_string(widget, data, atom);
+            break;
+        case TARGET_IMAGE:
+            dnd_source_set_image(widget, data, atom);
+            break;
+        case TARGET_URI:
+            dnd_source_set_uri(widget, data, atom);
+            break;
+        default:
+          dnd_source_set_raw(widget, data, atom);
     }
 }
 
