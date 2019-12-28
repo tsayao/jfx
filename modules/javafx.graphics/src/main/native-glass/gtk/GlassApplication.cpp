@@ -449,7 +449,7 @@ static void process_events(GdkEvent* event, gpointer data)
         gtk_main_do_event(event);
 
         if (event->type == GDK_DRAG_LEAVE) {
-            on_drag_leave(ctx);
+            dnd_drag_leave_callback(ctx);
         }
     } else {
         if (window == gdk_screen_get_root_window(gdk_screen_get_default())) {

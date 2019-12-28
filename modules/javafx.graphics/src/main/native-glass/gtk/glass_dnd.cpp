@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 #include "glass_dnd.h"
 #include "glass_general.h"
 #include "glass_evloop.h"
@@ -88,7 +89,6 @@ gboolean is_in_drag() {
 }
 
 static void reset_target_ctx() {
-    g_print("reset_target_ctx()\n");
     if (target_ctx.mimes != NULL) {
         mainEnv->DeleteGlobalRef(target_ctx.mimes);
     }
@@ -96,22 +96,16 @@ static void reset_target_ctx() {
     memset(&target_ctx, 0, sizeof(target_ctx));
 }
 
-static gboolean reset_target_ctx_callback(gpointer) {
-    reset_target_ctx();
-    return FALSE;
-}
-
-static gboolean on_drag_motion(GtkWidget      *widget,
-                               GdkDragContext *context,
-                               gint            x,
-                               gint            y,
-                               guint           time,
-                               gpointer        user_data) {
+static gboolean dnd_drag_motion_callback(GtkWidget      *widget,
+                                         GdkDragContext *context,
+                                         gint            x,
+                                         gint            y,
+                                         guint           time,
+                                         gpointer        user_data) {
 
     WindowContext* ctx = (WindowContext*)user_data;
 
     if (target_ctx.ctx == NULL || (target_ctx.ctx != context && !target_ctx.just_entered)) {
-        g_print("on_drag_motion -> ENTERED\n");
         reset_target_ctx();
         is_dnd_owner = is_in_drag();
         target_ctx.ctx = context;
@@ -139,14 +133,12 @@ static gboolean on_drag_motion(GtkWidget      *widget,
     return (gboolean) result;
 }
 
-static gboolean on_drag_drop(GtkWidget      *widget,
-                             GdkDragContext *context,
-                             gint            x,
-                             gint            y,
-                             guint           time,
-                             gpointer        user_data) {
-    g_print("on_drag_drop\n");
-
+static gboolean dnd_drag_drop_callback(GtkWidget      *widget,
+                                      GdkDragContext *context,
+                                      gint            x,
+                                      gint            y,
+                                      guint           time,
+                                      gpointer        user_data) {
     if (target_ctx.ctx == NULL || target_ctx.just_entered) {
         return FALSE; // Do not process drop events if no enter event and subsequent motion event were received
     }
@@ -163,16 +155,15 @@ static gboolean on_drag_drop(GtkWidget      *widget,
     return TRUE;
 }
 
-static void on_drag_data_received(GtkWidget        *widget,
-                                  GdkDragContext   *context,
-                                  gint              x,
-                                  gint              y,
-                                  GtkSelectionData *data,
-                                  guint             info,
-                                  guint             time,
-                                  gpointer          user_data)
+static void dnd_on_drag_data_received_callback(GtkWidget        *widget,
+                                               GdkDragContext   *context,
+                                               gint              x,
+                                               gint              y,
+                                               GtkSelectionData *data,
+                                               guint             info,
+                                               guint             time,
+                                               gpointer          user_data)
 {
-    g_print("on_drag_data_received\n");
     WindowContext* ctx = (WindowContext*)user_data;
 
     if (gtk_selection_data_get_length(data) == 0) {
@@ -198,13 +189,11 @@ static void on_drag_data_received(GtkWidget        *widget,
     gtk_drag_finish(context, selected, selected == GDK_ACTION_MOVE, GDK_CURRENT_TIME);
 }
 
-void on_drag_leave(WindowContext* ctx) {
-    g_print("on_drag_leave\n");
-
+void dnd_drag_leave_callback(WindowContext* ctx) {
     mainEnv->CallVoidMethod(ctx->get_jview(), jViewNotifyDragLeave, NULL);
     CHECK_JNI_EXCEPTION(mainEnv)
 
-    gdk_threads_add_idle((GSourceFunc) reset_target_ctx_callback, NULL);
+    reset_target_ctx();
 }
 
 void glass_dnd_attach_context(WindowContext *ctx) {
@@ -220,9 +209,9 @@ void glass_dnd_attach_context(WindowContext *ctx) {
 
     gtk_drag_dest_set_target_list(ctx->get_gtk_widget(), target_list);
 
-    g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(on_drag_motion), ctx);
-    g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(on_drag_drop), ctx);
-    g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(on_drag_data_received), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-motion", G_CALLBACK(dnd_drag_motion_callback), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-drop", G_CALLBACK(dnd_drag_drop_callback), ctx);
+    g_signal_connect(ctx->get_gtk_widget(), "drag-data-received", G_CALLBACK(dnd_on_drag_data_received_callback), ctx);
 }
 
 static gboolean check_state_in_drag(JNIEnv *env)
@@ -249,13 +238,13 @@ static GdkAtom* get_target_ctx_target_atoms(gint *size) {
     }
 
     *size = s;
+
+    g_list_free(targets);
     return atoms;
 }
 
 jobjectArray dnd_target_get_mimes(JNIEnv *env)
 {
-    g_print("===============> dnd_target_get_mimes\n");
-
     if (check_state_in_drag(env)) {
         return NULL;
     }
@@ -327,24 +316,24 @@ jint dnd_target_get_supported_actions(JNIEnv *env)
 
 static jobject dnd_target_get_string(JNIEnv *env)
 {
-    g_print("dnd_target_get_string\n");
-
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_data_type(target_ctx.data);
     guchar* data = gtk_selection_data_get_text(target_ctx.data);
 
-    result = env->NewStringUTF((char *)data);
-    EXCEPTION_OCCURED(env);
+    if (data) {
+        result = env->NewStringUTF((char *)data);
+        EXCEPTION_OCCURED(env);
 
-    g_free(data);
+        g_free(data);
+    }
 
     return result;
 }
 
 static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 {
-    g_print("dnd_target_get_list\n");
+    GDK_NOTE (DND, g_message ("dnd_target_get_list\n"));
 
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
@@ -352,24 +341,21 @@ static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 
     if (data) {
         result = uris_to_java(env, data, files);
+        // uris_to_java frees it
+        //g_strfreev(data);
     }
-
-    g_strfreev(data);
 
     return result;
 }
 
 static jobject dnd_target_get_image(JNIEnv *env)
 {
-    g_print("dnd_target_get_image\n");
-
     jobject result = NULL;
 
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     GdkPixbuf* buf = gtk_selection_data_get_pixbuf(target_ctx.data);
 
     if (buf == NULL) {
-        g_error("NULL Pixbuf\n");
         return NULL;
     }
 
@@ -412,7 +398,6 @@ static jobject dnd_target_get_image(JNIEnv *env)
 
 static jobject dnd_target_get_raw(JNIEnv *env, GdkAtom target, gboolean string_data)
 {
-    g_print("dnd_target_get_raw\n");
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     const guchar* data = gtk_selection_data_get_data(target_ctx.data);
@@ -444,8 +429,6 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 
     const char *cmime = env->GetStringUTFChars(mime, NULL);
 
-    g_print("dnd_target_get_data() mime: %s\n", cmime);
-
     if (g_strcmp0(cmime, "text/plain") == 0) {
         ret = dnd_target_get_string(env);
     } else if (g_strcmp0(cmime, "text/uri-list") == 0) {
@@ -459,10 +442,11 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
     } else {
         ret = dnd_target_get_raw(env, gdk_atom_intern(cmime, FALSE), FALSE);
     }
+
     LOG_EXCEPTION(env)
     env->ReleaseStringUTFChars(mime, cmime);
 
-    gdk_threads_add_idle((GSourceFunc) reset_target_ctx_callback, NULL);
+    reset_target_ctx();
 
     return ret;
 }
@@ -504,22 +488,16 @@ static void add_gtk_target_from_jstring(JNIEnv *env, GtkTargetList **list, jstri
 {
     const char *gstring = env->GetStringUTFChars(string, NULL);
 
-    g_print("add_gtk_target_from_jstring()\n");
-
     if (g_strcmp0(gstring, "text/plain") == 0) {
-        g_print("gtk_target_list_add_text_targets\n");
         gtk_target_list_add_text_targets(*list, TARGET_TEXT);
     } else if (g_strcmp0(gstring, "application/x-java-rawimage") == 0) {
-        g_print("gtk_target_list_add_image_targets\n");
         gtk_target_list_add_image_targets(*list, TARGET_IMAGE, TRUE);
     } else if (g_strcmp0(gstring, "application/x-java-file-list") == 0) {
-        g_print("gtk_target_list_add_uri_targets\n");
         gtk_target_list_add_uri_targets(*list, TARGET_URI);
     } else if (g_strcmp0(gstring, "application/x-java-drag-image") == 0
         || g_strcmp0(gstring, "application/x-java-drag-image-offset") == 0) {
         // do nothing - those are DragView information
     } else {
-        g_print("-->raw\n");
         GdkAtom atom = gdk_atom_intern(gstring, FALSE);
         gtk_target_list_add(*list, atom, flags, TARGET_RAW);
     }
@@ -719,23 +697,17 @@ static void dnd_data_get_callback(GtkWidget *widget,
 {
     GdkAtom atom = gtk_selection_data_get_target(data);
 
-    g_print("dnd_data_get_callback()\n");
-
     switch (info) {
         case TARGET_TEXT:
-            g_print("TARGET_TEXT\n");
             dnd_source_set_string(widget, data, atom);
             break;
         case TARGET_IMAGE:
-            g_print("TARGET_IMAGE\n");
             dnd_source_set_image(widget, data, atom);
             break;
         case TARGET_URI:
-            g_print("TARGET_URI\n");
             dnd_source_set_uri(widget, data, atom);
             break;
         default:
-            g_print("TARGET_RAW\n");
             dnd_source_set_raw(widget, data, atom);
     }
 }
