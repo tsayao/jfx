@@ -333,8 +333,6 @@ static jobject dnd_target_get_string(JNIEnv *env)
 
 static jobject dnd_target_get_list(JNIEnv *env, gboolean files)
 {
-    GDK_NOTE (DND, g_message ("dnd_target_get_list\n"));
-
     jobject result = NULL;
     GdkAtom atom = gtk_selection_data_get_selection(target_ctx.data);
     gchar** data = gtk_selection_data_get_uris(target_ctx.data);
