@@ -52,96 +52,96 @@
 #define MOUSE_FORWARD_BTN 9
 
 // EVENTS
-static gboolean on_configure(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_configure_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_configure(&event->configure);
     return FALSE;
 }
 
-static gboolean on_damage_or_draw(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_damage_or_draw_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_draw(&event->expose);
     return FALSE;
 }
 
-static gboolean on_property_notify(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_property_notify_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_property_notify(&event->property);
     return FALSE;
 }
 
-static gboolean on_focus_change(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_focus_change_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
     return FALSE;
 }
 
-static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_delete_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_delete();
     return FALSE;
 }
 
-static gboolean on_window_state(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_window_state_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_state(&event->window_state);
     return FALSE;
 }
 
-static gboolean on_device_button(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_device_button_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_button(&event->button);
     return FALSE;
 }
 
-static gboolean on_device_motion(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_device_motion_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_motion(&event->motion);
     gdk_event_request_motions(&event->motion);
     return FALSE;
 }
 
-static gboolean on_device_scroll(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_device_scroll_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_scroll(&event->scroll);
     return FALSE;
 }
 
-static gboolean on_enter_or_leave(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_enter_or_leave_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_cross(&event->crossing);
     return FALSE;
 }
 
-static gboolean on_key_press_or_release(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_key_press_or_release_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_key(&event->key);
     return FALSE;
 }
 
-static gboolean on_map(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static gboolean ctx_map_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_map();
     return FALSE;
 }
 
-static void on_screen_changed(GtkWidget *widget,
+static void ctx_screen_changed_callback(GtkWidget *widget,
                               GdkScreen *previous_screen,
                               gpointer   user_data) {
     ((WindowContextBase*)user_data)->process_screen_changed();
 }
 
 static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
-    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure), ctx);
-    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(on_damage_or_draw), ctx);
+    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(ctx_configure_callback), ctx);
+    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
 #ifdef GLASS_GTK3
-    g_signal_connect(gtk_widget, "draw", G_CALLBACK(on_damage_or_draw), ctx);
+    g_signal_connect(gtk_widget, "draw", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
 #else
-    g_signal_connect(gtk_widget, "expose", G_CALLBACK(on_damage_or_draw), ctx);
+    g_signal_connect(gtk_widget, "expose", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
 #endif
-    g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(on_property_notify), ctx);
-    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(on_focus_change), ctx);
-    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(on_focus_change), ctx);
-    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(on_delete), ctx);
-    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(on_window_state), ctx);
-    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(on_device_button), ctx);
-    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(on_device_button), ctx);
-    g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(on_device_motion), ctx);
-    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(on_device_scroll), ctx);
-    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(on_device_scroll), ctx);
-    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(on_enter_or_leave), ctx);
-    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(on_key_press_or_release), ctx);
-    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(on_key_press_or_release), ctx);
-    g_signal_connect(gtk_widget, "map-event", G_CALLBACK(on_map), ctx);
-    g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(on_screen_changed), ctx);
+    g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(ctx_property_notify_callback), ctx);
+    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(ctx_focus_change_callback), ctx);
+    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(ctx_focus_change_callback), ctx);
+    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(ctx_delete_callback), ctx);
+    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(ctx_window_state_callback), ctx);
+    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(ctx_device_button_callback), ctx);
+    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(ctx_device_button_callback), ctx);
+    g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(ctx_device_motion_callback), ctx);
+    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(ctx_device_scroll_callback), ctx);
+    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(ctx_device_scroll_callback), ctx);
+    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(ctx_enter_or_leave_callback), ctx);
+    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(ctx_key_press_or_release_callback), ctx);
+    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(ctx_key_press_or_release_callback), ctx);
+    g_signal_connect(gtk_widget, "map-event", G_CALLBACK(ctx_map_callback), ctx);
+    g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(ctx_screen_changed_callback), ctx);
 }
 
 WindowContext * WindowContextBase::sm_grab_window = NULL;
@@ -810,8 +810,8 @@ WindowContextBase::~WindowContextBase() {
 static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
 
-//static gboolean on_configure_view(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-////    g_print("on_configure\n");
+//static gboolean ctx_configure_callback_view(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+////    g_print("ctx_configure_callback\n");
 //
 //    ((WindowContextTop*)user_data)->process_configure_view(&event->configure);
 //    return FALSE;
