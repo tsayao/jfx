@@ -802,7 +802,9 @@ WindowContextBase::~WindowContextBase() {
         xim.im = NULL;
     }
 
-    gtk_widget_destroy(gtk_widget);
+    if (GTK_IS_WIDGET(gtk_widget)) {
+        gtk_widget_destroy(gtk_widget);
+    }
 }
 
 ////////////////////////////// WindowContextTop /////////////////////////////////
@@ -817,10 +819,6 @@ static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_F
 //    return FALSE;
 //}
 //
-
-//static void on_pre_map_event(GtkWidget *widget, gpointer data) {
-//    ((WindowContextTop*)data)->process_pre_map();
-//}
 
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
@@ -840,6 +838,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
+    // here to force sending the resize event, because if it matches the default 200x200, it will not
+    gtk_window_resize(GTK_WINDOW(gtk_widget), 1, 1);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
@@ -1032,7 +1032,7 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 
                 apply_geometry();
 
-//                g_print("frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+                g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
             }
         }
     }
@@ -1055,10 +1055,10 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     geometry.current_width = w;
     geometry.current_height = h;
 
-//    g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
+    g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d\n", x, y, w, h);
 
     if (jwindow) {
-        if (is_maximized || was_resized) {
+        if (was_resized || is_maximized) {
             mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
                     (is_maximized)
                         ? com_sun_glass_events_WindowEvent_MAXIMIZE
@@ -1066,14 +1066,13 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
                     w,
                     h);
             CHECK_JNI_EXCEPTION(mainEnv)
-
-//            g_print("JWINDOW SIZE: %d, %d\n", w, h);
+           g_print("JWINDOW SIZE: %d, %d\n", w, h);
         }
 
         if (was_moved) {
             mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
             CHECK_JNI_EXCEPTION(mainEnv)
-//            g_print("JWINDOW MOVE: %d, %d\n", x, y);
+            g_print("JWINDOW MOVE: %d, %d\n", x, y);
         }
     }
 
@@ -1082,7 +1081,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
             mainEnv->CallVoidMethod(jview, jViewNotifyResize, gtk_w, gtk_h);
             CHECK_JNI_EXCEPTION(mainEnv);
 
-//            g_print("JVIEW SIZE: %d, %d\n", gtk_w, gtk_h);
+            g_print("JVIEW SIZE: %d, %d\n", gtk_w, gtk_h);
         }
 
         if (was_moved) {
@@ -1090,7 +1089,6 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
             CHECK_JNI_EXCEPTION(mainEnv)
         }
     }
-
 }
 
 void WindowContextTop::process_screen_changed() {
@@ -1124,8 +1122,8 @@ void WindowContextTop::set_resizable(bool res) {
     }
 }
 
-void WindowContextTop::set_visible(bool visible)
-{
+void WindowContextTop::set_visible(bool visible) {
+    g_print("set_visible\n");
     WindowContextBase::set_visible(visible);
     //JDK-8220272 - fire event first because GDK_FOCUS_CHANGE is not always in order
     if (visible && jwindow && isEnabled()) {
@@ -1135,7 +1133,7 @@ void WindowContextTop::set_visible(bool visible)
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-//    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
     if (is_maximized || is_fullscreen) {
         return;
@@ -1173,7 +1171,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         : ch;
 
     if (newW != -1 && newH != -1) {
-//        g_print("RESIZE: %d, %d\n", newW, newH);
+        g_print("RESIZE: %d, %d\n", newW, newH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
     }
 
@@ -1433,6 +1431,7 @@ WindowContextPlug::WindowContextPlug(jobject _jwindow, void* _owner) :
         WindowContextBase(),
         parent()
 {
+    g_print("WindowContextPlug Created!!\n");
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_plug_new((Window)PTR_TO_JLONG(_owner));
@@ -1602,7 +1601,7 @@ WindowContextChild::WindowContextChild(jobject _jwindow,
 {
     (void)_owner;
 
-//    g_print("NEW WINDOW CONTEXT CHILD\n");
+    g_print("NEW WINDOW CONTEXT CHILD\n");
 
     jwindow = mainEnv->NewGlobalRef(_jwindow);
     gtk_widget = gtk_drawing_area_new();
