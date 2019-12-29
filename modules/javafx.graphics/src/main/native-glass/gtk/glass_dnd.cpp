@@ -199,7 +199,6 @@ void dnd_drag_leave_callback(WindowContext* ctx) {
 void glass_dnd_attach_context(WindowContext *ctx) {
     gtk_drag_dest_set(ctx->get_gtk_widget(), (GtkDestDefaults)0, NULL, 0,
                       (GdkDragAction)(GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK));
-    gtk_drag_dest_set_track_motion(ctx->get_gtk_widget(), TRUE);
 
     GtkTargetList *target_list = gtk_target_list_new (NULL, 0);
     gtk_target_list_add_image_targets(target_list, TARGET_IMAGE, TRUE);
