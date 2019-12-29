@@ -78,8 +78,7 @@ static struct {
     GtkSelectionData *data;
     gboolean just_entered;
     jobjectArray mimes;
-    guint info;
-} target_ctx = {NULL, NULL, FALSE, NULL, 0};
+} target_ctx = {NULL, NULL, FALSE, NULL};
 
 gboolean is_dnd_owner = FALSE;
 GtkWidget *drag_widget = NULL;
@@ -171,8 +170,6 @@ static void dnd_on_drag_data_received_callback(GtkWidget        *widget,
         reset_target_ctx();
         return;
     }
-
-    target_ctx.info = info;
 
     gint x_abs, y_abs;
     gdk_window_get_origin(gdk_drag_context_get_dest_window(context), &x_abs, &y_abs);
@@ -442,8 +439,6 @@ jobject dnd_target_get_data(JNIEnv *env, jstring mime)
 
     LOG_EXCEPTION(env)
     env->ReleaseStringUTFChars(mime, cmime);
-
-    reset_target_ctx();
 
     return ret;
 }

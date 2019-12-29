@@ -125,7 +125,7 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
 #ifdef GLASS_GTK3
     g_signal_connect(gtk_widget, "draw", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
 #else
-    g_signal_connect(gtk_widget, "expose", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
+    g_signal_connect(gtk_widget, "expose-event", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
 #endif
     g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(ctx_property_notify_callback), ctx);
     g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(ctx_focus_change_callback), ctx);
