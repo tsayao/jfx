@@ -609,21 +609,21 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1getNativeWindowImp
 //    env->SetIntArrayRegion(extarr, 3, 1, &extents.bottom);
 //}
 
-///*
-// * Class:     com_sun_glass_ui_gtk_GtkWindow
-// * Method:    _setGravity
-// * Signature: (JFF)V
-// */
-//JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1setGravity
-//    (JNIEnv * env, jobject obj, jlong ptr, jfloat xGravity, jfloat yGravity)
-//{
-//    (void)env;
-//    (void)obj;
-//
-//    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
-//    ctx->set_gravity(xGravity, yGravity);
-//
-//}
+/*
+ * Class:     com_sun_glass_ui_gtk_GtkWindow
+ * Method:    _setGravity
+ * Signature: (JFF)V
+ */
+JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1setGravity
+    (JNIEnv * env, jobject obj, jlong ptr, jfloat xGravity, jfloat yGravity)
+{
+    (void)env;
+    (void)obj;
+
+    WindowContext* ctx = JLONG_TO_WINDOW_CTX(ptr);
+    ctx->set_gravity(xGravity, yGravity);
+
+}
 
 
 /*

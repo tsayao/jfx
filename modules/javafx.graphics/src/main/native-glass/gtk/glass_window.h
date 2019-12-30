@@ -75,7 +75,9 @@ struct WindowGeometry {
                       req_bounds_w(-1),
                       req_bounds_h(-1),
                       req_bounds_cw(-1),
-                      req_bounds_ch(-1){}
+                      req_bounds_ch(-1),
+                      gravity_x(1.00),
+                      gravity_y(1.00) {}
 
     int current_x;
     int current_y;
@@ -88,6 +90,9 @@ struct WindowGeometry {
     int req_bounds_h;
     int req_bounds_cw;
     int req_bounds_ch;
+
+    float gravity_x;
+    float gravity_y;
 
     WindowFrameExtents extents;
 
@@ -133,7 +138,7 @@ public:
     virtual void restack(bool) = 0;
     virtual void set_cursor(GdkCursor*) = 0;
     virtual void set_modal(bool, WindowContext* parent = NULL) = 0;
-//    virtual void set_gravity(float, float) = 0;
+    virtual void set_gravity(float, float) = 0;
     virtual void set_level(int) = 0;
     virtual void set_background(float, float, float) = 0;
 
@@ -295,7 +300,7 @@ public:
     void set_icon(GdkPixbuf*) {}
     void restack(bool) {}
     void set_modal(bool, WindowContext*) {}
-//    void set_gravity(float, float) {}
+    void set_gravity(float, float) {}
     void process_property_notify(GdkEventProperty*) {}
     void process_configure(GdkEventConfigure*);
     void process_gtk_configure(GdkEventConfigure*);
@@ -342,7 +347,7 @@ public:
     void set_icon(GdkPixbuf*) {}
     void restack(bool);
     void set_modal(bool, WindowContext*) {}
-//    void set_gravity(float, float) {}
+    void set_gravity(float, float) {}
     void process_focus(GdkEventFocus*);
     void process_property_notify(GdkEventProperty*) {}
     void process_configure(GdkEventConfigure*);
@@ -386,6 +391,8 @@ class WindowContextTop: public WindowContextBase {
 
 public:
     WindowContextTop(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
+    void init_size();
+    bool set_view(jobject view);
     void process_map();
     void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
@@ -412,7 +419,7 @@ public:
     void set_icon(GdkPixbuf*);
     void restack(bool);
     void set_modal(bool, WindowContext* parent = NULL);
-//    void set_gravity(float, float);
+    void set_gravity(float, float);
     void set_level(int);
     void set_visible(bool);
     void notify_on_top(bool);

@@ -812,14 +812,6 @@ WindowContextBase::~WindowContextBase() {
 static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
 
-//static gboolean ctx_configure_callback_view(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-////    g_print("ctx_configure_callback\n");
-//
-//    ((WindowContextTop*)user_data)->process_configure_view(&event->configure);
-//    return FALSE;
-//}
-//
-
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
             WindowContextBase(),
@@ -830,6 +822,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             geometry(),
             resizable(),
             map_received(false),
+            //FIXME: not used
             location_assigned(false),
             size_assigned(false),
             on_top(false),
@@ -838,8 +831,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
-    // here to force sending the resize event, because if it matches the default 200x200, it will not
-    gtk_window_resize(GTK_WINDOW(gtk_widget), 1, 1);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
@@ -890,6 +881,47 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type == TITLED) {
         request_frame_extents();
     }
+
+    init_size();
+}
+
+void WindowContextTop::init_size() {
+
+    geometry.current_width =
+    geometry.current_height =
+    geometry.req_bounds_w =
+    geometry.req_bounds_cw =
+    geometry.req_bounds_h =
+    geometry.req_bounds_ch = 200;
+    geometry.current_x = geometry.current_y = 0;
+
+    gtk_window_resize(GTK_WINDOW(gtk_widget), geometry.req_bounds_cw, geometry.req_bounds_ch);
+    gtk_window_move(GTK_WINDOW(gtk_widget), geometry.current_x, geometry.current_y);
+
+    apply_geometry();
+}
+
+bool WindowContextTop::set_view(jobject view) {
+    bool ret = WindowContextBase::set_view(view);
+
+    if (jwindow && !map_received) {
+        // let java know, because configure event will not fire because 200x200
+        // is the gtk default
+        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                     com_sun_glass_events_WindowEvent_RESIZE,
+                     geometry.req_bounds_w, geometry.req_bounds_h);
+        CHECK_JNI_EXCEPTION_RET(mainEnv, ret)
+        g_print("JWINDOW SIZE: %d, %d\n", geometry.req_bounds_w, geometry.req_bounds_h);
+
+        if (jview) {
+            mainEnv->CallVoidMethod(jview, jViewNotifyResize, geometry.req_bounds_cw,
+                                    geometry.req_bounds_ch);
+            CHECK_JNI_EXCEPTION_RET(mainEnv, ret);
+            g_print("JVIEW SIZE: %d, %d\n", geometry.req_bounds_cw, geometry.req_bounds_ch);
+        }
+    }
+
+    return ret;
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1023,16 +1055,18 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
                 geometry.extents.bottom = bottom;
                 geometry.extents.right = right;
 
-                // set bounds again to set to correct window size that must
-                // be the total width and height accounting extents
-                set_bounds(-1, -1,
-                           false, false,
-                           geometry.req_bounds_w, geometry.req_bounds_h,
-                           geometry.req_bounds_cw, geometry.req_bounds_ch);
+                if (top + left + bottom + right > 0) {
+                    // set bounds again to set to correct window size that must
+                    // be the total width and height accounting extents
+                    set_bounds(0, 0,
+                               false, false,
+                               geometry.req_bounds_w, geometry.req_bounds_h,
+                               geometry.req_bounds_cw, geometry.req_bounds_ch);
 
-                apply_geometry();
+                    apply_geometry();
 
-                g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+                    g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+                }
             }
         }
     }
@@ -1176,8 +1210,9 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     }
 
     if (xSet || ySet) {
-        int newX = (xSet) ? x : geometry.current_x;
-        int newY = (ySet) ? y : geometry.current_y;
+        g_print("Formula = %d + (%d / 2) * %f", x, geometry.current_width, geometry.gravity_x);
+        int newX = (xSet) ? x - geometry.current_width  * geometry.gravity_x : geometry.current_x;
+        int newY = (ySet) ? y - geometry.current_height * geometry.gravity_y : geometry.current_y;
 
         if (newX != geometry.current_x || newY != geometry.current_y) {
             gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
@@ -1342,6 +1377,13 @@ GtkWindow *WindowContextTop::get_gtk_window() {
 
 WindowFrameExtents WindowContextTop::get_frame_extents() {
     return geometry.extents;
+}
+
+void WindowContextTop::set_gravity(float x, float y) {
+    g_print("gravity: %f, %f\n", x, y);
+
+    geometry.gravity_x = x;
+    geometry.gravity_y = y;
 }
 
 void WindowContextTop::update_ontop_tree(bool on_top) {
