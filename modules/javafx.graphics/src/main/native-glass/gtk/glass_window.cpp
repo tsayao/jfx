@@ -876,36 +876,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type == TITLED) {
         request_frame_extents();
     }
-
-    init_size();
 }
-
-void WindowContextTop::init_size() {
-    geometry.current_cw =
-    geometry.current_ch = 200;
-    geometry.current_x = geometry.current_y = 0;
-
-    gtk_window_resize(GTK_WINDOW(gtk_widget), geometry.current_cw, geometry.current_ch);
-    gtk_window_move(GTK_WINDOW(gtk_widget), geometry.current_x, geometry.current_y);
-
-    apply_geometry();
-}
-
-//bool WindowContextTop::set_view(jobject view) {
-//    bool ret = WindowContextBase::set_view(view);
-//
-//    if (jwindow && !map_received) {
-//        // let java know, because configure event will not fire because 200x200
-//        // is the gtk default
-//        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-//                     com_sun_glass_events_WindowEvent_RESIZE,
-//                     geometry.req_bounds_cw, geometry.req_bounds_ch);
-//        CHECK_JNI_EXCEPTION_RET(mainEnv, ret)
-////        g_print("JWINDOW SIZE: %d, %d\n", geometry.req_bounds_cw, geometry.req_bounds_ch);
-//    }
-//
-//    return ret;
-//}
 
 // Applied to a temporary full screen window to prevent sending events to Java
 void WindowContextTop::detach_from_java() {
@@ -924,6 +895,8 @@ void WindowContextTop::size_position_notify() {
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, geometry.current_cw, geometry.current_ch);
         CHECK_JNI_EXCEPTION(mainEnv);
 
+        g_print("notify jview size: %d, %d\n", geometry.current_cw, geometry.current_ch);
+
         mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
@@ -936,8 +909,12 @@ void WindowContextTop::size_position_notify() {
                 geometry.current_w, geometry.current_h);
         CHECK_JNI_EXCEPTION(mainEnv)
 
+        g_print("notify jwindow size: %d, %d\n", geometry.current_w, geometry.current_h);
+
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, geometry.current_x, geometry.current_y);
         CHECK_JNI_EXCEPTION(mainEnv)
+
+        g_print("notify jwindow pos: %d, %d\n", geometry.current_x, geometry.current_y);
     }
 }
 
@@ -1158,11 +1135,13 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 
     gboolean changed = FALSE;
     if (newW != -1 && newH != -1) {
-        g_print("RESIZE: %d, %d\n", newW, newH);
         changed = TRUE;
+
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
         geometry.current_cw = newW;
         geometry.current_ch = newH;
+        geometry.current_w = newW + geometry.extents.left + geometry.extents.right;
+        geometry.current_h = newH +  geometry.extents.top + geometry.extents.bottom;
     }
 
     if (xSet || ySet) {

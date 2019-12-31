@@ -164,7 +164,6 @@ public:
     virtual int getEmbeddedX() = 0;
     virtual int getEmbeddedY() = 0;
 
-
     virtual void increment_events_counter() = 0;
     virtual void decrement_events_counter() = 0;
     virtual size_t get_events_count() = 0;
@@ -383,8 +382,6 @@ class WindowContextTop: public WindowContextBase {
 
 public:
     WindowContextTop(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
-    void init_size();
-//    bool set_view(jobject view);
     void process_map();
     void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
