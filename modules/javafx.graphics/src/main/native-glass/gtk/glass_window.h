@@ -52,16 +52,16 @@ enum request_type {
     REQUEST_NOT_RESIZABLE
 };
 
-struct WindowFrameExtents {
-    WindowFrameExtents(): top(0),
-                          left(0),
-                          bottom(0),
-                          right(0) {}
-    int top;
-    int left;
-    int bottom;
-    int right;
-};
+//struct WindowFrameExtents {
+//    WindowFrameExtents(): top(0),
+//                          left(0),
+//                          bottom(0),
+//                          right(0) {}
+//    int top;
+//    int left;
+//    int bottom;
+//    int right;
+//};
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
@@ -72,6 +72,10 @@ struct WindowGeometry {
                       current_h(0),
                       current_cw(0),
                       current_ch(0),
+                      adjust_w(0),
+                      adjust_h(0),
+                      view_x(0),
+                      view_y(0),
                       gravity_x(1.00),
                       gravity_y(1.00) {}
 
@@ -82,11 +86,20 @@ struct WindowGeometry {
     int current_cw;
     int current_ch;
 
+    // Used to ajust window sizes because gtk doest not account frame extents as part
+    // of the window size and JavaFx does.
+    int adjust_w;
+    int adjust_h;
+
+    // The position of thw View relative to the Window
+    int view_x;
+    int view_y;
+
     // Currently not used
     float gravity_x;
     float gravity_y;
 
-    WindowFrameExtents extents;
+//    WindowFrameExtents extents;
 
 //FIXME: leak?
     GdkGeometry gdk_geometry;
@@ -103,8 +116,8 @@ public:
     virtual void enableOrResetIME() = 0;
     virtual void disableIME() = 0;
     virtual void paint(void* data, jint width, jint height) = 0;
-    virtual WindowFrameExtents get_frame_extents() = 0;
-//    virtual WindowGeometry get_geometry() = 0;
+//    virtual WindowFrameExtents get_frame_extents() = 0;
+    virtual WindowGeometry get_geometry() = 0;
 
     virtual void enter_fullscreen() = 0;
     virtual void exit_fullscreen() = 0;
@@ -273,8 +286,8 @@ class WindowContextPlug: public WindowContextBase {
 public:
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
-//    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
+//    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
+    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
 
     void enter_fullscreen() {}
     void exit_fullscreen() {}
@@ -320,8 +333,8 @@ public:
 //    void process_mouse_button(GdkEventButton*);
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-//    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
-    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
+    WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
+//    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
 
     void enter_fullscreen();
     void exit_fullscreen();
@@ -362,7 +375,6 @@ private:
 
 class WindowContextTop: public WindowContextBase {
     jlong screen;
-//    GtkWidget* gtk_view;
     WindowFrameType frame_type;
     WindowType window_type;
     struct WindowContext *owner;
@@ -375,8 +387,6 @@ class WindowContextTop: public WindowContextBase {
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
     bool map_received;
-//    bool location_assigned;
-//    bool size_assigned;
     bool on_top;
     bool is_fullscreen;
 
@@ -389,8 +399,8 @@ public:
     void process_net_wm_property();
     void process_screen_changed();
 
-    //WindowGeometry get_geometry();
-    WindowFrameExtents get_frame_extents();
+    WindowGeometry get_geometry();
+//    WindowFrameExtents get_frame_extents();
 
     void set_minimized(bool);
     void set_maximized(bool);
@@ -402,7 +412,6 @@ public:
     void set_title(const char*);
     void set_alpha(double);
     void set_enabled(bool);
-    void apply_geometry();
     void set_minimum_size(int, int);
     void set_maximum_size(int, int);
     void set_icon(GdkPixbuf*);
@@ -423,13 +432,12 @@ public:
 protected:
     void applyShapeMask(void*, uint width, uint height);
 private:
+    void calculate_adjustments();
+    void apply_geometry();
     bool get_frame_extents_property(int *, int *, int *, int *);
     void request_frame_extents();
     void activate_window();
-//    bool update_frame_extents();
     void size_position_notify();
-    //void set_cached_extents(WindowFrameExtents ex);
-    //WindowFrameExtents get_cached_extents();
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
