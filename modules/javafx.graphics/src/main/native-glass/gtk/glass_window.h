@@ -68,29 +68,21 @@ static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_
 struct WindowGeometry {
     WindowGeometry(): current_x(0),
                       current_y(0),
-                      current_width(0),
-                      current_height(0),
-                      req_bounds_x(-1),
-                      req_bounds_y(-1),
-                      req_bounds_w(-1),
-                      req_bounds_h(-1),
-                      req_bounds_cw(-1),
-                      req_bounds_ch(-1),
+                      current_w(0),
+                      current_h(0),
+                      current_cw(0),
+                      current_ch(0),
                       gravity_x(1.00),
                       gravity_y(1.00) {}
 
     int current_x;
     int current_y;
-    int current_width;
-    int current_height;
+    int current_w;
+    int current_h;
+    int current_cw;
+    int current_ch;
 
-    int req_bounds_x;
-    int req_bounds_y;
-    int req_bounds_w;
-    int req_bounds_h;
-    int req_bounds_cw;
-    int req_bounds_ch;
-
+    // Currently not used
     float gravity_x;
     float gravity_y;
 
@@ -384,15 +376,15 @@ class WindowContextTop: public WindowContextBase {
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
     bool map_received;
-    bool location_assigned;
-    bool size_assigned;
+//    bool location_assigned;
+//    bool size_assigned;
     bool on_top;
     bool is_fullscreen;
 
 public:
     WindowContextTop(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
     void init_size();
-    bool set_view(jobject view);
+//    bool set_view(jobject view);
     void process_map();
     void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
@@ -437,7 +429,8 @@ private:
     bool get_frame_extents_property(int *, int *, int *, int *);
     void request_frame_extents();
     void activate_window();
-    bool update_frame_extents();
+//    bool update_frame_extents();
+    void size_position_notify();
     //void set_cached_extents(WindowFrameExtents ex);
     //WindowFrameExtents get_cached_extents();
     void update_ontop_tree(bool);
