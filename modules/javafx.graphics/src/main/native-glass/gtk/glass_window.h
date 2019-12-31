@@ -56,11 +56,13 @@ enum request_type {
 //    WindowFrameExtents(): top(0),
 //                          left(0),
 //                          bottom(0),
-//                          right(0) {}
+//                          right(0),
+//                          was_set(FALSE) {}
 //    int top;
 //    int left;
 //    int bottom;
 //    int right;
+//    bool was_set;
 //};
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
@@ -76,6 +78,7 @@ struct WindowGeometry {
                       adjust_h(0),
                       view_x(0),
                       view_y(0),
+                      frame_extents_received(false),
                       gravity_x(1.00),
                       gravity_y(1.00) {}
 
@@ -94,6 +97,9 @@ struct WindowGeometry {
     // The position of thw View relative to the Window
     int view_x;
     int view_y;
+
+    // If WM supports _NET_REQUEST_FRAME_EXTENTS and it was received
+    bool frame_extents_received;
 
     // Currently not used
     float gravity_x;
@@ -116,7 +122,6 @@ public:
     virtual void enableOrResetIME() = 0;
     virtual void disableIME() = 0;
     virtual void paint(void* data, jint width, jint height) = 0;
-//    virtual WindowFrameExtents get_frame_extents() = 0;
     virtual WindowGeometry get_geometry() = 0;
 
     virtual void enter_fullscreen() = 0;
@@ -286,7 +291,6 @@ class WindowContextPlug: public WindowContextBase {
 public:
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-//    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
     WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
 
     void enter_fullscreen() {}
@@ -306,6 +310,7 @@ public:
     void set_modal(bool, WindowContext*) {}
     void set_gravity(float, float) {}
     void process_property_notify(GdkEventProperty*) {}
+    void process_configure() {}
     void process_configure(GdkEventConfigure*);
     void process_gtk_configure(GdkEventConfigure*);
 
@@ -334,7 +339,6 @@ public:
     bool set_view(jobject);
     void set_bounds(int, int, bool, bool, int, int, int, int);
     WindowGeometry get_geometry() { WindowGeometry geom; return geom; }
-//    WindowFrameExtents get_frame_extents() { WindowFrameExtents ext; return ext;}
 
     void enter_fullscreen();
     void exit_fullscreen();
@@ -379,12 +383,12 @@ class WindowContextTop: public WindowContextBase {
     WindowType window_type;
     struct WindowContext *owner;
     WindowGeometry geometry;
-    struct _Resizable {// we can't use set/get gtk_window_resizable function
+    struct _Resizable {
         _Resizable(): value(true), prev(false),
                 minw(-1), minh(-1), maxw(-1), maxh(-1){}
-        bool value; //actual value of resizable for a window
-        bool prev; //former resizable value (used in setEnabled for parents of modal window)
-        int minw, minh, maxw, maxh; //minimum and maximum window width/height;
+        bool value; // actual value of resizable for a window
+        bool prev; // former resizable value (used in setEnabled for parents of modal window)
+        int minw, minh, maxw, maxh; // minimum and maximum window width/height;
     } resizable;
     bool map_received;
     bool on_top;
@@ -400,7 +404,6 @@ public:
     void process_screen_changed();
 
     WindowGeometry get_geometry();
-//    WindowFrameExtents get_frame_extents();
 
     void set_minimized(bool);
     void set_maximized(bool);

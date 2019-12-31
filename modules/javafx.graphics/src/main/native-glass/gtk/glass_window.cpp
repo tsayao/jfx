@@ -805,7 +805,7 @@ WindowContextBase::~WindowContextBase() {
 ////////////////////////////// WindowContextTop /////////////////////////////////
 
 static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
-//static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
+static GdkAtom atom_net_wm_frame_extents = gdk_atom_intern_static_string("_NET_FRAME_EXTENTS");
 
 WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
@@ -817,9 +817,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             geometry(),
             resizable(),
             map_received(false),
-            //FIXME: not used
-//            location_assigned(false),
-//            size_assigned(false),
             on_top(false),
             is_fullscreen(false)
 {
@@ -872,10 +869,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     geometry.gdk_geometry.win_gravity = GDK_GRAVITY_NORTH_WEST;
     connect_signals(gtk_widget, this);
-
-//    if (frame_type == TITLED) {
-//        request_frame_extents();
-//    }
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -892,13 +885,14 @@ void WindowContextTop::detach_from_java() {
 
 // This function calculate the deltas between window and window + decoration (titleblar, borders)
 void WindowContextTop::calculate_adjustments() {
-    if (frame_type == TITLED) {
+    if (frame_type == TITLED && !geometry.frame_extents_received) {
         GdkRectangle er;
         gdk_window_get_frame_extents(gdk_window, &er);
 //        g_print("gdk_window_get_frame_extents: %d, %d, %d, %d\n", er.x, er.y, er.width, er.height);
 
         int w, h;
         gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
+//        g_print("gtk_window_get_size: %d, %d\n", w, h);
 
         int px, py;
         gdk_window_get_origin(gdk_window, &px, &py);
@@ -909,8 +903,10 @@ void WindowContextTop::calculate_adjustments() {
         geometry.view_x = (px - er.x > 0) ? px - er.x : 0;
         geometry.view_y = (py - er.y > 0) ? py - er.y : 0;
 
-        g_print("Adjustments: w = %d, h = %d, x = %d, y = %d\n", geometry.adjust_w, geometry.adjust_h,
-                geometry.view_x, geometry.view_y);
+        apply_geometry();
+
+//        g_print("Adjustments: w = %d, h = %d, x = %d, y = %d\n", geometry.adjust_w, geometry.adjust_h,
+//                geometry.view_x, geometry.view_y);
     }
 }
 
@@ -959,25 +955,6 @@ void WindowContextTop::size_position_notify() {
     }
 }
 
-//void WindowContextTop::request_frame_extents() {
-//    Display *display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(gdk_window));
-//    Atom rfeAtom = XInternAtom(display, "_NET_REQUEST_FRAME_EXTENTS", True);
-//    if (rfeAtom != None) {
-//        XClientMessageEvent clientMessage;
-//        memset(&clientMessage, 0, sizeof(clientMessage));
-//
-//        clientMessage.type = ClientMessage;
-//        clientMessage.window = GDK_WINDOW_XID(gdk_window);
-//        clientMessage.message_type = rfeAtom;
-//        clientMessage.format = 32;
-//
-//        XSendEvent(display, XDefaultRootWindow(display), False,
-//                   SubstructureRedirectMask | SubstructureNotifyMask,
-//                   (XEvent *) &clientMessage);
-//        XFlush(display);
-//    }
-//}
-
 void WindowContextTop::activate_window() {
     Display *display = GDK_DISPLAY_XDISPLAY (gdk_window_get_display (gdk_window));
     Atom navAtom = XInternAtom(display, "_NET_ACTIVE_WINDOW", True);
@@ -1000,31 +977,31 @@ void WindowContextTop::activate_window() {
     }
 }
 
-//bool WindowContextTop::get_frame_extents_property(int *top, int *left,
-//        int *bottom, int *right) {
-//    unsigned long *extents;
-//
-//    if (gdk_property_get(gdk_window,
-//            atom_net_wm_frame_extents,
-//            gdk_atom_intern("CARDINAL", FALSE),
-//            0,
-//            sizeof (unsigned long) * 4,
-//            FALSE,
-//            NULL,
-//            NULL,
-//            NULL,
-//            (guchar**) & extents)) {
-//        *left = extents [0];
-//        *right = extents [1];
-//        *top = extents [2];
-//        *bottom = extents [3];
-//
-//        g_free(extents);
-//        return true;
-//    }
-//
-//    return false;
-//}
+bool WindowContextTop::get_frame_extents_property(int *top, int *left,
+        int *bottom, int *right) {
+    unsigned long *extents;
+
+    if (gdk_property_get(gdk_window,
+            atom_net_wm_frame_extents,
+            gdk_atom_intern("CARDINAL", FALSE),
+            0,
+            sizeof (unsigned long) * 4,
+            FALSE,
+            NULL,
+            NULL,
+            NULL,
+            (guchar**) & extents)) {
+        *left = extents [0];
+        *right = extents [1];
+        *top = extents [2];
+        *bottom = extents [3];
+
+        g_free(extents);
+        return true;
+    }
+
+    return false;
+}
 
 void WindowContextTop::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
@@ -1068,29 +1045,30 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
     if (event->window == gdk_window) {
         if (event->atom == atom_net_wm_state) {
             process_net_wm_property();
-        }
+        } else if (event->atom == atom_net_wm_frame_extents) {
+            int top, left, bottom, right;
 
-//        else if (event->atom == atom_net_wm_frame_extents) {
-//            int top, left, bottom, right;
-//
-//            if (get_frame_extents_property(&top, &left, &bottom, &right)) {
-//                geometry.adjust_w = left + right;
-//                geometry.adjust_h = top + bottom;
-//
-//                if (top + left + bottom + right > 0) {
-//                    // set bounds again to set to correct window size that must
-//                    // be the total width and height accounting extents
-//                    set_bounds(0, 0,
-//                               false, false,
-//                               geometry.current_w, geometry.current_h,
-//                               geometry.current_cw, geometry.current_ch);
-//
-//                    apply_geometry();
-//
+            if (get_frame_extents_property(&top, &left, &bottom, &right)) {
+                if (top + left + bottom + right > 0) {
+                    geometry.frame_extents_received = true;
+                    geometry.adjust_w = left + right;
+                    geometry.adjust_h = top + bottom;
+                    geometry.view_x = left;
+                    geometry.view_y = top;
+
+                    // set bounds again to set to correct window size that must
+                    // be the total width and height accounting extents
+                    set_bounds(0, 0,
+                               false, false,
+                               geometry.current_w, geometry.current_h,
+                               geometry.current_cw, geometry.current_ch);
+
+                    apply_geometry();
+
 //                    g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
-//                }
-//            }
-//        }
+                }
+            }
+        }
     }
 }
 
@@ -1164,11 +1142,11 @@ void WindowContextTop::set_visible(bool visible) {
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
 //    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
-    calculate_adjustments();
-
     if (is_maximized || is_fullscreen) {
         return;
     }
+
+    calculate_adjustments();
 
     int newW = w > 0
         ? (w - geometry.adjust_w)
@@ -1205,6 +1183,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 }
 
 void WindowContextTop::process_map() {
+    g_print("WINDOW_MAPPED\n");
     map_received = true;
     set_window_resizable(resizable.value);
 }
@@ -1237,6 +1216,7 @@ void WindowContextTop::set_minimized(bool minimize) {
         activate_window();
     }
 }
+
 void WindowContextTop::set_maximized(bool maximize) {
     is_maximized = maximize;
     if (maximize) {
