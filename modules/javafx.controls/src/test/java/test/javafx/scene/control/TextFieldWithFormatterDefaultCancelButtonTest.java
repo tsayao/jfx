@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,35 @@
  * questions.
  */
 
-#pragma once
+package test.javafx.scene.control;
 
-#import <Foundation/Foundation.h>
-#import <jni.h>
+import org.junit.Ignore;
 
-@interface GlassHelper : NSObject
-{
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+
+/**
+ * Test interaction of TextField with formatter with default/cancel button
+ *
+ * Fails for cancel/not consuming - behavior.cancel
+ * consumes always with formatter. Should it?
+ *
+ * Ignoring for now
+ */
+@Ignore
+public class TextFieldWithFormatterDefaultCancelButtonTest
+        extends TextFieldDefaultCancelButtonTest {
+
+    public TextFieldWithFormatterDefaultCancelButtonTest(ButtonType buttonType,
+            boolean consume, boolean registerAfterShowing) {
+        super(buttonType, consume, registerAfterShowing);
+    }
+
+    @Override
+    protected TextField createControl() {
+        TextField input = super.createControl();
+        input.setTextFormatter(new TextFormatter<>(TextFormatter.IDENTITY_STRING_CONVERTER));
+        return input;
+    }
 
 }
-
-/*
- * Function to find a glass class using the context class loader. All glass
- * classes must be looked up using this function rather than FindClass so that
- * the correct ClassLoader is used.
- *
- * Note that the className passed to this function must use "." rather than "/"
- * as a package separator.
- */
-+ (jclass)ClassForName:(char*)className withEnv:(JNIEnv*)env;
-+ (jmethodID)ApplicationNotifyWillBecomeActiveMethod;
-+ (jmethodID)ApplicationNotifyDidBecomeActiveMethod;
-+ (jmethodID)ApplicationNotifyWillResignActiveMethod;
-+ (jmethodID)ApplicationNotifyDidResignActiveMethod;
-+ (jmethodID)ApplicationNotifyWillQuitMethod;
-+ (jmethodID)ApplicationNotifyDidReceiveMemoryWarningMethod;
-
-@end
