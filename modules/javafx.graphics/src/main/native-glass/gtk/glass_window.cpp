@@ -888,7 +888,7 @@ void WindowContextTop::calculate_adjustments() {
     if (frame_type == TITLED && !geometry.frame_extents_received) {
         GdkRectangle er;
         gdk_window_get_frame_extents(gdk_window, &er);
-//        g_print("gdk_window_get_frame_extents: %d, %d, %d, %d\n", er.x, er.y, er.width, er.height);
+        g_print("gdk_window_get_frame_extents: %d, %d, %d, %d\n", er.x, er.y, er.width, er.height);
 
         int w, h;
         gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
@@ -1061,7 +1061,7 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
                     set_bounds(0, 0,
                                false, false,
                                geometry.current_w, geometry.current_h,
-                               geometry.current_cw, geometry.current_ch);
+                               -1, -1);
 
                     apply_geometry();
 
@@ -1140,7 +1140,7 @@ void WindowContextTop::set_visible(bool visible) {
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-//    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
     if (is_maximized || is_fullscreen) {
         return;
@@ -1148,17 +1148,16 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 
     calculate_adjustments();
 
-    int newW = w > 0
-        ? (w - geometry.adjust_w)
-        : cw;
-    int newH = h > 0
-        ? (h - geometry.adjust_h)
-        : ch;
+    // newW / newH always content sizes compatible with GTK+
+    int newW = cw > 0 ? cw : (w - geometry.adjust_w);
+    int newH = ch > 0 ? ch : (h - geometry.adjust_h);
 
     gboolean changed = FALSE;
     if (newW != -1 && newH != -1) {
         changed = TRUE;
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
+
+        g_print("gtk_window_resize: %d, %d\n", newW, newH);
         geometry.current_cw = newW;
         geometry.current_ch = newH;
         geometry.current_w = newW + geometry.adjust_w;
