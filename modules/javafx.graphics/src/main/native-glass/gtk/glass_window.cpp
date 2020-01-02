@@ -1046,6 +1046,10 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
         if (event->atom == atom_net_wm_state) {
             process_net_wm_property();
         } else if (event->atom == atom_net_wm_frame_extents) {
+            if (frame_type != TITLED) {
+                return;
+            }
+
             int top, left, bottom, right;
 
             if (get_frame_extents_property(&top, &left, &bottom, &right)) {
@@ -1123,6 +1127,7 @@ void WindowContextTop::set_window_resizable(bool res) {
 }
 
 void WindowContextTop::set_resizable(bool res) {
+    g_print("SET RESIZABLE: %d\n", res);
     resizable.value = res;
 
     if (map_received) {
@@ -1155,13 +1160,15 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     gboolean changed = FALSE;
     if (newW > 0 && newH > 0) {
         changed = TRUE;
-        gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
 
 //        g_print("gtk_window_resize: %d, %d\n", newW, newH);
         geometry.current_cw = newW;
         geometry.current_ch = newH;
         geometry.current_w = newW + geometry.adjust_w;
         geometry.current_h = newH + geometry.adjust_h;
+
+        apply_geometry(); // update constraints if not resized by the user interface
+        gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
     }
 
     if (xSet || ySet) {
@@ -1170,9 +1177,9 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 
         if (newX != geometry.current_x || newY != geometry.current_y) {
             changed = TRUE;
-            gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
             geometry.current_x = newX;
             geometry.current_y = newY;
+            gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
         }
     }
 
@@ -1257,6 +1264,7 @@ void WindowContextTop::set_alpha(double alpha) {
 }
 
 void WindowContextTop::set_enabled(bool enabled) {
+    g_print("set_enabled: %d\n", enabled);
     if (gtk_widget_get_sensitive(gtk_widget) != enabled) {
         gtk_widget_set_sensitive(gtk_widget, enabled);
     }
@@ -1264,8 +1272,10 @@ void WindowContextTop::set_enabled(bool enabled) {
     resizable.prev = resizable.value;
 
     if (!enabled && resizable.value) {
+        g_print("set_enabled -> set_resizable FALSE\n");
         set_resizable(FALSE);
     } else if (resizable.prev) {
+        g_print("set_enabled -> set_resizable TRUE\n");
         set_resizable(TRUE);
     }
 }

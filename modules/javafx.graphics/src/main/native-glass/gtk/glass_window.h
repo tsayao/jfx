@@ -52,19 +52,6 @@ enum request_type {
     REQUEST_NOT_RESIZABLE
 };
 
-//struct WindowFrameExtents {
-//    WindowFrameExtents(): top(0),
-//                          left(0),
-//                          bottom(0),
-//                          right(0),
-//                          was_set(FALSE) {}
-//    int top;
-//    int left;
-//    int bottom;
-//    int right;
-//    bool was_set;
-//};
-
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
 struct WindowGeometry {
@@ -82,19 +69,19 @@ struct WindowGeometry {
                       gravity_x(1.00),
                       gravity_y(1.00) {}
 
-    int current_x;
-    int current_y;
-    int current_w;
-    int current_h;
-    int current_cw;
-    int current_ch;
+    int current_x; // current position X
+    int current_y; // current position Y
+    int current_w; // current window width
+    int current_h; // current window height
+    int current_cw; // current content (view) width
+    int current_ch; // current content (view) height
 
     // Used to ajust window sizes because gtk doest not account frame extents as part
     // of the window size and JavaFx does.
     int adjust_w;
     int adjust_h;
 
-    // The position of thw View relative to the Window
+    // The position of the view relative to the window
     int view_x;
     int view_y;
 
@@ -104,8 +91,6 @@ struct WindowGeometry {
     // Currently not used
     float gravity_x;
     float gravity_y;
-
-//    WindowFrameExtents extents;
 
 //FIXME: leak?
     GdkGeometry gdk_geometry;
