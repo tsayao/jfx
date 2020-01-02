@@ -74,7 +74,7 @@ static gboolean ctx_focus_change_callback(GtkWidget *widget, GdkEvent *event, gp
 
 static gboolean ctx_delete_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_delete();
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_window_state_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
@@ -326,6 +326,7 @@ void WindowContextBase::process_destroy() {
 
 void WindowContextBase::process_delete() {
     if (jwindow && isEnabled()) {
+        gtk_widget_hide_on_delete(gtk_widget);
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyClose);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
@@ -797,9 +798,7 @@ WindowContextBase::~WindowContextBase() {
         xim.im = NULL;
     }
 
-    if (GTK_IS_WIDGET(gtk_widget)) {
-        gtk_widget_destroy(gtk_widget);
-    }
+    gtk_widget_destroy(gtk_widget);
 }
 
 ////////////////////////////// WindowContextTop /////////////////////////////////
