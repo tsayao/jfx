@@ -1153,7 +1153,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     int newH = ch > 0 ? ch : (h - geometry.adjust_h);
 
     gboolean changed = FALSE;
-    if (newW != -1 && newH != -1) {
+    if (newW > 0 && newH > 0) {
         changed = TRUE;
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
 
