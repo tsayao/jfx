@@ -67,7 +67,13 @@ struct WindowGeometry {
                       view_y(0),
                       frame_extents_received(false),
                       gravity_x(1.00),
-                      gravity_y(1.00) {}
+                      gravity_y(1.00),
+                      enabled(true),
+                      resizable(true),
+                      minw(-1),
+                      minh(-1),
+                      maxw(-1),
+                      maxh(-1){}
 
     int current_x; // current position X
     int current_y; // current position Y
@@ -92,8 +98,14 @@ struct WindowGeometry {
     float gravity_x;
     float gravity_y;
 
-//FIXME: leak?
-    GdkGeometry gdk_geometry;
+    bool enabled;
+    bool resizable;
+
+    int minw;
+    int minh;
+
+    int maxw;
+    int maxh;
 };
 
 class WindowContextChild;
@@ -368,13 +380,13 @@ class WindowContextTop: public WindowContextBase {
     WindowType window_type;
     struct WindowContext *owner;
     WindowGeometry geometry;
-    struct _Resizable {
-        _Resizable(): value(true), prev(false),
-                minw(-1), minh(-1), maxw(-1), maxh(-1){}
-        bool value; // actual value of resizable for a window
-        bool prev; // former resizable value (used in setEnabled for parents of modal window)
-        int minw, minh, maxw, maxh; // minimum and maximum window width/height;
-    } resizable;
+//    struct _Resizable {
+//        _Resizable(): value(true), enabled(true),
+//                minw(-1), minh(-1), maxw(-1), maxh(-1){}
+//        bool value; // actual value of resizable for a window
+//        bool enabled;
+//        int minw, minh, maxw, maxh; // minimum and maximum window width/height;
+//    } resizable;
     bool map_received;
     bool on_top;
     bool is_fullscreen;
@@ -393,7 +405,6 @@ public:
     void set_minimized(bool);
     void set_maximized(bool);
     void set_bounds(int, int, bool, bool, int, int, int, int);
-    void set_window_resizable(bool);
     void set_resizable(bool);
     void request_focus();
     void set_focusable(bool);
