@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "glass_view.h"
+#include "glass_general.h"
 
 enum WindowFrameType {
     TITLED,
@@ -264,7 +265,7 @@ public:
     void process_destroy();
     void process_delete();
 #ifdef GLASS_GTK3
-    void process_draw(cairo_t* cr);
+    void process_draw(cairo_t*);
 #else
     void process_expose(GdkEventExpose*);
 #endif

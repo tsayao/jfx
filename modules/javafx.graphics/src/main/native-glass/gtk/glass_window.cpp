@@ -23,7 +23,6 @@
  * questions.
  */
 #include "glass_window.h"
-#include "glass_general.h"
 #include "glass_key.h"
 #include "glass_screen.h"
 #include "glass_dnd.h"
@@ -378,7 +377,10 @@ void WindowContextBase::process_draw(cairo_t* cr) {
         cairo_rectangle_list_t* list = cairo_copy_clip_rectangle_list(cr);
 
         if (list->status != CAIRO_STATUS_CLIP_NOT_REPRESENTABLE ) {
-            for (i = 0; i < list->num_rectangles; ++i) {
+            for (int i = 0; i < list->num_rectangles; ++i) {
+                g_print("REDRAW: %f, %f, %f, %f\n",list->rectangles[i].x, list->rectangles[i].y,
+                                                    list->rectangles[i].width, list->rectangles[i].height);
+
                 mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, list->rectangles[i].x, list->rectangles[i].y,
                                         list->rectangles[i].width, list->rectangles[i].height);
                 CHECK_JNI_EXCEPTION(mainEnv)
