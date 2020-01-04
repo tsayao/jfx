@@ -733,7 +733,7 @@ bool WindowContextBase::set_view(jobject view) {
 bool WindowContextBase::grab_focus() {
     if (!gtk_widget_has_grab(gtk_widget)) {
         gtk_grab_add(gtk_widget);
-        g_print("add window grab\n");
+//        g_print("add window grab\n");
     }
 
     return TRUE;
@@ -743,7 +743,7 @@ void WindowContextBase::ungrab_focus() {
     if (gtk_widget_has_grab(gtk_widget)) {
         gtk_grab_remove(gtk_widget);
 
-        g_print("remove window grab\n");
+//        g_print("remove window grab\n");
 
         if (jwindow) {
             mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusUngrab);
@@ -1055,7 +1055,7 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
                                -1, -1);
 
 //                    apply_geometry();
-                    g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
+//                    g_print("got frame extents: %d, %d, %d, %d\n", top, left, bottom, right);
                 }
             }
         }
@@ -1083,7 +1083,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
         geometry.current_cw = gtk_w;
         geometry.current_ch = gtk_h;
 
-        g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d, cw = %d, ch = %d\n", x, y, w, h, gtk_w, gtk_h);
+//        g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d, cw = %d, ch = %d\n", x, y, w, h, gtk_w, gtk_h);
         size_position_notify();
     }
 }
@@ -1104,9 +1104,13 @@ void WindowContextTop::process_screen_changed() {
 }
 
 void WindowContextTop::set_resizable(bool res) {
-    if (res != geometry.resizable) {
-        geometry.resizable = res;
-        apply_geometry();
+    if (map_received) {
+        if (res != geometry.resizable) {
+            geometry.resizable = res;
+            apply_geometry();
+        }
+    } else {
+        geometry.resizable_on_map = res;
     }
 }
 
@@ -1120,7 +1124,7 @@ void WindowContextTop::set_visible(bool visible) {
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+//    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
 //    if (is_maximized || is_fullscreen) {
 //        return;
@@ -1166,6 +1170,10 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 
 void WindowContextTop::process_map() {
     map_received = true;
+
+    geometry.resizable = geometry.resizable_on_map;
+    set_enabled (geometry.enabled_on_map);
+
     apply_geometry();
 
     g_print("window should be: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
@@ -1242,9 +1250,13 @@ void WindowContextTop::set_alpha(double alpha) {
 }
 
 void WindowContextTop::set_enabled(bool enabled) {
-    if (enabled != geometry.enabled) {
-        gtk_widget_set_sensitive(gtk_widget, enabled);
-        geometry.enabled = enabled;
+    if (map_received) {
+        if (enabled != geometry.enabled) {
+            gtk_widget_set_sensitive(gtk_widget, enabled);
+            geometry.enabled = enabled;
+        }
+    } else {
+        geometry.enabled_on_map = enabled;
     }
 }
 

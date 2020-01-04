@@ -69,8 +69,10 @@ struct WindowGeometry {
                       frame_extents_received(false),
                       gravity_x(1.00),
                       gravity_y(1.00),
+                      enabled_on_map(true),
                       enabled(true),
                       resizable(true),
+                      resizable_on_map(true),
                       minw(-1),
                       minh(-1),
                       maxw(-1),
@@ -99,8 +101,10 @@ struct WindowGeometry {
     float gravity_x;
     float gravity_y;
 
+    bool enabled_on_map;
     bool enabled;
     bool resizable;
+    bool resizable_on_map; // resizable property will be final when window is mapped
 
     int minw;
     int minh;
