@@ -131,9 +131,9 @@ public:
     virtual void request_focus() = 0;
     virtual void set_focusable(bool)= 0;
     virtual bool grab_focus() = 0;
-    virtual bool grab_mouse_drag_focus() = 0;
+//    virtual bool grab_mouse_drag_focus() = 0;
     virtual void ungrab_focus() = 0;
-    virtual void ungrab_mouse_drag_focus() = 0;
+//    virtual void ungrab_mouse_drag_focus() = 0;
     virtual void set_title(const char*) = 0;
     virtual void set_alpha(double) = 0;
     virtual void set_enabled(bool) = 0;
@@ -213,6 +213,7 @@ protected:
      * sm_grab_window points to WindowContext holding a mouse grab.
      * It is mostly used for popup windows.
      */
+    //FIXME : REMOVE
     static WindowContext* sm_grab_window;
 
     /*
@@ -247,9 +248,9 @@ public:
     bool is_visible();
     bool set_view(jobject);
     bool grab_focus();
-    bool grab_mouse_drag_focus();
+//    bool grab_mouse_drag_focus();
     void ungrab_focus();
-    void ungrab_mouse_drag_focus();
+//    void ungrab_mouse_drag_focus();
     void set_cursor(GdkCursor*);
     void set_level(int) {}
     void set_background(float, float, float);
@@ -380,13 +381,6 @@ class WindowContextTop: public WindowContextBase {
     WindowType window_type;
     struct WindowContext *owner;
     WindowGeometry geometry;
-//    struct _Resizable {
-//        _Resizable(): value(true), enabled(true),
-//                minw(-1), minh(-1), maxw(-1), maxh(-1){}
-//        bool value; // actual value of resizable for a window
-//        bool enabled;
-//        int minw, minh, maxw, maxh; // minimum and maximum window width/height;
-//    } resizable;
     bool map_received;
     bool on_top;
     bool is_fullscreen;

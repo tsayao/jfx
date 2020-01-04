@@ -663,6 +663,10 @@ static void dnd_end_callback(GtkWidget *widget,
                              gpointer user_data)
 {
     if (drag_widget) {
+        if (gtk_widget_has_grab(drag_widget)) {
+            gtk_grab_remove(drag_widget);
+        }
+
         GdkDragAction action = gdk_drag_context_get_selected_action(context);
         dnd_set_performed_action(translate_gdk_action_to_glass(action));
     }
@@ -708,6 +712,12 @@ static void dnd_drag_begin_callback(GtkWidget *widget,
                                     GdkDragContext *context,
                                     gpointer user_data)
 {
+    g_print("IS_GRAB_DISABLED: %d\n", is_grab_disabled());
+
+    if (!is_grab_disabled()) {
+        gtk_grab_add(drag_widget);
+    }
+
     DragView::set_drag_view(widget, context);
 }
 

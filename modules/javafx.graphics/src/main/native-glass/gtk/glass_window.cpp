@@ -142,8 +142,21 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(ctx_key_press_or_release_callback), ctx);
     g_signal_connect(gtk_widget, "map-event", G_CALLBACK(ctx_map_callback), ctx);
     g_signal_connect(gtk_widget, "screen-changed", G_CALLBACK(ctx_screen_changed_callback), ctx);
+
 }
 
+static GtkWidget* gtk_grab_widget = NULL; // used to simulate Windows like mouse grab when dragging
+
+static void init_gtk_grab_widget() {
+    if (gtk_grab_widget == NULL) {
+        gtk_grab_widget = gtk_invisible_new();
+        gtk_widget_show_all(gtk_grab_widget);
+    } else if (gtk_widget_has_grab(gtk_grab_widget)) {
+        gtk_grab_remove(gtk_grab_widget);
+    }
+}
+
+//FIXME: remove
 WindowContext * WindowContextBase::sm_grab_window = NULL;
 WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
@@ -230,10 +243,15 @@ void WindowContextBase::process_state(GdkEventWindowState* event) {
 }
 
 void WindowContextBase::process_focus(GdkEventFocus* event) {
-    if (!event->in && WindowContextBase::sm_mouse_drag_window == this) {
-        ungrab_mouse_drag_focus();
-    }
-    if (!event->in && WindowContextBase::sm_grab_window == this) {
+// FIXME
+//    if (!event->in && WindowContextBase::sm_mouse_drag_window == this) {
+//        ungrab_mouse_drag_focus();
+//    }
+//    if (!event->in && WindowContextBase::sm_grab_window == this) {
+//        ungrab_focus();
+//    }
+
+    if (!event->in) {
         ungrab_focus();
     }
 
@@ -286,13 +304,15 @@ void destroy_and_delete_ctx(WindowContext* ctx) {
 }
 
 void WindowContextBase::process_destroy() {
-    if (WindowContextBase::sm_mouse_drag_window == this) {
-        ungrab_mouse_drag_focus();
-    }
+//    if (WindowContextBase::sm_mouse_drag_window == this) {
+//        ungrab_mouse_drag_focus();
+//    }
+//
+//    if (WindowContextBase::sm_grab_window == this) {
+//        ungrab_focus();
+//    }
 
-    if (WindowContextBase::sm_grab_window == this) {
-        ungrab_focus();
-    }
+    ungrab_focus();
 
     std::set<WindowContextTop*>::iterator it;
     for (it = children.begin(); it != children.end(); ++it) {
@@ -392,35 +412,37 @@ void WindowContextBase::process_mouse_button(GdkEventButton* event) {
         state &= ~mask;
     }
 
-    if (press) {
-        GdkDevice* device = event->device;
-
-        if (glass_gdk_device_is_grabbed(device)
-                && (glass_gdk_device_get_window_at_position(device, NULL, NULL)
-                == NULL)) {
-            ungrab_focus();
-            return;
-        }
-    }
+//FIXME
+//    if (press) {
+//        GdkDevice* device = event->device;
+//
+//        if (glass_gdk_device_is_grabbed(device)
+//                && (glass_gdk_device_get_window_at_position(device, NULL, NULL)
+//                == NULL)) {
+//            ungrab_focus();
+//            return;
+//        }
+//    }
 
     // Upper layers expects from us Windows behavior:
     // all mouse events should be delivered to window where drag begins
     // and no exit/enter event should be reported during this drag.
     // We can grab mouse pointer for these needs.
-    if (press) {
-        grab_mouse_drag_focus();
-    } else {
-        if ((event->state & MOUSE_BUTTONS_MASK)
-            && !(state & MOUSE_BUTTONS_MASK)) { // all buttons released
-            ungrab_mouse_drag_focus();
-        } else if (event->button == 8 || event->button == 9) {
-            // GDK X backend interprets button press events for buttons 4-7 as
-            // scroll events so GDK_BUTTON4_MASK and GDK_BUTTON5_MASK will never
-            // be set on the event->state from GDK. Thus we cannot check if all
-            // buttons have been released in the usual way (as above).
-            ungrab_mouse_drag_focus();
-        }
-    }
+//FIXME
+//    if (press) {
+//        grab_mouse_drag_focus();
+//    } else {
+//        if ((event->state & MOUSE_BUTTONS_MASK)
+//            && !(state & MOUSE_BUTTONS_MASK)) { // all buttons released
+//            ungrab_mouse_drag_focus();
+//        } else if (event->button == 8 || event->button == 9) {
+//            // GDK X backend interprets button press events for buttons 4-7 as
+//            // scroll events so GDK_BUTTON4_MASK and GDK_BUTTON5_MASK will never
+//            // be set on the event->state from GDK. Thus we cannot check if all
+//            // buttons have been released in the usual way (as above).
+//            ungrab_mouse_drag_focus();
+//        }
+//    }
 
     jint button = gtk_button_number_to_mouse_button(event->button);
 
@@ -719,56 +741,71 @@ bool WindowContextBase::set_view(jobject view) {
     return TRUE;
 }
 
+/*
 bool WindowContextBase::grab_mouse_drag_focus() {
-    if (glass_gdk_mouse_devices_grab_with_cursor(
-            gdk_window, gdk_window_get_cursor(gdk_window), FALSE)) {
-        WindowContextBase::sm_mouse_drag_window = this;
-        return true;
-    } else {
-        return false;
-    }
+    init_gtk_grab_widget();
+    gtk_grab_add(gtk_grab_widget);
+
+    return gtk_widget_has_grab(gtk_grab_widget);
+
+//    if (glass_gdk_mouse_devices_grab_with_cursor(
+//            gdk_window, gdk_window_get_cursor(gdk_window), FALSE)) {
+//        WindowContextBase::sm_mouse_drag_window = this;
+//        return true;
+//    } else {
+//        return false;
+//    }
 }
 
 void WindowContextBase::ungrab_mouse_drag_focus() {
-    WindowContextBase::sm_mouse_drag_window = NULL;
-    glass_gdk_mouse_devices_ungrab();
-    if (WindowContextBase::sm_grab_window) {
-        WindowContextBase::sm_grab_window->grab_focus();
-    }
+    gtk_grab_remove(gtk_grab_widget);
+//    WindowContextBase::sm_mouse_drag_window = NULL;
+//    glass_gdk_mouse_devices_ungrab();
+//    if (WindowContextBase::sm_grab_window) {
+//        WindowContextBase::sm_grab_window->grab_focus();
+//    }
 }
+*/
 
 bool WindowContextBase::grab_focus() {
-    if (WindowContextBase::sm_mouse_drag_window
-            || glass_gdk_mouse_devices_grab(gdk_window)) {
-        WindowContextBase::sm_grab_window = this;
-        return true;
-    } else {
-        return false;
-    }
+    gtk_grab_add(gtk_widget);
+//    if (WindowContextBase::sm_mouse_drag_window
+//            || glass_gdk_mouse_devices_grab(gdk_window)) {
+//        WindowContextBase::sm_grab_window = this;
+//        return true;
+//    } else {
+//        return false;
+//    }
+    return TRUE;
 }
 
 void WindowContextBase::ungrab_focus() {
-    if (!WindowContextBase::sm_mouse_drag_window) {
-        glass_gdk_mouse_devices_ungrab();
-    }
-    WindowContextBase::sm_grab_window = NULL;
+//    if (!WindowContextBase::sm_mouse_drag_window) {
+//        glass_gdk_mouse_devices_ungrab();
+//    }
+//    WindowContextBase::sm_grab_window = NULL;
+//
+    if (gtk_widget_has_grab(gtk_widget)) {
+        gtk_grab_remove(gtk_widget);
 
-    if (jwindow) {
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusUngrab);
-        CHECK_JNI_EXCEPTION(mainEnv)
+        if (jwindow) {
+            mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusUngrab);
+            CHECK_JNI_EXCEPTION(mainEnv)
+        }
     }
 }
 
+//TODO: use GTK cursors
 void WindowContextBase::set_cursor(GdkCursor* cursor) {
-    if (!is_in_drag()) {
-        if (WindowContextBase::sm_mouse_drag_window) {
-            glass_gdk_mouse_devices_grab_with_cursor(
-                    WindowContextBase::sm_mouse_drag_window->get_gdk_window(), cursor, FALSE);
-        } else if (WindowContextBase::sm_grab_window) {
-            glass_gdk_mouse_devices_grab_with_cursor(
-                    WindowContextBase::sm_grab_window->get_gdk_window(), cursor, TRUE);
-        }
-    }
+//    if (!is_in_drag()) {
+//        if (WindowContextBase::sm_mouse_drag_window) {
+//            glass_gdk_mouse_devices_grab_with_cursor(
+//                    WindowContextBase::sm_mouse_drag_window->get_gdk_window(), cursor, FALSE);
+//        } else if (WindowContextBase::sm_grab_window) {
+//            glass_gdk_mouse_devices_grab_with_cursor(
+//                    WindowContextBase::sm_grab_window->get_gdk_window(), cursor, TRUE);
+//        }
+//    }
     gdk_window_set_cursor(gdk_window, cursor);
 }
 
@@ -1183,6 +1220,9 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
 void WindowContextTop::process_map() {
     map_received = true;
     apply_geometry();
+
+    g_print("window should be: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
+            geometry.current_cw, geometry.current_ch);
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height) {

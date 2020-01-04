@@ -121,6 +121,7 @@ private:
     extern char const * const GDK_WINDOW_DATA_CONTEXT;
 
     GdkCursor* get_native_cursor(int type);
+    gboolean is_grab_disabled();
 
     // JNI global references
     extern jclass jStringCls; // java.lang.String

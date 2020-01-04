@@ -517,6 +517,10 @@ static void configure_opaque_window(GtkWidget *window);
 static void grab_mouse_device(GdkDevice *device, DeviceGrabContext *context);
 static void ungrab_mouse_device(GdkDevice *device);
 
+gboolean is_grab_disabled() {
+    return disableGrab;
+}
+
 gint glass_gdk_visual_get_depth (GdkVisual * visual)
 {
     // gdk_visual_get_depth is GTK 2.2 +
