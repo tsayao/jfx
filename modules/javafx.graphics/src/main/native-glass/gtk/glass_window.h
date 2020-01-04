@@ -155,7 +155,11 @@ public:
     virtual void process_focus(GdkEventFocus*) = 0;
     virtual void process_destroy() = 0;
     virtual void process_delete() = 0;
-    virtual void process_draw(GdkEventExpose*) = 0;
+#ifdef GLASS_GTK3
+    virtual void process_draw(cairo_t*) = 0;
+#else
+    virtual void process_expose(GdkEventExpose*) = 0;
+#endif
     virtual void process_mouse_button(GdkEventButton*) = 0;
     virtual void process_mouse_motion(GdkEventMotion*) = 0;
     virtual void process_mouse_scroll(GdkEventScroll*) = 0;
@@ -259,7 +263,11 @@ public:
     void process_focus(GdkEventFocus*);
     void process_destroy();
     void process_delete();
-    void process_draw(GdkEventExpose*);
+#ifdef GLASS_GTK3
+    void process_draw(cairo_t* cr);
+#else
+    void process_expose(GdkEventExpose*);
+#endif
     void process_mouse_button(GdkEventButton*);
     void process_mouse_motion(GdkEventMotion*);
     void process_mouse_scroll(GdkEventScroll*);

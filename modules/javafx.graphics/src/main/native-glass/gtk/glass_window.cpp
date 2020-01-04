@@ -57,9 +57,29 @@ static gboolean ctx_configure_callback(GtkWidget *widget, GdkEvent *event, gpoin
     return FALSE;
 }
 
-static gboolean ctx_damage_or_draw_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
-    ((WindowContextBase*)user_data)->process_draw(&event->expose);
-    return FALSE;
+#ifdef GLASS_GTK3
+static gboolean ctx_draw_callback(GtkWidget *widget, cairo_t* cr, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_draw(cr);
+    return TRUE;
+}
+#else
+static gboolean ctx_expose_callback(GtkWidget *widget, GdkEvent* event, gpointer user_data) {
+    ((WindowContextBase*)user_data)->process_expose(&event->expose);
+    return TRUE;
+}
+#endif
+
+static gboolean ctx_damage_callback(GtkWidget *widget, GdkEvent* event, gpointer user_data) {
+    GdkEventExpose* e = &event->expose;
+
+#ifdef GLASS_GTK3
+    gtk_widget_queue_draw_region(widget, e->region);
+#else
+    GdkWindow* gdk_win = gtk_widget_get_root_window(widget);
+    gdk_window_invalidate_rect(gdk_win, &e->area, FALSE);
+    gdk_window_process_updates(gdk_win, FALSE);
+#endif
+    return TRUE;
 }
 
 static gboolean ctx_property_notify_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
@@ -121,11 +141,11 @@ static void ctx_screen_changed_callback(GtkWidget *widget,
 
 static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(ctx_configure_callback), ctx);
-    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
+    g_signal_connect(gtk_widget, "damage-event", G_CALLBACK(ctx_damage_callback), ctx);
 #ifdef GLASS_GTK3
-    g_signal_connect(gtk_widget, "draw", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
+    g_signal_connect(gtk_widget, "draw", G_CALLBACK(ctx_draw_callback), ctx);
 #else
-    g_signal_connect(gtk_widget, "expose-event", G_CALLBACK(ctx_damage_or_draw_callback), ctx);
+    g_signal_connect(gtk_widget, "expose-event", G_CALLBACK(ctx_expose_callback), ctx);
 #endif
     g_signal_connect(gtk_widget, "property-notify-event", G_CALLBACK(ctx_property_notify_callback), ctx);
     g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(ctx_focus_change_callback), ctx);
@@ -352,15 +372,30 @@ void WindowContextBase::process_delete() {
     }
 }
 
-void WindowContextBase::process_draw(GdkEventExpose* event) {
+#ifdef GLASS_GTK3
+void WindowContextBase::process_draw(cairo_t* cr) {
     if (jview) {
-        GtkAllocation a;
-        gtk_widget_get_allocation(gtk_widget, &a);
+        cairo_rectangle_list_t* list = cairo_copy_clip_rectangle_list(cr);
 
-        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, a.x, a.y, a.width, a.height);
+        if (list->status != CAIRO_STATUS_CLIP_NOT_REPRESENTABLE ) {
+            for (i = 0; i < list->num_rectangles; ++i) {
+                mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, list->rectangles[i].x, list->rectangles[i].y,
+                                        list->rectangles[i].width, list->rectangles[i].height);
+                CHECK_JNI_EXCEPTION(mainEnv)
+            }
+
+        }
+        cairo_rectangle_list_destroy(list);
+    }
+}
+#else
+void WindowContextBase::process_expose(GdkEventExpose* event) {
+   if (jview) {
+        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 }
+#endif
 
 static inline jint gtk_button_number_to_mouse_button(guint button) {
     switch (button) {
@@ -768,7 +803,11 @@ void WindowContextBase::ungrab_mouse_drag_focus() {
 */
 
 bool WindowContextBase::grab_focus() {
-    gtk_grab_add(gtk_widget);
+    if (!gtk_widget_has_grab(gtk_widget)) {
+        gtk_grab_add(gtk_widget);
+        g_print("add window grab\n");
+    }
+
 //    if (WindowContextBase::sm_mouse_drag_window
 //            || glass_gdk_mouse_devices_grab(gdk_window)) {
 //        WindowContextBase::sm_grab_window = this;
@@ -787,6 +826,8 @@ void WindowContextBase::ungrab_focus() {
 //
     if (gtk_widget_has_grab(gtk_widget)) {
         gtk_grab_remove(gtk_widget);
+
+        g_print("remove window grab\n");
 
         if (jwindow) {
             mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusUngrab);
@@ -948,7 +989,7 @@ void WindowContextTop::apply_geometry() {
     GdkGeometry gdk_geometry;
     gdk_geometry.win_gravity = GDK_GRAVITY_NORTH_WEST;
 
-    if (!geometry.resizable || !geometry.enabled) {
+    if ((!geometry.resizable || !geometry.enabled) && !(is_maximized || is_fullscreen)) {
         gdk_geometry.min_width = geometry.current_w;
         gdk_geometry.min_height = geometry.current_h;
         gdk_geometry.max_width = geometry.current_w;
@@ -1175,9 +1216,9 @@ void WindowContextTop::set_visible(bool visible) {
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
     g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
-    if (is_maximized || is_fullscreen) {
-        return;
-    }
+//    if (is_maximized || is_fullscreen) {
+//        return;
+//    }
 
     calculate_adjustments();
 
