@@ -712,10 +712,7 @@ static void dnd_drag_begin_callback(GtkWidget *widget,
                                     GdkDragContext *context,
                                     gpointer user_data)
 {
-    g_print("IS_GRAB_DISABLED: %d\n", is_grab_disabled());
-
     if (!is_grab_disabled()) {
-        g_print("DND GRAB\n");
         gtk_grab_add(drag_widget);
     }
 
