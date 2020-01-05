@@ -89,7 +89,7 @@ static gboolean ctx_property_notify_callback(GtkWidget *widget, GdkEvent *event,
 
 static gboolean ctx_focus_change_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean ctx_delete_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
@@ -156,7 +156,7 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
     g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(ctx_device_button_callback), ctx);
     g_signal_connect(gtk_widget, "motion-notify-event", G_CALLBACK(ctx_device_motion_callback), ctx);
     g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(ctx_device_scroll_callback), ctx);
-    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(ctx_device_scroll_callback), ctx);
+    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(ctx_enter_or_leave_callback), ctx);
     g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(ctx_enter_or_leave_callback), ctx);
     g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(ctx_key_press_or_release_callback), ctx);
     g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(ctx_key_press_or_release_callback), ctx);
@@ -648,11 +648,19 @@ void WindowContextBase::paint(void* data, jint width, jint height)
 void WindowContextBase::add_child(WindowContextTop* child) {
     children.insert(child);
     gtk_window_set_transient_for(child->get_gtk_window(), this->get_gtk_window());
+
+    if (win_group != NULL) {
+        gtk_window_group_add_window(win_group, GTK_WINDOW(child->get_gtk_widget()));
+    }
 }
 
 void WindowContextBase::remove_child(WindowContextTop* child) {
     children.erase(child);
     gtk_window_set_transient_for(child->get_gtk_window(), NULL);
+
+    if (win_group != NULL) {
+        gtk_window_group_remove_window(win_group, GTK_WINDOW(child->get_gtk_widget()));
+    }
 }
 
 void WindowContextBase::show_or_hide_children(bool show) {
@@ -673,7 +681,6 @@ void WindowContextBase::reparent_children(WindowContext* parent) {
 }
 
 void WindowContextBase::set_visible(bool visible) {
-    g_print("set_visible: %d\n", visible);
     if (visible) {
         gtk_widget_show_all(gtk_widget);
     } else {
@@ -720,15 +727,29 @@ bool WindowContextBase::set_view(jobject view) {
 }
 
 bool WindowContextBase::grab_focus() {
+    if (win_group == NULL) {
+        return FALSE;
+    }
+
     if (!gtk_widget_has_grab(gtk_widget)) {
-        gtk_grab_add(gtk_widget);
+        GtkWidget* current_grab = gtk_grab_get_current();
+
+        if (current_grab != NULL) {
+            gtk_grab_remove(current_grab);
+        }
+
         g_print("add window grab\n");
+        gtk_grab_add(gtk_widget);
     }
 
     return TRUE;
 }
 
 void WindowContextBase::ungrab_focus() {
+    if (win_group == NULL) {
+        return;
+    }
+
     if (gtk_widget_has_grab(gtk_widget)) {
         gtk_grab_remove(gtk_widget);
 
@@ -794,6 +815,10 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
+
+    if (type != POPUP && owner == NULL) {
+        win_group = gtk_window_group_new();
+    }
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
@@ -891,8 +916,8 @@ void WindowContextTop::apply_geometry() {
         gdk_geometry.max_height = (geometry.maxh > 0) ? geometry.maxh - geometry.adjust_h : G_MAXINT;
     }
 
-    g_print("GEOMETRY: %d, %d, %d, %d\n", gdk_geometry.min_width, gdk_geometry.min_height,
-            gdk_geometry.max_width, gdk_geometry.max_height);
+//    g_print("GEOMETRY: %d, %d, %d, %d\n", gdk_geometry.min_width, gdk_geometry.min_height,
+//            gdk_geometry.max_width, gdk_geometry.max_height);
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), gtk_widget, &gdk_geometry,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE | GDK_HINT_WIN_GRAVITY));
@@ -903,7 +928,7 @@ void WindowContextTop::size_position_notify() {
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, geometry.current_cw, geometry.current_ch);
         CHECK_JNI_EXCEPTION(mainEnv);
 
-        g_print("notify jview size: %d, %d\n", geometry.current_cw, geometry.current_ch);
+//        g_print("notify jview size: %d, %d\n", geometry.current_cw, geometry.current_ch);
 
         mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
         CHECK_JNI_EXCEPTION(mainEnv)
@@ -917,12 +942,12 @@ void WindowContextTop::size_position_notify() {
                 geometry.current_w, geometry.current_h);
         CHECK_JNI_EXCEPTION(mainEnv)
 
-        g_print("notify jwindow size: %d, %d\n", geometry.current_w, geometry.current_h);
+//        g_print("notify jwindow size: %d, %d\n", geometry.current_w, geometry.current_h);
 
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, geometry.current_x, geometry.current_y);
         CHECK_JNI_EXCEPTION(mainEnv)
 
-        g_print("notify jwindow pos: %d, %d\n", geometry.current_x, geometry.current_y);
+//        g_print("notify jwindow pos: %d, %d\n", geometry.current_x, geometry.current_y);
     }
 }
 
@@ -1114,7 +1139,7 @@ void WindowContextTop::set_visible(bool visible) {
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+//    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
     calculate_adjustments();
 
@@ -1135,7 +1160,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
             apply_geometry(); // update constraints if not resized by the user interface
         }
 
-        g_print("gtk_window_resize: %d, %d\n", newW, newH);
+//        g_print("gtk_window_resize: %d, %d\n", newW, newH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
     }
 
@@ -1147,7 +1172,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
             changed = TRUE;
             geometry.current_x = newX;
             geometry.current_y = newY;
-            g_print("gtk_window_move: %d, %d\n", newX, newY);
+//            g_print("gtk_window_move: %d, %d\n", newX, newY);
             gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
         }
     }
@@ -1165,8 +1190,8 @@ void WindowContextTop::process_map() {
 
     apply_geometry();
 
-    g_print("=== > MAP: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
-            geometry.current_cw, geometry.current_ch);
+//    g_print("=== > MAP: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
+//            geometry.current_cw, geometry.current_ch);
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height) {

@@ -210,6 +210,7 @@ protected:
     jobject jview;
     GtkWidget* gtk_widget;
     GdkWindow* gdk_window;
+    GtkWindowGroup* win_group; // this is used for window grabs
     GdkWMFunction gdk_windowManagerFunctions;
 
     bool is_iconified;
