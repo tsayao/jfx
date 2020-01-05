@@ -55,6 +55,23 @@ enum request_type {
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
+struct BgColor {
+    BgColor(): red(0), green(0), blue(0), is_set(FALSE) {}
+    float red;
+    float green;
+    float blue;
+    bool is_set;
+};
+
+struct CanvasBuffer {
+    CanvasBuffer() : data(NULL), width(0), height(0), pending(false) {}
+    void* data;
+    int width;
+    int height;
+    bool pending; // if a draw from gtk_queue
+    BgColor bg_color; // background color
+};
+
 struct WindowGeometry {
     WindowGeometry(): current_x(0),
                       current_y(0),
@@ -212,6 +229,7 @@ protected:
     GdkWindow* gdk_window;
     GtkWindowGroup* win_group; // this is used for window grabs
     GdkWMFunction gdk_windowManagerFunctions;
+    CanvasBuffer buffer; // the content to draw
 
     bool is_iconified;
     bool is_maximized;
@@ -292,6 +310,7 @@ protected:
     virtual void applyShapeMask(void*, uint width, uint height) = 0;
 private:
     bool im_filter_keypress(GdkEventKey*);
+    bool paint_buffer(cairo_t*);
 };
 
 //class WindowContextPlug: public WindowContextBase {

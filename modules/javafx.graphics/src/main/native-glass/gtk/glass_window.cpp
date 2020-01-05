@@ -59,6 +59,7 @@ static gboolean ctx_configure_callback(GtkWidget *widget, GdkEvent *event, gpoin
 #ifdef GLASS_GTK3
 static gboolean ctx_draw_callback(GtkWidget *widget, cairo_t* cr, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_draw(cr);
+
     return TRUE;
 }
 #else
@@ -348,26 +349,28 @@ void WindowContextBase::process_delete() {
 #ifdef GLASS_GTK3
 void WindowContextBase::process_draw(cairo_t* cr) {
     if (jview) {
-        cairo_rectangle_list_t* list = cairo_copy_clip_rectangle_list(cr);
-
-        if (list->status != CAIRO_STATUS_CLIP_NOT_REPRESENTABLE ) {
-            for (int i = 0; i < list->num_rectangles; ++i) {
-                g_print("REDRAW: %f, %f, %f, %f\n",list->rectangles[i].x, list->rectangles[i].y,
-                                                    list->rectangles[i].width, list->rectangles[i].height);
-
-                mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, list->rectangles[i].x, list->rectangles[i].y,
-                                        list->rectangles[i].width, list->rectangles[i].height);
+        if (!paint_buffer(cr)) {
+            GdkRectangle r;
+            if (gdk_cairo_get_clip_rectangle (cr, &r)) {
+                g_print("REDRAW: %d, %d, %d, %d\n", r.x, r.y, r.width, r.height);
+                mainEnv->CallVoidMethod(jview, jViewNotifyRepaint,r.x, r.y, r.width, r.height);
                 CHECK_JNI_EXCEPTION(mainEnv)
             }
         }
-        cairo_rectangle_list_destroy(list);
     }
 }
 #else
 void WindowContextBase::process_expose(GdkEventExpose* event) {
    if (jview) {
-        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
-        CHECK_JNI_EXCEPTION(mainEnv)
+        if (!buffer.pending) {
+            mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y,
+                                     event->area.width, event->area.height);
+            CHECK_JNI_EXCEPTION(mainEnv)
+        } else {
+            cairo_t* context = gdk_cairo_create(gdk_window);
+            paint_buffer(context);
+            cairo_destroy(context);
+        }
     }
 }
 #endif
@@ -616,37 +619,89 @@ void WindowContextBase::process_key(GdkEventKey* event) {
     }
 }
 
-void WindowContextBase::paint(void* data, jint width, jint height)
-{
-    if (!is_visible()) {
-        return;
+void WindowContextBase::paint(void* data, jint width, jint height) {
+    buffer.data = data;
+    buffer.width = width;
+    buffer.height = height;
+    buffer.pending = TRUE;
+
+    if (is_visible()) {
+        g_print("queue draw\n");
+        gtk_widget_queue_draw(gtk_widget);
     }
-#ifdef GLASS_GTK3
-    cairo_region_t *region = gdk_window_get_clip_region(gdk_window);
-    gdk_window_begin_paint_region(gdk_window, region);
-#endif
-    cairo_t* context;
-    context = gdk_cairo_create(gdk_window);
+}
+
+bool WindowContextBase::paint_buffer(cairo_t* context) {
+    if (!buffer.pending) {
+        g_print("buffer not pending\n");
+        return FALSE;
+    }
 
     cairo_surface_t* cairo_surface;
     cairo_surface = cairo_image_surface_create_for_data(
-            (unsigned char*)data,
+            (unsigned char*) buffer.data,
             CAIRO_FORMAT_ARGB32,
-            width, height, width * 4);
+           buffer.width, buffer.height, buffer.width * 4);
 
-    applyShapeMask(data, width, height);
-
-    cairo_set_source_surface(context, cairo_surface, 0, 0);
-    cairo_set_operator (context, CAIRO_OPERATOR_SOURCE);
-    cairo_paint(context);
+    applyShapeMask(buffer.data, buffer.width, buffer.height);
 #ifdef GLASS_GTK3
-    gdk_window_end_paint(gdk_window);
-    cairo_region_destroy(region);
+    if (buffer.bg_color.is_set) {
+        cairo_set_source_rgb(context, buffer.bg_color.red, buffer.bg_color.green, buffer.bg_color.blue);
+    }
 #endif
-
-    cairo_destroy(context);
+    cairo_set_source_surface(context, cairo_surface, 0, 0);
+    cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
+    cairo_paint(context);
     cairo_surface_destroy(cairo_surface);
+    buffer.pending = FALSE;
+
+    return TRUE;
 }
+
+//#if GTK_CHECK_VERSION(3, 0, 0)
+//    cairo_region_t *region = gdk_window_get_clip_region(gdk_window);
+//#if GTK_CHECK_VERSION(3, 22, 0)
+////    cairo_region_t *region = gdk_window_get_visible_region(gdk_window);
+//    GdkDrawingContext *dcontext = gdk_window_begin_draw_frame(gdk_window, region);
+//    cairo_t *context = gdk_drawing_context_get_cairo_context(dcontext);
+//#else
+//    gdk_window_begin_paint_region(gdk_window, region);
+//    cairo_t* context = gdk_cairo_create(gdk_window);
+//#endif
+//#else
+//    cairo_t* context = gdk_cairo_create(gdk_window);
+//#endif
+//    cairo_surface_t* cairo_surface;
+//    cairo_surface = cairo_image_surface_create_for_data(
+//            (unsigned char*)data,
+//            CAIRO_FORMAT_ARGB32,
+//            width, height, width * 4);
+//
+//    applyShapeMask(data, width, height);
+//#ifdef GLASS_GTK3
+//    if (!jview && bg_color.alpha > 0) {
+//        cairo_set_source_rgb(context, bg_color.red, bg_color.green, bg_color.blue);
+//    }
+//#endif
+//    cairo_set_source_surface(context, cairo_surface, 0, 0);
+//    cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
+//    cairo_paint(context);
+//
+//#if GTK_CHECK_VERSION(3, 0, 0)
+//#if GTK_CHECK_VERSION(3, 22, 0)
+//    gdk_window_end_draw_frame(gdk_window, dcontext);
+//    cairo_region_destroy(region);
+//#else
+//    gdk_window_end_paint(gdk_window);
+//    cairo_region_destroy(region);
+//    cairo_destroy(context);
+//#endif
+//#else
+//    cairo_destroy(context);
+//#endif
+//
+//    cairo_surface_destroy(cairo_surface);
+//}
 
 void WindowContextBase::add_child(WindowContextTop* child) {
     children.insert(child);
@@ -770,20 +825,19 @@ void WindowContextBase::set_cursor(GdkCursor* cursor) {
 }
 
 void WindowContextBase::set_background(float r, float g, float b) {
-#ifdef GLASS_GTK3
-//FIXME: deprecated
-    GdkRGBA rgba = {0, 0, 0, 1.};
-    rgba.red = r;
-    rgba.green = g;
-    rgba.blue = b;
-    gdk_window_set_background_rgba(gdk_window, &rgba);
-#else
-    GdkColor color;
-    color.red   = (guint16) (r * 65535);
-    color.green = (guint16) (g * 65535);
-    color.blue  = (guint16) (b * 65535);
-    gtk_widget_modify_bg(gtk_widget, GTK_STATE_NORMAL, &color);
-#endif
+//#ifdef GLASS_GTK3
+    buffer.bg_color.red = r;
+    buffer.bg_color.green = g;
+    buffer.bg_color.blue = b;
+    buffer.bg_color.is_set = TRUE;
+    gtk_widget_queue_draw(gtk_widget);
+//#else
+//    GdkColor color;
+//    color.red   = (guint16) (r * 65535);
+//    color.green = (guint16) (g * 65535);
+//    color.blue  = (guint16) (b * 65535);
+//    gtk_widget_modify_bg(gtk_widget, GTK_STATE_NORMAL, &color);
+//#endif
 }
 
 WindowContextBase::~WindowContextBase() {
@@ -1077,7 +1131,7 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
     // this is to let java know about user changes on the window
     // if the window is not visible, there will be no changes
-    if (!map_received) {
+    if (!map_received && !is_maximized) {
         return;
     }
 

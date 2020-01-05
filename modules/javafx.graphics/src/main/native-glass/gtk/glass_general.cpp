@@ -609,25 +609,27 @@ glass_gdk_master_pointer_get_position(gint *x, gint *y) {
 #endif
 }
 
-gboolean
-glass_gdk_device_is_grabbed(GdkDevice *device) {
-#ifdef GLASS_GTK3
-        return gdk_display_device_is_grabbed(gdk_display_get_default(), device);
-#else
-        (void) device;
-        return gdk_display_pointer_is_grabbed(gdk_display_get_default());
-#endif
-}
+//gboolean
+//glass_gdk_device_is_grabbed(GdkDevice *device) {
+//#ifdef GLASS_GTK3
+//        return gdk_display_device_is_grabbed(gdk_display_get_default(), device);
+//#else
+//        (void) device;
+//        return gdk_display_pointer_is_grabbed(gdk_display_get_default());
+//#endif
+//}
+//
+//*
+//void
+//glass_gdk_device_ungrab(GdkDevice *device) {
+//#ifdef GLASS_GTK3
+//        gdk_device_ungrab(device, GDK_CURRENT_TIME);
+//#else
+//        (void) device;
+//        gdk_pointer_ungrab(GDK_CURRENT_TIME);
+//#endif
+//}
 
-void
-glass_gdk_device_ungrab(GdkDevice *device) {
-#ifdef GLASS_GTK3
-        gdk_device_ungrab(device, GDK_CURRENT_TIME);
-#else
-        (void) device;
-        gdk_pointer_ungrab(GDK_CURRENT_TIME);
-#endif
-}
 
 GdkWindow *
 glass_gdk_device_get_window_at_position(GdkDevice *device, gint *x, gint *y) {
