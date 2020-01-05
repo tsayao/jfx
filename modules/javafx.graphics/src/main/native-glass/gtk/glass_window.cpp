@@ -1062,6 +1062,10 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 }
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
+    if (!map_received) {
+        return;
+    }
+
     gint x, y, w, h, gtk_w, gtk_h;
 
     calculate_adjustments();
@@ -1071,7 +1075,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     w = gtk_w + geometry.adjust_w;
     h = gtk_h + geometry.adjust_h;
 
-    gboolean changed = !map_received || geometry.current_x != x || geometry.current_y != y
+    gboolean changed = geometry.current_x != x || geometry.current_y != y
                         || geometry.current_w != w || geometry.current_h != h
                         || geometry.current_cw != gtk_w || geometry.current_ch != gtk_h;
 

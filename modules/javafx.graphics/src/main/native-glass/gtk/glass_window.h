@@ -136,9 +136,7 @@ public:
     virtual void request_focus() = 0;
     virtual void set_focusable(bool)= 0;
     virtual bool grab_focus() = 0;
-//    virtual bool grab_mouse_drag_focus() = 0;
     virtual void ungrab_focus() = 0;
-//    virtual void ungrab_mouse_drag_focus() = 0;
     virtual void set_title(const char*) = 0;
     virtual void set_alpha(double) = 0;
     virtual void set_enabled(bool) = 0;
@@ -257,9 +255,7 @@ public:
     bool is_visible();
     bool set_view(jobject);
     bool grab_focus();
-//    bool grab_mouse_drag_focus();
     void ungrab_focus();
-//    void ungrab_mouse_drag_focus();
     void set_cursor(GdkCursor*);
     void set_level(int) {}
     void set_background(float, float, float);
