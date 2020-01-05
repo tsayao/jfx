@@ -88,7 +88,7 @@ static gboolean ctx_property_notify_callback(GtkWidget *widget, GdkEvent *event,
 
 static gboolean ctx_focus_change_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_delete_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
@@ -164,18 +164,7 @@ static void connect_signals(GtkWidget* gtk_widget, WindowContextBase* ctx) {
 
 }
 
-static GtkWidget* gtk_grab_widget = NULL; // used to simulate Windows like mouse grab when dragging
-
-static void init_gtk_grab_widget() {
-    if (gtk_grab_widget == NULL) {
-        gtk_grab_widget = gtk_invisible_new();
-        gtk_widget_show_all(gtk_grab_widget);
-    } else if (gtk_widget_has_grab(gtk_grab_widget)) {
-        gtk_grab_remove(gtk_grab_widget);
-    }
-}
-
-//FIXME: remove
+////FIXME: remove
 WindowContext * WindowContextBase::sm_grab_window = NULL;
 WindowContext * WindowContextBase::sm_mouse_drag_window = NULL;
 
