@@ -84,12 +84,12 @@ static gboolean ctx_damage_callback(GtkWidget *widget, GdkEvent* event, gpointer
 
 static gboolean ctx_property_notify_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_property_notify(&event->property);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_focus_change_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_focus(&event->focus_change);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_delete_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
@@ -104,33 +104,33 @@ static gboolean ctx_window_state_callback(GtkWidget *widget, GdkEvent *event, gp
 
 static gboolean ctx_device_button_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_button(&event->button);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_device_motion_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_motion(&event->motion);
     gdk_event_request_motions(&event->motion);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_device_scroll_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_scroll(&event->scroll);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_enter_or_leave_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_mouse_cross(&event->crossing);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_key_press_or_release_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_key(&event->key);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean ctx_map_callback(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     ((WindowContextBase*)user_data)->process_map();
-    return FALSE;
+    return TRUE;
 }
 
 static void ctx_screen_changed_callback(GtkWidget *widget,
@@ -524,6 +524,9 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
 
 void WindowContextBase::process_mouse_cross(GdkEventCrossing* event) {
     bool enter = event->type == GDK_ENTER_NOTIFY;
+
+    g_print("MOUSE: %d\n", enter);
+
     if (jview) {
         guint state = event->state;
         if (enter) { // workaround for RT-21590
@@ -671,14 +674,14 @@ void WindowContextBase::show_or_hide_children(bool show) {
     }
 }
 
-void WindowContextBase::reparent_children(WindowContext* parent) {
-    std::set<WindowContextTop*>::iterator it;
-    for (it = children.begin(); it != children.end(); ++it) {
-        (*it)->set_owner(parent);
-        parent->add_child(*it);
-    }
-    children.clear();
-}
+//void WindowContextBase::reparent_children(WindowContext* parent) {
+//    std::set<WindowContextTop*>::iterator it;
+//    for (it = children.begin(); it != children.end(); ++it) {
+//        (*it)->set_owner(parent);
+//        parent->add_child(*it);
+//    }
+//    children.clear();
+//}
 
 void WindowContextBase::set_visible(bool visible) {
     if (visible) {
@@ -768,6 +771,7 @@ void WindowContextBase::set_cursor(GdkCursor* cursor) {
 
 void WindowContextBase::set_background(float r, float g, float b) {
 #ifdef GLASS_GTK3
+//FIXME: deprecated
     GdkRGBA rgba = {0, 0, 0, 1.};
     rgba.red = r;
     rgba.green = g;
