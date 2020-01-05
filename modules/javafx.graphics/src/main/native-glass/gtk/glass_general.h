@@ -121,6 +121,7 @@ private:
     extern char const * const GDK_WINDOW_DATA_CONTEXT;
 
     GdkCursor* get_native_cursor(int type);
+    gboolean is_grab_disabled();
 
     // JNI global references
     extern jclass jStringCls; // java.lang.String
@@ -275,29 +276,8 @@ glass_gdk_visual_get_depth (GdkVisual * visual);
 GdkScreen *
 glass_gdk_window_get_screen(GdkWindow * gdkWindow);
 
-gboolean
-glass_gdk_mouse_devices_grab(GdkWindow * gdkWindow);
-
-gboolean
-glass_gdk_mouse_devices_grab_with_cursor(GdkWindow * gdkWindow, GdkCursor *cursor, gboolean owner_events);
-
-void
-glass_gdk_mouse_devices_ungrab();
-
-void
-glass_gdk_master_pointer_grab(GdkEvent *event, GdkWindow *window, GdkCursor *cursor);
-
-void
-glass_gdk_master_pointer_ungrab(GdkEvent *event);
-
 void
 glass_gdk_master_pointer_get_position(gint *x, gint *y);
-
-gboolean
-glass_gdk_device_is_grabbed(GdkDevice *device);
-
-void
-glass_gdk_device_ungrab(GdkDevice *device);
 
 GdkWindow *
 glass_gdk_device_get_window_at_position(

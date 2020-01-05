@@ -32,6 +32,8 @@
 #include <gtk/gtk.h>
 
 void process_dnd_target(WindowContext *, GdkEventDND *);
+void glass_dnd_attach_context(WindowContext *ctx);
+void dnd_drag_leave_callback(WindowContext *ctx);
 jint dnd_target_get_supported_actions(JNIEnv *);
 jobjectArray dnd_target_get_mimes(JNIEnv *);
 jobject dnd_target_get_data(JNIEnv *, jstring);
