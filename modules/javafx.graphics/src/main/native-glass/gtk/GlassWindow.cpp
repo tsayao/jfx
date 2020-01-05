@@ -115,6 +115,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1createChildWindow
                         (Window)PTR_TO_JLONG(owner));
 
     if (parent_window != NULL) {
+        g_print("===> HERE\n");
         parent_ctx = (WindowContextPlug *)g_object_get_data(G_OBJECT(parent_window), GDK_WINDOW_DATA_CONTEXT);
         // HACK: do not use get_gtk_window()
         // the method is intended to return GtkWindow that can be used for FileChooser
@@ -126,8 +127,10 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1createChildWindow
 
     if (parent_widget == NULL) {
         // If 'owner' is a bad handle, then the child window is created unparented
+        g_print("===> HERE2\n");
         ctx = new WindowContextPlug(obj, JLONG_TO_PTR(owner));
     } else {
+        g_print("===> HERE3\n");
         ctx = new WindowContextChild(obj,
                         JLONG_TO_PTR(owner),
                         parent_ctx->gtk_container,
