@@ -865,19 +865,17 @@ void WindowContextTop::detach_from_java() {
 }
 
 // This function calculate the deltas between window and window + decoration (titleblar, borders)
+// Only useful if the window manager does not support the frame extents extension
 void WindowContextTop::calculate_adjustments() {
     if (frame_type == TITLED && !geometry.frame_extents_received) {
         GdkRectangle er;
         gdk_window_get_frame_extents(gdk_window, &er);
-//        g_print("gdk_window_get_frame_extents: %d, %d, %d, %d\n", er.x, er.y, er.width, er.height);
 
         int w, h;
         gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
-//        g_print("gtk_window_get_size: %d, %d\n", w, h);
 
         int px, py;
         gdk_window_get_origin(gdk_window, &px, &py);
-//        g_print("gdk_window_get_origin: %d, %d\n", px, py);
 
         geometry.adjust_w = (er.width - w > 0) ? er.width - w : 0;
         geometry.adjust_h = (er.height - h > 0) ? er.height - h : 0;
@@ -885,9 +883,6 @@ void WindowContextTop::calculate_adjustments() {
         geometry.view_y = (py - er.y > 0) ? py - er.y : 0;
 
         apply_geometry();
-
-//        g_print("Adjustments: w = %d, h = %d, x = %d, y = %d\n", geometry.adjust_w, geometry.adjust_h,
-//                geometry.view_x, geometry.view_y);
     }
 }
 
@@ -907,8 +902,8 @@ void WindowContextTop::apply_geometry() {
         gdk_geometry.max_height = (geometry.maxh > 0) ? geometry.maxh - geometry.adjust_h : -1;
     }
 
-    g_print("GEOMETRY: %d, %d, %d, %d\n", gdk_geometry.min_width, gdk_geometry.min_height,
-            gdk_geometry.max_width, gdk_geometry.max_height);
+//    g_print("GEOMETRY: %d, %d, %d, %d\n", gdk_geometry.min_width, gdk_geometry.min_height,
+//            gdk_geometry.max_width, gdk_geometry.max_height);
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), gtk_widget, &gdk_geometry,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE | GDK_HINT_WIN_GRAVITY | GDK_HINT_USER_POS));
@@ -1062,6 +1057,8 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 }
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
+    // this is to let java know about user changes on the window
+    // if the window is not visible, there will be no changes
     if (!map_received) {
         return;
     }
@@ -1087,7 +1084,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
         geometry.current_cw = gtk_w;
         geometry.current_ch = gtk_h;
 
-        g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d, cw = %d, ch = %d\n", x, y, w, h, gtk_w, gtk_h);
+//        g_print("WindowContextTop::process_configure: x = %d, y = %d, w = %d, h = %d, cw = %d, ch = %d\n", x, y, w, h, gtk_w, gtk_h);
         size_position_notify();
     }
 }
@@ -1128,7 +1125,7 @@ void WindowContextTop::set_visible(bool visible) {
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
+//    g_print("WindowContextTop::set_bounds: %d, %d, %d, %d, %d, %d\n", x, y, w, h, cw, ch);
 
     calculate_adjustments();
 
@@ -1149,7 +1146,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
             apply_geometry(); // update constraints if not resized by the user interface
         }
 
-        g_print("gtk_window_resize: %d, %d\n", newW, newH);
+//        g_print("gtk_window_resize: %d, %d\n", newW, newH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
     }
 
@@ -1178,8 +1175,8 @@ void WindowContextTop::process_map() {
 
     apply_geometry();
 
-    g_print("window should be: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
-            geometry.current_cw, geometry.current_ch);
+//    g_print("window should be: %d, %d, %d, %d\n", geometry.current_w, geometry.current_h,
+//            geometry.current_cw, geometry.current_ch);
 }
 
 void WindowContextTop::applyShapeMask(void* data, uint width, uint height) {
