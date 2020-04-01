@@ -142,7 +142,7 @@ private:
     bool can_be_deleted;
 
     struct _XIM {
-	_XIM() : im(NULL), ic(NULL), enabled(FALSE) {}
+    _XIM() : im(NULL), ic(NULL), enabled(FALSE) {}
         XIM im;
         XIC ic;
         bool enabled;
