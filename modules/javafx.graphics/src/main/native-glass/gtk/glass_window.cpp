@@ -904,6 +904,7 @@ void WindowContext::set_visible(bool visible) {
 
 void WindowContext::set_cursor(GdkCursor *cursor) {
 // This seems to have no no effect on either Gtk+2 or Gtk+3
+// Also note that re-enabling this will break grab on Gtk 3.20+
 //    if (!is_in_drag()) {
 //        if (WindowContext::sm_mouse_drag_window) {
 //            grab_mouse_drag_focus(WindowContext::sm_mouse_drag_window->get_gdk_window(), NULL, cursor, false);
@@ -1214,11 +1215,10 @@ void WindowContext::applyShapeMask(void *data, uint width, uint height) {
 
 ///////////////////////// PRIVATE
 
-// This function calculate the deltas between window and window + decoration (titleblar, borders).
+// This function calculate the deltas between window and window + decoration (titlebar, borders).
 // It's used when the window manager does not support the _NET_FRAME_EXTENTS extension or when
 // it's not received on time.
 void WindowContext::calculate_adjustments() {
-    // if WM supports _NET_FRAME_EXTENTS, wait for it
     if (frame_type != TITLED || geometry.frame_extents_received) {
         return;
     }
