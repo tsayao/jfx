@@ -88,8 +88,8 @@ struct WindowGeometry {
 
     int current_x; // current position X
     int current_y; // current position Y
-    int current_w; // current window width
-    int current_h; // current window height
+    int current_w; // current window width, adjusted
+    int current_h; // current window height, adjusted
     int current_cw; // current content (view) width
     int current_ch; // current content (view) height
 

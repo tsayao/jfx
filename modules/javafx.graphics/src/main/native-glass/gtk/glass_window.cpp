@@ -973,18 +973,30 @@ void WindowContext::set_maximized(bool maximize) {
 }
 
 void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
-    // newW / newH always content sizes compatible with GTK+
-    // if window has no decoration, adjustments will be ZERO
-    // this will always be content size
-    int newW = w > 0 ? w - geometry.adjust_w : cw;
-    int newH = h > 0 ? h - geometry.adjust_h : ch;
-
-    gboolean size_changed = FALSE;
-    gboolean pos_changed = FALSE;
-
     // this will tell if adjustments are needed - that's because GTK does not have full window size
     // values, just content values. Frame extents (window decorations) are handled by the window manager.
     geometry.needs_ajustment = (w > 0 || h > 0) || geometry.needs_ajustment;
+
+    // newW / newH always content sizes compatible with GTK+
+    // if window has no decoration, adjustments will be ZERO
+    // this will always be content size
+    int newW, newH;
+    if (w > 0) {
+        newW = w - geometry.adjust_w;
+        geometry.current_w = w;
+    } else {
+        newW = cw;
+    }
+
+    if (h > 0) {
+        newH = h - geometry.adjust_h;
+        geometry.current_h = h;
+    } else {
+        newH = ch;
+    }
+
+    gboolean size_changed = FALSE;
+    gboolean pos_changed = FALSE;
 
     if (newW > 0 && newH > 0) {
         size_changed = TRUE;
@@ -992,9 +1004,6 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
         // content size
         geometry.current_cw = newW;
         geometry.current_ch = newH;
-        // window total size (with decorations)
-        geometry.current_w = newW + geometry.adjust_w;
-        geometry.current_h = newH + geometry.adjust_h;
 
         if (visible_received) {
             // call apply_geometry() to let gtk_window_resize succeed, because it's bound to
@@ -1244,7 +1253,6 @@ void WindowContext::apply_geometry() {
 
     GdkGeometry gdk_geometry;
     gdk_geometry.win_gravity = GDK_GRAVITY_NORTH_WEST;
-
 
     if ((!geometry.resizable || !geometry.enabled) && !(is_maximized || is_fullscreen)) {
         // not resizeable
