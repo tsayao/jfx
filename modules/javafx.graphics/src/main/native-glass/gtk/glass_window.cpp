@@ -984,14 +984,14 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
     int newW, newH;
     if (w > 0) {
         newW = w - geometry.adjust_w;
-        geometry.current_w = w;
+        geometry.current_w = newW;
     } else {
         newW = cw;
     }
 
     if (h > 0) {
         newH = h - geometry.adjust_h;
-        geometry.current_h = h;
+        geometry.current_h = newH;
     } else {
         newH = ch;
     }
