@@ -1221,7 +1221,7 @@ void WindowContext::applyShapeMask(void *data, uint width, uint height) {
 // this is to work-around past gtk+ bug
 void WindowContext::ensure_window_size() {
 #if !GTK_CHECK_VERSION(3, 22, 0)
-    gdk_window_resize(gdk_window, geometry.current_cw, geometry.current_ch);
+    gdk_window_resize(gdk_window, geometry.current_w, geometry.current_h);
 #endif
 }
 
