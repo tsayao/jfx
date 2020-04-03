@@ -412,6 +412,11 @@ void WindowContext::process_configure() {
     geometry.current_cw = gtk_w;
     geometry.current_ch = gtk_h;
 
+    if (!is_fullscreen && !is_maximized) {
+        geometry.last_cw = gtk_w;
+        geometry.last_ch = gtk_h;
+    }
+
     size_position_notify(size_changed, pos_changed);
 }
 
@@ -1006,6 +1011,8 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
         // content size
         geometry.current_cw = newW;
         geometry.current_ch = newH;
+        geometry.last_cw = newW;
+        geometry.last_ch = newH;
 
         if (visible_received) {
             // call apply_geometry() to let gtk_window_resize succeed, because it's bound to
@@ -1227,8 +1234,8 @@ void WindowContext::ensure_window_size() {
 #else
     gdk_window_get_geometry(gdk_window, NULL, NULL, &w, &h, NULL);
 #endif
-    if (geometry.current_cw != w || geometry.current_ch != h)) {
-        gdk_window_resize(gdk_window, geometry.current_cw, geometry.current_ch);
+    if (geometry.last_cw != w || geometry.last_ch != h)) {
+        gdk_window_resize(gdk_window, geometry.last_cw, geometry.last_ch);
     }
 #endif
 }
