@@ -93,6 +93,12 @@ struct WindowGeometry {
     int current_cw; // current content (view) width
     int current_ch; // current content (view) height
 
+// workaround gtk+ bug
+#if !GTK_CHECK_VERSION(3, 22, 0)
+    int unfullscreen_w;
+    int unfullscreen_h;
+#endif
+
     // Used to ajust window sizes because gtk doest not account frame extents as part
     // of the window size and JavaFx does.
     int adjust_w;
