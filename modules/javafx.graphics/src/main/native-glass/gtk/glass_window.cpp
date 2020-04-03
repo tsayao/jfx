@@ -967,6 +967,7 @@ void WindowContext::set_maximized(bool maximize) {
         GdkWMFunction wmf = (GdkWMFunction)(gdk_windowManagerFunctions | GDK_FUNC_MAXIMIZE);
         gdk_window_set_functions(gdk_window, wmf);
 
+        ensure_window_size();
         gtk_window_maximize(GTK_WINDOW(gtk_widget));
     } else {
         gtk_window_unmaximize(GTK_WINDOW(gtk_widget));
@@ -1172,24 +1173,13 @@ void WindowContext::request_focus() {
 void WindowContext::enter_fullscreen() {
     is_fullscreen = TRUE;
 
-// workaround gtk+ bug
-#if !GTK_CHECK_VERSION(3, 22, 0)
-    // this is content size
-    geometry.unfullscreen_w = geometry.current_cw;
-    geometry.unfullscreen_h = geometry.current_ch;
-#endif
-
+    ensure_window_size();
     gtk_window_fullscreen(GTK_WINDOW(gtk_widget));
 }
 
 void WindowContext::exit_fullscreen() {
     is_fullscreen = FALSE;
     gtk_window_unfullscreen(GTK_WINDOW(gtk_widget));
-
-// It was a Gtk+ that got fixed
-#if !GTK_CHECK_VERSION(3, 22, 0)
-    set_bounds(0, 0, false, false, -1, -1, geometry.unfullscreen_w, geometry.unfullscreen_h);
-#endif
 }
 
 // Applied to a temporary full screen window to prevent sending events to Java
@@ -1227,6 +1217,18 @@ void WindowContext::applyShapeMask(void *data, uint width, uint height) {
 }
 
 ///////////////////////// PRIVATE
+
+// this is to work-around past gtk+ bug
+void WindowContext::ensure_window_size() {
+#if !GTK_CHECK_VERSION(3, 22, 0)
+    gint w, h;
+    w = gdk_window_get_width(gdk_window);
+    h = gdk_window_get_height(gdk_window);
+    if (geometry.current_cw != w || geometry.current_ch != h) {
+        gdk_window_resize(gdk_window, w, h);
+    }
+#endif
+}
 
 // This function calculate the deltas between window and window + decoration (titlebar, borders).
 // It's used when the window manager does not support the _NET_FRAME_EXTENTS extension or when
