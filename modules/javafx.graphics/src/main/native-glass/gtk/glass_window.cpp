@@ -1224,7 +1224,8 @@ void WindowContext::ensure_window_size() {
     gint w, h;
     w = gdk_window_get_width(gdk_window);
     h = gdk_window_get_height(gdk_window);
-    if (geometry.current_cw != w || geometry.current_ch != h) {
+
+    if (geometry.current_w != w || geometry.current_h != h) {
         gdk_window_resize(gdk_window, w, h);
     }
 #endif
