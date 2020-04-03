@@ -71,6 +71,8 @@ struct WindowGeometry {
                        current_h(0),
                        current_cw(0),
                        current_ch(0),
+                       last_cw(0),
+                       last_ch(0),
                        adjust_w(0),
                        adjust_h(0),
                        view_x(0),
