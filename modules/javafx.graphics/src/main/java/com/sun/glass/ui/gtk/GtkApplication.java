@@ -155,10 +155,15 @@ final class GtkApplication extends Application implements
                 }
                 return ret;
             }) : forcedGtkVersion;
+
+        boolean gtkNew = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                Boolean.getBoolean("jdk.gtk.new"));
+
         boolean gtkVersionVerbose =
                 AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
             return Boolean.getBoolean("jdk.gtk.verbose");
         });
+
         if (PrismSettings.allowHiDPIScaling) {
             overrideUIScale = AccessController.doPrivileged((PrivilegedAction<Float>) () ->
                     getFloat("glass.gtk.uiScale", -1.0f, "Forcing UI scaling factor: "));
@@ -176,18 +181,23 @@ final class GtkApplication extends Application implements
                     System.out.println("Glass GTK library to load is already loaded");
                 }
             } else if (libraryToLoad == QUERY_LOAD_GTK2) {
+                String libName = (gtkNew) ? "glassgtkn2" : "glassgtk2";
                 if (gtkVersionVerbose) {
-                    System.out.println("Glass GTK library to load is glassgtk2");
+                    System.out.println(String.format("Glass GTK library to load is %s", libName));
                 }
-                NativeLibLoader.loadLibrary("glassgtk2");
+
+                NativeLibLoader.loadLibrary(libName);
             } else if (libraryToLoad == QUERY_LOAD_GTK3) {
+                String libName = (gtkNew) ? "glassgtkn3" : "glassgtk3";
                 if (gtkVersionVerbose) {
-                    System.out.println("Glass GTK library to load is glassgtk3");
+                    System.out.println(String.format("Glass GTK library to load is %s", libName));
                 }
-                NativeLibLoader.loadLibrary("glassgtk3");
+
+                NativeLibLoader.loadLibrary(libName);
             } else {
                 throw new UnsupportedOperationException("Internal Error");
             }
+
             return null;
         });
 
@@ -213,7 +223,7 @@ final class GtkApplication extends Application implements
     @Native private static final int QUERY_USE_CURRENT = 1;
     @Native private static final int QUERY_LOAD_GTK2 = 2;
     @Native private static final int QUERY_LOAD_GTK3 = 3;
-    /*
+        /*
      * check the system and return an indication of which library to load
      *  return values are the QUERY_ constants
      */
