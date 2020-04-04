@@ -360,6 +360,7 @@ void WindowContext::process_focus(GdkEventFocus *event) {
 
 void WindowContext::process_property_notify(GdkEventProperty *event) {
     if (event->window == gdk_window) {
+        // This work-around is only necessary for Unity
         if (event->atom == atom_net_wm_state) {
             process_net_wm_property();
         } else if (event->atom == atom_net_wm_frame_extents) {
@@ -759,6 +760,11 @@ void WindowContext::process_state(GdkEventWindowState *event) {
 
 void WindowContext::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
+
+    // This is a Unity bug
+    if (!g_strcmp0("Unity", gdk_x11_screen_get_window_manager_name(gdk_screen_get_default()))) {
+        return;
+    }
 
     static GdkAtom atom_atom = gdk_atom_intern_static_string("ATOM");
     static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
