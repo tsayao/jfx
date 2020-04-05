@@ -635,7 +635,7 @@ void WindowContext::process_mouse_scroll(GdkEventScroll *event) {
                                 gdk_modifier_mask_to_glass(event->state),
                                 (jint) 0, (jint) 0,
                                 (jint) 0, (jint) 0,
-                                mx, my);
+                                (jdouble) 40.0, (jdouble) 40.0);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 }
