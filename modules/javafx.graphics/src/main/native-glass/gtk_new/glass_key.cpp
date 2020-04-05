@@ -244,7 +244,7 @@ jint get_glass_key(GdkEventKey* e) {
     guint keyValue;
     guint state = e->state & GDK_MOD2_MASK; //NumLock test
 
-    gdk_keymap_translate_keyboard_state(gdk_keymap_get_default(),
+    gdk_keymap_translate_keyboard_state(gdk_keymap_get_for_display(gdk_display_get_default()),
             e->hardware_keycode, static_cast<GdkModifierType>(state), e->group,
             &keyValue, NULL, NULL, NULL);
 
@@ -259,7 +259,7 @@ jint get_glass_key(GdkEventKey* e) {
         kk.keycode = e->hardware_keycode;
         kk.group = kk.level = 0;
 
-        keyValue = gdk_keymap_lookup_key(gdk_keymap_get_default(), &kk);
+        keyValue = gdk_keymap_lookup_key(gdk_keymap_get_for_display(gdk_display_get_default()), &kk);
 
         key = GPOINTER_TO_INT(g_hash_table_lookup(keymap,
                 GINT_TO_POINTER(keyValue)));

@@ -107,9 +107,12 @@ JNIEXPORT jint JNICALL Java_com_sun_glass_ui_gtk_GtkApplication__1initGTK
     gtk_verbose = verbose;
 
     env->ExceptionClear();
-    init_threads();
 
+#if !GTK_CHECK_VERSION(3, 6, 0)
+    init_threads();
     gdk_threads_enter();
+#endif
+
     gtk_init(NULL, NULL);
 
     return JNI_TRUE;
@@ -200,7 +203,11 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkApplication__1runLoop
     // Disable X error handling
 #ifndef VERBOSE
     if (!noErrorTrap) {
+#if GTK_CHECK_VERSION(3, 0, 0)
+        gdk_x11_display_error_trap_push(gdk_display_get_default());
+#else
         gdk_error_trap_push();
+#endif
     }
 #endif
 
@@ -220,7 +227,9 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkApplication__1runLoop
     //     }
     // #endif
 
+#if !GTK_CHECK_VERSION(3, 6, 0)
     gdk_threads_leave();
+#endif
 
 }
 
@@ -384,8 +393,7 @@ JNIEXPORT jboolean JNICALL Java_com_sun_glass_ui_gtk_GtkApplication__1supportsTr
     (void)env;
     (void)obj;
 
-    return gdk_display_supports_composite(gdk_display_get_default())
-            && gdk_screen_is_composited(gdk_screen_get_default());
+    return gdk_screen_is_composited(gdk_screen_get_default());
 }
 
 } // extern "C"

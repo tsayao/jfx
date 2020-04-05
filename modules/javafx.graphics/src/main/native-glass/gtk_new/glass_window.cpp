@@ -193,10 +193,11 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext *_owner, long _scre
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
 
-    if (gchar * app_name = get_application_name()) {
-        gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
-        g_free(app_name);
-    }
+// Not useful, see: https://developer.gnome.org/gtk3/stable/GtkWindow.html#gtk-window-set-wmclass
+//    if (gchar * app_name = get_application_name()) {
+//        gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
+//        g_free(app_name);
+//    }
 
     if (owner) {
         owner->add_child(this);
@@ -1061,7 +1062,11 @@ void WindowContext::set_title(const char *title) {
 }
 
 void WindowContext::set_alpha(double alpha) {
-    gtk_window_set_opacity(GTK_WINDOW(gtk_widget), (gdouble) alpha);
+#if GTK_CHECK_VERSION(3, 8, 0)
+    gtk_widget_set_opacity(gtk_widget, (gdouble)alpha);
+#else
+    gtk_window_set_opacity(GTK_WINDOW(gtk_widget), (gdouble)alpha);
+#endif
 }
 
 void WindowContext::set_enabled(bool enabled) {

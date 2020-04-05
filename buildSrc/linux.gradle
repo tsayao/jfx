@@ -81,6 +81,7 @@ if (hasProperty('toolchainDir')) {
 
 def gtk2CCFlags = [ "-Wno-deprecated-declarations" ];
 def gtk3CCFlags = [ "-Wno-deprecated-declarations" ];
+def gtkn3CCFlags = [ ];
 def gtk2LinkFlags = [ ];
 def gtk3LinkFlags = [ ];
 
@@ -135,6 +136,7 @@ setupTools("linux_gtk3",
         def libsGTK3 = properties.getProperty("libsGTK3")
         if (cflagsGTK3 && libsGTK3) {
             gtk3CCFlags.addAll(cflagsGTK3.split(" "))
+            gtkn3CCFlags.addAll(cflagsGTK3.split(" "))
             gtk3LinkFlags.addAll(libsGTK3.split(" "))
         } else {
             throw new IllegalStateException("GTK3 development packages not found. If GTK3 packages are installed, please remove the build directory and try again.")
@@ -266,8 +268,8 @@ LINUX.glass.glassgtkn3 = [:]
 LINUX.glass.glassgtkn3.nativeSource =  ft_gtkn.getFiles()
 LINUX.glass.glassgtkn3.compiler = compiler
 LINUX.glass.glassgtkn3.ccFlags = IS_STATIC_BUILD ?
-        ["-fno-threadsafe-statics", ccFlags, gtk3CCFlags].flatten() :
-        [ccFlags, gtk3CCFlags, "-Werror"].flatten()
+        ["-fno-threadsafe-statics", ccFlags, gtkn3CCFlags].flatten() :
+        [ccFlags, gtkn3CCFlags, "-Werror"].flatten()
 LINUX.glass.glassgtkn3.linker = linker
 LINUX.glass.glassgtkn3.linkFlags = IS_STATIC_BUILD ? linkFlags : [linkFlags, gtk3LinkFlags].flatten()
 LINUX.glass.glassgtkn3.lib = "glassgtkn3"
