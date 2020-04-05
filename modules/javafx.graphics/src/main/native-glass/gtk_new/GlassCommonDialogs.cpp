@@ -114,9 +114,9 @@ JNIEXPORT jobject JNICALL Java_com_sun_glass_ui_gtk_GtkCommonDialogs__1showFileC
 
     GtkWidget* chooser = gtk_file_chooser_dialog_new(chooser_title, gdk_window_handle_to_gtk(parent),
             static_cast<GtkFileChooserAction>(chooser_type),
-            GTK_STOCK_CANCEL,
+            "_Cancel",
             GTK_RESPONSE_CANCEL,
-            (chooser_type == GTK_FILE_CHOOSER_ACTION_OPEN ? GTK_STOCK_OPEN : GTK_STOCK_SAVE),
+            (chooser_type == GTK_FILE_CHOOSER_ACTION_OPEN ? "_Open" : "_Save"),
             GTK_RESPONSE_ACCEPT,
             NULL);
 
@@ -201,9 +201,9 @@ JNIEXPORT jstring JNICALL Java_com_sun_glass_ui_gtk_GtkCommonDialogs__1showFolde
             chooser_title,
             gdk_window_handle_to_gtk(parent),
             GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-            GTK_STOCK_CANCEL,
+            "_Cancel",
             GTK_RESPONSE_CANCEL,
-            GTK_STOCK_OPEN,
+            "_Open",
             GTK_RESPONSE_ACCEPT,
             NULL);
 

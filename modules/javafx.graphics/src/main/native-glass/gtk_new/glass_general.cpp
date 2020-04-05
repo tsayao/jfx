@@ -533,9 +533,14 @@ GdkScreen * glass_gdk_window_get_screen(GdkWindow * gdkWindow)
 void
 glass_gdk_master_pointer_get_position(gint *x, gint *y) {
 #ifdef GLASS_GTK3
-        gdk_device_get_position(gdk_device_manager_get_client_pointer(
-                                    gdk_display_get_device_manager(
-                                        gdk_display_get_default())), NULL, x, y);
+#if GTK_CHECK_VERSION(3, 20, 0)
+        gdk_device_get_position(gdk_seat_get_pointer(gdk_display_get_default_seat(gdk_display_get_default())),
+                                NULL, x, y);
+#else
+        gdk_device_get_position(
+            gdk_device_manager_get_client_pointer(
+                gdk_display_get_device_manager(gdk_display_get_default())), NULL , x, y);
+#endif
 #else
         gdk_display_get_pointer(gdk_display_get_default(), NULL, x, y, NULL);
 #endif
@@ -566,24 +571,23 @@ glass_gtk_window_configure_from_visual(GtkWidget *widget, GdkVisual *visual) {
 static gboolean
 configure_transparent_window(GtkWidget *window) {
     GdkScreen *default_screen = gdk_screen_get_default();
-    GdkDisplay *default_display = gdk_display_get_default();
 
 #ifdef GLASS_GTK3
-        GdkVisual *visual = gdk_screen_get_rgba_visual(default_screen);
-        if (visual
-                && gdk_display_supports_composite(default_display)
-                && gdk_screen_is_composited(default_screen)) {
-            glass_widget_set_visual(window, visual);
-            return TRUE;
-        }
+    GdkVisual *visual = gdk_screen_get_rgba_visual(default_screen);
+    // visual will be NULL if rgba not supported
+    if (visual) {
+        glass_widget_set_visual(window, visual);
+        return TRUE;
+    }
 #else
-        GdkColormap *colormap = gdk_screen_get_rgba_colormap(default_screen);
-        if (colormap
-                && gdk_display_supports_composite(default_display)
-                && gdk_screen_is_composited(default_screen)) {
-            gtk_widget_set_colormap(window, colormap);
-            return TRUE;
-        }
+    GdkDisplay *default_display = gdk_display_get_default();
+    GdkColormap *colormap = gdk_screen_get_rgba_colormap(default_screen);
+    if (colormap
+            && gdk_display_supports_composite(default_display)
+            && gdk_screen_is_composited(default_screen)) {
+        gtk_widget_set_colormap(window, colormap);
+        return TRUE;
+    }
 #endif
 
     return FALSE;
@@ -598,9 +602,13 @@ glass_gdk_window_get_size(GdkWindow *window, gint *w, gint *h) {
 void
 glass_gdk_display_get_pointer(GdkDisplay* display, gint* x, gint *y) {
 #ifdef GLASS_GTK3
+#if GTK_CHECK_VERSION(3, 20, 0)
+        gdk_device_get_position(gdk_seat_get_pointer(gdk_display_get_default_seat(display)), NULL, x, y);
+#else
         gdk_device_get_position(
             gdk_device_manager_get_client_pointer(
                 gdk_display_get_device_manager(display)), NULL , x, y);
+#endif
 #else
         gdk_display_get_pointer(display, NULL, x, y, NULL);
 #endif

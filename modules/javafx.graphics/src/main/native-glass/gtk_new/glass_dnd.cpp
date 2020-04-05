@@ -928,6 +928,7 @@ void DragView::View::screen_changed() {
 }
 
 void DragView::View::expose() {
+#ifdef GLASS_GTK2
     cairo_t *context = gdk_cairo_create(gtk_widget_get_window(widget));
 
     cairo_surface_t *cairo_surface;
@@ -952,4 +953,5 @@ void DragView::View::expose() {
     }
     cairo_destroy(context);
     cairo_surface_destroy(cairo_surface);
+#endif
 }

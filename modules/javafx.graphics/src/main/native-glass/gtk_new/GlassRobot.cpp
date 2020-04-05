@@ -76,7 +76,7 @@ static void keyButton(jint code, gboolean press)
     if (gdk_keyval == -1) {
         return;
     }
-    gdk_keymap_get_entries_for_keyval(gdk_keymap_get_default(),
+    gdk_keymap_get_entries_for_keyval(gdk_keymap_get_for_display(gdk_x11_lookup_xdisplay(xdisplay)),
             gdk_keyval, &keys, &n_keys);
     if (n_keys < 1) {
         return;
