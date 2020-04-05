@@ -593,14 +593,20 @@ void WindowContext::process_mouse_motion(GdkEventMotion *event) {
 }
 
 void WindowContext::process_mouse_scroll(GdkEventScroll *event) {
-    jdouble dx = 0;
-    jdouble dy = 0;
+    jdouble dx = 0, dy = 0, mx = 40.0, my = 40.0;
 
     // converting direction to change in pixels
     switch (event->direction) {
 #if GTK_CHECK_VERSION(3, 4, 0)
         case GDK_SCROLL_SMOOTH:
-            //FIXME 3.4 ???
+            g_print("this is smooth\n");
+            if (event->delta_x != 0.0) {
+                dx = 1;
+                mx = mx * event->delta_x;
+            } else if (event->delta_y != 0.00) {
+                dy = 1;
+                my = my * event->delta_y;
+            }
             break;
 #endif
         case GDK_SCROLL_UP:
@@ -629,7 +635,7 @@ void WindowContext::process_mouse_scroll(GdkEventScroll *event) {
                                 gdk_modifier_mask_to_glass(event->state),
                                 (jint) 0, (jint) 0,
                                 (jint) 0, (jint) 0,
-                                (jdouble) 40.0, (jdouble) 40.0);
+                                mx, my);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 }
