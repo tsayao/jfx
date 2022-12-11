@@ -279,6 +279,7 @@ public:
     void process_configure(GdkEventConfigure*);
     void process_destroy();
     void process_net_wm_property();
+    void process_focus(GdkEventFocus*);
 
     WindowFrameExtents get_frame_extents();
 
@@ -301,6 +302,7 @@ public:
     void set_level(int);
     void set_visible(bool);
     void notify_on_top(bool);
+    void restack_on_top();
 
     void enter_fullscreen();
     void exit_fullscreen();
@@ -318,7 +320,6 @@ private:
     WindowFrameExtents get_cached_extents();
     bool get_frame_extents_property(int *, int *, int *, int *);
     void update_window_constraints();
-    void update_ontop_tree(bool);
     void notify_window_move();
     void notify_window_resize();
     WindowContextTop(WindowContextTop&);

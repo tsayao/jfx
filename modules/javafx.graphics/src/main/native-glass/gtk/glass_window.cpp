@@ -947,6 +947,11 @@ bool WindowContextTop::get_frame_extents_property(int *top, int *left,
     return false;
 }
 
+void WindowContextTop::process_focus(GdkEventFocus* event) {
+    restack_on_top();
+    WindowContextBase::process_focus(event);
+}
+
 void WindowContextTop::process_net_wm_property() {
     // Workaround for https://bugs.launchpad.net/unity/+bug/998073
 
@@ -1304,11 +1309,26 @@ void WindowContextTop::set_gravity(float x, float y) {
     geometry_set_window_y(&geometry, oldY);
 }
 
-void WindowContextTop::update_ontop_tree(bool on_top) {
-    bool effective_on_top = on_top || this->on_top;
-    for (std::set<WindowContextTop*>::iterator it = children.begin(); it != children.end(); ++it) {
-        (*it)->update_ontop_tree(effective_on_top);
+void WindowContextTop::restack_on_top() {
+    GList* all_win;
+    guint i;
+    WindowContextTop* ctx;
+
+    all_win = gdk_screen_get_window_stack(gdk_screen_get_default());
+
+    for (i=0; i<g_list_length(all_win); i++) {
+        GdkWindow* win = (GdkWindow*) g_list_nth_data(all_win, i);
+        ctx = (WindowContextTop*) g_object_get_data(G_OBJECT(win), GDK_WINDOW_DATA_CONTEXT);
+        if (ctx == NULL || ctx == this) {
+            continue;
+        }
+
+        if (ctx->on_top) {
+            ctx->to_front();
+        }
     }
+
+    g_list_free(all_win);
 }
 
 void WindowContextTop::notify_on_top(bool top) {
@@ -1321,12 +1341,12 @@ void WindowContextTop::notify_on_top(bool top) {
 void WindowContextTop::set_level(int level) {
     if (level == com_sun_glass_ui_Window_Level_NORMAL) {
         on_top = false;
-        gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), false);
     } else if (level == com_sun_glass_ui_Window_Level_FLOATING
             || level == com_sun_glass_ui_Window_Level_TOPMOST) {
         on_top = true;
-        gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), true);
     }
+
+    gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), on_top);
 }
 
 void WindowContextTop::set_owner(WindowContext * owner_ctx) {
