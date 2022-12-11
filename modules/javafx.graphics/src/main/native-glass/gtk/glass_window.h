@@ -320,8 +320,6 @@ private:
     bool get_frame_extents_property(int *, int *, int *, int *);
     void update_window_constraints();
     void update_ontop_tree(bool);
-    bool on_top_inherited();
-    bool effective_on_top();
     void notify_window_move();
     void notify_window_resize();
     WindowContextTop(WindowContextTop&);

@@ -806,9 +806,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     if (owner) {
         owner->add_child(this);
-        if (on_top_inherited()) {
-            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), TRUE);
-        }
     }
 
     if (type == UTILITY) {
@@ -1318,61 +1315,26 @@ void WindowContextTop::set_gravity(float x, float y) {
 
 void WindowContextTop::update_ontop_tree(bool on_top) {
     bool effective_on_top = on_top || this->on_top;
-    gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), effective_on_top ? TRUE : FALSE);
     for (std::set<WindowContextTop*>::iterator it = children.begin(); it != children.end(); ++it) {
         (*it)->update_ontop_tree(effective_on_top);
     }
 }
 
-bool WindowContextTop::on_top_inherited() {
-    WindowContext* o = owner;
-    while (o) {
-        WindowContextTop* topO = dynamic_cast<WindowContextTop*>(o);
-        if (!topO) break;
-        if (topO->on_top) {
-            return true;
-        }
-        o = topO->owner;
-    }
-    return false;
-}
-
-bool WindowContextTop::effective_on_top() {
-    if (owner) {
-        WindowContextTop* topO = dynamic_cast<WindowContextTop*>(owner);
-        return (topO && topO->effective_on_top()) || on_top;
-    }
-    return on_top;
-}
-
 void WindowContextTop::notify_on_top(bool top) {
-    // Do not report effective (i.e. native) values to the FX, only if the user sets it manually
-    if (top != effective_on_top() && jwindow) {
-        if (on_top_inherited() && !top) {
-            // Disallow user's "on top" handling on windows that inherited the property
-            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), TRUE);
-        } else {
-            on_top = top;
-            update_ontop_tree(top);
-            mainEnv->CallVoidMethod(jwindow,
-                    jWindowNotifyLevelChanged,
-                    top ? com_sun_glass_ui_Window_Level_FLOATING :  com_sun_glass_ui_Window_Level_NORMAL);
-            CHECK_JNI_EXCEPTION(mainEnv);
-        }
-    }
+    mainEnv->CallVoidMethod(jwindow,
+            jWindowNotifyLevelChanged,
+            top ? com_sun_glass_ui_Window_Level_FLOATING :  com_sun_glass_ui_Window_Level_NORMAL);
+    CHECK_JNI_EXCEPTION(mainEnv);
 }
 
 void WindowContextTop::set_level(int level) {
     if (level == com_sun_glass_ui_Window_Level_NORMAL) {
         on_top = false;
+        gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), false);
     } else if (level == com_sun_glass_ui_Window_Level_FLOATING
             || level == com_sun_glass_ui_Window_Level_TOPMOST) {
         on_top = true;
-    }
-    // We need to emulate always on top behaviour on child windows
-
-    if (!on_top_inherited()) {
-        update_ontop_tree(on_top);
+        gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), true);
     }
 }
 
