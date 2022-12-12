@@ -948,7 +948,6 @@ bool WindowContextTop::get_frame_extents_property(int *top, int *left,
 }
 
 void WindowContextTop::process_focus(GdkEventFocus* event) {
-    restack_on_top();
     WindowContextBase::process_focus(event);
 }
 
