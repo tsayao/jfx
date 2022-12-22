@@ -910,6 +910,7 @@ void WindowContextTop::ensure_window_size() {
     int cw = geometry_get_content_width(&geometry);
     int ch = geometry_get_content_height(&geometry);
 
+    g_print("ensure_window_size\n");
     set_bounds(-1, -1, false, false, w, h, cw, ch);
 
     notify_window_resize();
@@ -1133,6 +1134,7 @@ void WindowContextTop::set_visible(bool visible) {
 }
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch) {
+    g_print("set_bounds %d, %d, %d, %d\n", w, h, cw, ch);
     // newW / newH always content sizes compatible with GTK+ (content size means "do not account window frame")
     int newW = 0;
     int newH = 0;
@@ -1408,6 +1410,7 @@ void WindowContextTop::notify_window_move() {
     int y = geometry_get_window_y(&geometry);
 
     mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, x, y);
+    CHECK_JNI_EXCEPTION(mainEnv)
     CHECK_JNI_EXCEPTION(mainEnv)
 
     if (jview) {
