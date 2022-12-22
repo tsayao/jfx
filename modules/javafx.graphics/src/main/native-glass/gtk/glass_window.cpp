@@ -237,7 +237,7 @@ void WindowContextBase::process_delete() {
 
 void WindowContextBase::process_expose(GdkEventExpose* event) {
     if (jview) {
-        g_print("repaint\n");
+        g_print("repaint %d, %d, %d, %d\n",  event->area.x, event->area.y, event->area.width, event->area.height);
         mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
