@@ -913,7 +913,6 @@ void WindowContextTop::ensure_window_size() {
 
     g_print("ensure_window_size\n");
     set_bounds(-1, -1, false, false, w, h, cw, ch);
-    notify_window_resize();
     // Window didn't actually move, but view X, Y might change
     notify_window_move();
 }
