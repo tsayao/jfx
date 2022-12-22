@@ -1388,15 +1388,6 @@ void WindowContextTop::set_owner(WindowContext * owner_ctx) {
 }
 
 void WindowContextTop::notify_window_resize() {
-    int w = geometry_get_window_width(&geometry);
-    int h = geometry_get_window_height(&geometry);
-
-    g_print("notify window %d, %d\n", w, h);
-
-    mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-                 com_sun_glass_events_WindowEvent_RESIZE, w, h);
-    CHECK_JNI_EXCEPTION(mainEnv)
-
     if (jview) {
         int cw = geometry_get_content_width(&geometry);
         int ch = geometry_get_content_height(&geometry);
@@ -1405,6 +1396,15 @@ void WindowContextTop::notify_window_resize() {
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, cw, ch);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
+
+    int w = geometry_get_window_width(&geometry);
+    int h = geometry_get_window_height(&geometry);
+
+    g_print("notify window %d, %d\n", w, h);
+
+    mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                 com_sun_glass_events_WindowEvent_RESIZE, w, h);
+    CHECK_JNI_EXCEPTION(mainEnv)
 }
 
 void WindowContextTop::notify_window_move() {
