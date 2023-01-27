@@ -416,7 +416,8 @@ is being used to size a border should also be in pixels.
 .choice-box,
 .color-picker.split-button > .color-picker-label,
 .combo-box-base,
-.combo-box-base:editable > .arrow-button {
+.combo-box-base:editable > .arrow-button
+.stage-decoration {
     -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
     -fx-background-insets: 0 0 -1 0, 0, 1, 2;
     -fx-background-radius: 3px, 3px, 2px, 1px;
@@ -3446,14 +3447,14 @@ is being used to size a border should also be in pixels.
  ******************************************************************************/
 
 .stage-decoration {
-    -fx-background: #dfdcd8 linear-gradient(to top, #dad6d2, #e1dedb);
-    -fx-border-color: #bfb8b1;
-    -fx-border-style: solid;
-    -fx-border-radius: 0;
-    -fx-border-width: 0 0 1px;
     -fx-min-height: 46px;
-    -fx-padding: 0 6px;
     -fx-effect: innershadow(three-pass-box, rgba(255, 255, 255, 0.8), 1, 0, 0, 0);
+}
+
+.stage-decoration .title-buttons {
+    -fx-spacing: 0.333333em;
+    -fx-fill-height: true;
+    -fx-alignment: center-right;
 }
 
 .stage-decoration .button {

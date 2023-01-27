@@ -1,6 +1,8 @@
 package javafx.scene.control;
 
 import javafx.beans.DefaultProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.ListChangeListener;
@@ -12,7 +14,7 @@ import java.util.List;
 
 @DefaultProperty("content")
 public class StageDecoration extends Control {
-    private static final String DEFAULT_STYLE_CLASS = "decoration";
+    private static final String DEFAULT_STYLE_CLASS = "stage-decoration";
     private final Stage stage;
 
     public StageDecoration(Stage stage) {
@@ -23,6 +25,30 @@ public class StageDecoration extends Control {
     @Override
     protected Skin<?> createDefaultSkin() {
         return new StageDecorationSkin(this, stage);
+    }
+
+    private final BooleanProperty showIcon = new BooleanPropertyBase(true) {
+        @Override
+        public Object getBean() {
+            return StageDecoration.this;
+        }
+
+        @Override
+        public String getName() {
+            return "showIcon";
+        }
+    };
+
+    public final void setShowIcon(boolean value) {
+        showIconProperty().set(value);
+    }
+
+    public final BooleanProperty showIconProperty() {
+        return showIcon;
+    }
+
+    public final boolean isShowIcon() {
+        return showIcon.get();
     }
 
     private ObjectProperty<Node> left;

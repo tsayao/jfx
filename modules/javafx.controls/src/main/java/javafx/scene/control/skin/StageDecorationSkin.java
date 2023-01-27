@@ -27,30 +27,66 @@
 package javafx.scene.control.skin;
 
 import com.sun.javafx.scene.control.behavior.StageDecorationBehaviour;
-import javafx.scene.control.StageDecoration;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
+import javafx.scene.control.StageDecoration;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
+import java.util.Comparator;
+
 public class StageDecorationSkin extends SkinBase<StageDecoration> {
-    private final ImageView icon;
+    private IconRegion icon;
     private final Label title;
-    private final HBox titleButtons;
     private final StageDecorationBehaviour behaviour;
+    private final StageDecoration control;
+    private Stage stage;
 
 
     public StageDecorationSkin(StageDecoration control, Stage stage) {
         super(control);
         this.behaviour = new StageDecorationBehaviour(control);
-
-        icon = new ImageView();
+        this.stage = stage;
+        this.control = getSkinnable();
 
         title = new Label();
         title.textProperty().bind(stage.titleProperty());
 
-        titleButtons = new HBox();
+        registerChangeListener(control.showIconProperty(), e -> updateChildren());
+        registerChangeListener(control.leftProperty(), e -> updateChildren());
+        registerChangeListener(control.rightProperty(), e -> updateChildren());
     }
 
+    private void updateChildren() {
+        getChildren().clear();
+
+        if (control.isShowIcon() && !stage.getIcons().isEmpty()) {
+            icon = new IconRegion();
+            getChildren().add(icon);
+        }
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        behaviour.dispose();
+    }
+
+    class IconRegion extends ImageView {
+        public IconRegion() {
+            double height = getSkinnable().getHeight();
+
+            stage.getIcons().stream().filter(i -> i.getHeight() < height)
+                    .max(Comparator.comparingDouble(Image::getHeight))
+                    .ifPresent(this::setImage);
+        }
+    }
+
+    class TitleButtonsRegion extends HBox {
+        public TitleButtonsRegion() {
+            getStyleClass().setAll("title-buttons");
+        }
+    }
 }
