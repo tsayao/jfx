@@ -3438,3 +3438,24 @@ is being used to size a border should also be in pixels.
 .alert.warning.dialog-pane {
     -fx-graphic: url("dialog-warning.png");
 }
+
+/*******************************************************************************
+ *                                                                             *
+ * Stage Decoration                                                            *
+ *                                                                             *
+ ******************************************************************************/
+
+.stage-decoration {
+    -fx-background: #dfdcd8 linear-gradient(to top, #dad6d2, #e1dedb);
+    -fx-border-color: #bfb8b1;
+    -fx-border-style: solid;
+    -fx-border-radius: 0;
+    -fx-border-width: 0 0 1px;
+    -fx-min-height: 46px;
+    -fx-padding: 0 6px;
+    -fx-effect: innershadow(three-pass-box, rgba(255, 255, 255, 0.8), 1, 0, 0, 0);
+}
+
+.stage-decoration .button {
+    -fx-background-color: red;
+}
