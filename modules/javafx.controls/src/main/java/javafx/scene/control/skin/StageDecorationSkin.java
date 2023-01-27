@@ -28,6 +28,7 @@ package javafx.scene.control.skin;
 
 import com.sun.javafx.scene.control.ListenerHelper;
 import com.sun.javafx.scene.control.behavior.StageDecorationBehaviour;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.StageDecoration;
@@ -37,6 +38,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.util.Comparator;
 
@@ -66,7 +68,7 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
 
         ListenerHelper lh = ListenerHelper.get(this);
         lh.addChangeListener(this::update, control.showIconProperty(), control.showTitleProperty(),
-                stage.fullScreenProperty());
+                control.leftProperty(), control.rightProperty(), stage.fullScreenProperty());
         update();
     }
 
@@ -87,8 +89,12 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
             HBox.setHgrow(icon, Priority.NEVER);
         }
 
-        container.getChildren().add(leftRegion);
-        HBox.setHgrow(leftRegion, Priority.SOMETIMES);
+        if (getSkinnable().getLeft() != null) {
+            container.getChildren().add(leftRegion);
+            HBox.setHgrow(leftRegion, Priority.SOMETIMES);
+        }
+
+        container.getChildren().add(getSpanPane());
 
         if (getSkinnable().isShowTitle()) {
             if (title == null) {
@@ -98,11 +104,22 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
             HBox.setHgrow(title, Priority.ALWAYS);
         }
 
-        container.getChildren().add(rightRegion);
-        HBox.setHgrow(rightRegion, Priority.SOMETIMES);
+        container.getChildren().add(getSpanPane());
+
+
+        if (getSkinnable().getRight() != null) {
+            container.getChildren().add(rightRegion);
+            HBox.setHgrow(rightRegion, Priority.SOMETIMES);
+        }
 
         container.getChildren().add(stageButtons);
         HBox.setHgrow(stageButtons, Priority.NEVER);
+    }
+
+    private StackPane getSpanPane() {
+        StackPane pane = new StackPane();
+        HBox.setHgrow(pane, Priority.SOMETIMES);
+        return pane;
     }
 
     @Override
@@ -144,25 +161,65 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
     }
 
     class StageButtonsRegion extends HBox {
+        private final Button iconify;
+        private final Button maximize;
+        private final Button close;
+
         StageButtonsRegion() {
             getStyleClass().setAll("stage-buttons");
+
+            iconify = new Button();
+            iconify.getStyleClass().add("iconify");
+
+            maximize = new Button();
+            maximize.getStyleClass().add("maximize");
+
+            close = new Button();
+            close.getStyleClass().add("close");
+
+            iconify.setOnAction(e -> stage.setIconified(!stage.isIconified()));
+            maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+            close.setOnAction(e -> stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST)));
+
             ListenerHelper lh = new ListenerHelper(this);
             lh.addChangeListener(this::update, stage.resizableProperty());
+
+            update();
         }
 
         private void update() {
+            getChildren().clear();
+            getChildren().add(iconify);
+
+            if (stage.isResizable()) {
+                getChildren().add(maximize);
+            }
+
+            getChildren().add(close);
         }
     }
 
     class LeftRegion extends StackPane {
         LeftRegion() {
             getStyleClass().setAll("left");
+            ListenerHelper lh = new ListenerHelper(this);
+            lh.addChangeListener(this::update, getSkinnable().leftProperty());
+        }
+
+        private void update() {
+            getChildren().setAll(getSkinnable().getLeft());
         }
     }
 
     class RightRegion extends StackPane {
         RightRegion() {
             getStyleClass().setAll("right");
+            ListenerHelper lh = new ListenerHelper(this);
+            lh.addChangeListener(this::update, getSkinnable().rightProperty());
+        }
+
+        private void update() {
+            getChildren().setAll(getSkinnable().getRight());
         }
     }
 }

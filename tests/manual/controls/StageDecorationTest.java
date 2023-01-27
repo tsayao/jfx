@@ -40,9 +40,8 @@ public class StageDecorationTest extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         StageDecoration headerBar = new StageDecoration(stage);
-//        headerBar.getButtons().add(new Button("Test"));
         Scene scene = new Scene(new VBox(headerBar));
-        stage.initStyle(StageStyle.UNDECORATED);
+        stage.initStyle(StageStyle.TRANSPARENT);
         stage.setScene(scene);
         stage.getIcons().add(new Image("https://www.iconsdb.com/icons/download/black/skull-32-32.png"));
         stage.setTitle("Olaaaaaaaaaaaaa");

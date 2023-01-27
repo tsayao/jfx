@@ -416,8 +416,7 @@ is being used to size a border should also be in pixels.
 .choice-box,
 .color-picker.split-button > .color-picker-label,
 .combo-box-base,
-.combo-box-base:editable > .arrow-button
-.stage-decoration {
+.combo-box-base:editable > .arrow-button {
     -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
     -fx-background-insets: 0 0 -1 0, 0, 1, 2;
     -fx-background-radius: 3px, 3px, 2px, 1px;
@@ -502,6 +501,7 @@ is being used to size a border should also be in pixels.
 .text-input:disabled,
 .choice-box:disabled,
 .combo-box-base:disabled,
+
 .date-cell:disabled > *, /* This is set on children so border is not affected. */
 .list-view:disabled,
 .tree-view:disabled,
@@ -3447,8 +3447,12 @@ is being used to size a border should also be in pixels.
  ******************************************************************************/
 
 .stage-decoration {
-    -fx-min-height: 46px;
+    -fx-background-color: -fx-outer-border, -fx-inner-border-bottomup, -fx-body-color-bottomup;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 12px, 12px, 0px, 0px;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
     -fx-effect: innershadow(three-pass-box, rgba(255, 255, 255, 0.8), 1, 0, 0, 0);
+    -fx-min-height: 42px;
 }
 
 .stage-decoration .container {
@@ -3457,10 +3461,22 @@ is being used to size a border should also be in pixels.
     -fx-alignment: center-left;
 }
 
+.stage-decoration .container .title {
+    -fx-alignment: center;
+    -fx-font-weight: bold;
+    -fx-wrap-text: false;
+    -fx-text-overrun: ellipsis;
+    -fx-text-fill: -fx-text-base-color;
+}
+
 .stage-decoration .container .stage-buttons {
     -fx-spacing: 0.333333em;
     -fx-fill-height: true;
     -fx-alignment: center-right;
+}
+
+.stage-decoration .container .stage-buttons .button {
+    -fx-background-radius: 5em;
 }
 
 .stage-decoration .container .icon {

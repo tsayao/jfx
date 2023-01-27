@@ -1,6 +1,5 @@
 package javafx.scene.control;
 
-import javafx.beans.DefaultProperty;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
@@ -12,7 +11,6 @@ import javafx.stage.Stage;
 
 import java.util.List;
 
-@DefaultProperty("content")
 public class StageDecoration extends Control {
     private static final String DEFAULT_STYLE_CLASS = "stage-decoration";
     private final Stage stage;
@@ -59,7 +57,7 @@ public class StageDecoration extends Control {
 
     public final ObjectProperty<Node> leftProperty() {
         if (left == null) {
-            left = new StageDecoration.HeaderBarPositionProperty("left");
+            left = new StageDecorationPositionProperty("left");
         }
         return left;
     }
@@ -76,7 +74,7 @@ public class StageDecoration extends Control {
 
     public final ObjectProperty<Node> rightProperty() {
         if (right == null) {
-            right = new StageDecoration.HeaderBarPositionProperty("right");
+            right = new StageDecorationPositionProperty("right");
         }
         return right;
     }
@@ -89,12 +87,12 @@ public class StageDecoration extends Control {
         return right == null ? null : right.get();
     }
 
-    private final class HeaderBarPositionProperty extends ObjectPropertyBase<Node> {
+    private final class StageDecorationPositionProperty extends ObjectPropertyBase<Node> {
         private Node oldValue = null;
         private final String propertyName;
         private boolean isBeingInvalidated;
 
-        HeaderBarPositionProperty(String propertyName) {
+        StageDecorationPositionProperty(String propertyName) {
             this.propertyName = propertyName;
             getChildren().addListener((ListChangeListener<Node>) c -> {
                 if (oldValue == null || isBeingInvalidated) {
