@@ -2,9 +2,9 @@ package javafx.scene.control;
 
 import javafx.beans.DefaultProperty;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.BooleanPropertyBase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.control.skin.StageDecorationSkin;
@@ -27,28 +27,32 @@ public class StageDecoration extends Control {
         return new StageDecorationSkin(this, stage);
     }
 
-    private final BooleanProperty showIcon = new BooleanPropertyBase(true) {
-        @Override
-        public Object getBean() {
-            return StageDecoration.this;
-        }
+    private final BooleanProperty showTitle = new SimpleBooleanProperty(this, "showTitle", true);
 
-        @Override
-        public String getName() {
-            return "showIcon";
-        }
-    };
-
-    public final void setShowIcon(boolean value) {
-        showIconProperty().set(value);
+    public boolean isShowTitle() {
+        return showTitle.get();
     }
 
-    public final BooleanProperty showIconProperty() {
+    public BooleanProperty showTitleProperty() {
+        return showTitle;
+    }
+
+    public void setShowTitle(boolean showTitle) {
+        this.showTitle.set(showTitle);
+    }
+
+    private final BooleanProperty showIcon =  new SimpleBooleanProperty(this, "showIcon", true);
+
+    public boolean isShowIcon() {
+        return showIcon.get();
+    }
+
+    public BooleanProperty showIconProperty() {
         return showIcon;
     }
 
-    public final boolean isShowIcon() {
-        return showIcon.get();
+    public void setShowIcon(boolean showIcon) {
+        this.showIcon.set(showIcon);
     }
 
     private ObjectProperty<Node> left;

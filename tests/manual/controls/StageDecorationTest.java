@@ -27,6 +27,7 @@
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.StageDecoration;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -43,6 +44,8 @@ public class StageDecorationTest extends Application {
         Scene scene = new Scene(new VBox(headerBar));
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setScene(scene);
+        stage.getIcons().add(new Image("https://www.iconsdb.com/icons/download/black/skull-32-32.png"));
+        stage.setTitle("Olaaaaaaaaaaaaa");
         stage.setWidth(400);
         stage.setHeight(200);
         stage.show();

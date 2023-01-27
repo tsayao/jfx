@@ -3451,12 +3451,18 @@ is being used to size a border should also be in pixels.
     -fx-effect: innershadow(three-pass-box, rgba(255, 255, 255, 0.8), 1, 0, 0, 0);
 }
 
-.stage-decoration .title-buttons {
+.stage-decoration .container {
+    -fx-spacing: 0.333333em;
+    -fx-fill-height: true;
+    -fx-alignment: center-left;
+}
+
+.stage-decoration .container .stage-buttons {
     -fx-spacing: 0.333333em;
     -fx-fill-height: true;
     -fx-alignment: center-right;
 }
 
-.stage-decoration .button {
-    -fx-background-color: red;
+.stage-decoration .container .icon {
+
 }
