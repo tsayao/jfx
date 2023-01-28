@@ -12,7 +12,7 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * accompanied this code);
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
@@ -31,143 +31,54 @@
 #include "com_sun_glass_ui_Cursor.h"
 #include "glass_general.h"
 
+static GdkCursor* get_cursor(const char *name) {
+    return gdk_cursor_new_from_name(gdk_display_get_default(), name);
+}
+
 GdkCursor* get_native_cursor(int type) {
-    GdkCursor *cursor = NULL;
     switch (type) {
         case com_sun_glass_ui_Cursor_CURSOR_DEFAULT:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "default");
-            break;
+            return get_cursor("default");
         case com_sun_glass_ui_Cursor_CURSOR_TEXT:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "text");
-            break;
+            return get_cursor("text");
         case com_sun_glass_ui_Cursor_CURSOR_CROSSHAIR:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "crosshair");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "cross");
-            break;
+            return get_cursor("crosshair");
         case com_sun_glass_ui_Cursor_CURSOR_CLOSED_HAND:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "closedhand");
-            break;
+            return get_cursor("grabbing");
         case com_sun_glass_ui_Cursor_CURSOR_OPEN_HAND:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "openhand");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "grabbing");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "hand1");
-            break;
+            return get_cursor("grab");
         case com_sun_glass_ui_Cursor_CURSOR_POINTING_HAND:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "pointing_hand");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "hand2");
-            break;
+            return get_cursor("pointer");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_UP:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "n-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ns-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_ver");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_TOP_SIDE);
-            break;
+            return get_cursor("n-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_DOWN:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "s-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ns-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_ver");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_BOTTOM_SIDE);
-            break;
+            return get_cursor("s-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_UPDOWN:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ns-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_ver");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_SB_V_DOUBLE_ARROW);
-            break;
+            return get_cursor("ns-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_LEFT:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "w-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ew-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_hor");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_LEFT_SIDE);
-            break;
+            return get_cursor("w-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_RIGHT:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "e-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ew-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_hor");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_RIGHT_SIDE);
-            break;
+            return get_cursor("e-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_LEFTRIGHT:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ew-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_hor");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_SB_H_DOUBLE_ARROW);
-            break;
+            return get_cursor("ew-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_SOUTHWEST:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "sw-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "nesw-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_bdiag");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_BOTTOM_LEFT_CORNER);
-            break;
+            return get_cursor("sw-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_NORTHEAST:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "ne-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "nesw-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_bdiag");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_TOP_RIGHT_CORNER);
-            break;
+            return get_cursor("ne-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_SOUTHEAST:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "se-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "nwse-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_fdiag");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_BOTTOM_RIGHT_CORNER);
-            break;
+            return get_cursor("se-resize");
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_NORTHWEST:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "nw-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "nwse-resize");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "size_fdiag");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_TOP_LEFT_CORNER);
-            break;
+            return get_cursor("nw-resize");
         case com_sun_glass_ui_Cursor_CURSOR_MOVE:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "fleur");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "move");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "all-scroll");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_SIZING);
-            break;
+            return get_cursor("move");
         case com_sun_glass_ui_Cursor_CURSOR_WAIT:
-            cursor = gdk_cursor_new(GDK_WATCH);
-            break;
+            return get_cursor("wait");
         case com_sun_glass_ui_Cursor_CURSOR_DISAPPEAR:
         case com_sun_glass_ui_Cursor_CURSOR_NONE:
-            cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-            break;
+            return get_cursor("none");
         default:
-            cursor = gdk_cursor_new(GDK_LEFT_PTR);
-            break;
+            return get_cursor("default");
     }
-
-    return cursor;
 }
 
 extern "C" {
