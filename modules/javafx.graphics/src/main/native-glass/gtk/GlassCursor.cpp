@@ -31,35 +31,34 @@
 #include "com_sun_glass_ui_Cursor.h"
 #include "glass_general.h"
 
-GdkCursor* get_native_cursor(int type)
-{
+GdkCursor* get_native_cursor(int type) {
     GdkCursor *cursor = NULL;
     switch (type) {
         case com_sun_glass_ui_Cursor_CURSOR_DEFAULT:
-            cursor = gdk_cursor_new(GDK_LEFT_PTR);
+            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "default");
             break;
         case com_sun_glass_ui_Cursor_CURSOR_TEXT:
-            cursor = gdk_cursor_new(GDK_XTERM);
+            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "text");
             break;
         case com_sun_glass_ui_Cursor_CURSOR_CROSSHAIR:
-            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "cross");
+            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "crosshair");
             if (cursor == NULL)
-                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "crosshair");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_CROSSHAIR);
+                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "cross");
             break;
         case com_sun_glass_ui_Cursor_CURSOR_CLOSED_HAND:
             cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "closedhand");
-            if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_HAND2);
             break;
         case com_sun_glass_ui_Cursor_CURSOR_OPEN_HAND:
             cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "openhand");
             if (cursor == NULL)
-                cursor = gdk_cursor_new(GDK_HAND2);
+                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "grabbing");
+            if (cursor == NULL)
+                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "hand1");
             break;
         case com_sun_glass_ui_Cursor_CURSOR_POINTING_HAND:
-            cursor = gdk_cursor_new(GDK_HAND2);
+            cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "pointing_hand");
+            if (cursor == NULL)
+                cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "hand2");
             break;
         case com_sun_glass_ui_Cursor_CURSOR_RESIZE_UP:
             cursor = gdk_cursor_new_from_name(gdk_display_get_default(), "n-resize");
