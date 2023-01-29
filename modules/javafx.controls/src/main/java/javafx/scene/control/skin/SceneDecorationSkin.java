@@ -26,93 +26,99 @@
 
 package javafx.scene.control.skin;
 
+import com.sun.javafx.geom.Shape;
 import com.sun.javafx.scene.control.ListenerHelper;
-import com.sun.javafx.scene.control.behavior.StageDecorationBehaviour;
+import com.sun.javafx.scene.control.behavior.SceneDecorationBehaviour;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SkinBase;
-import javafx.scene.control.StageDecoration;
-import javafx.scene.image.Image;
+import javafx.scene.control.SceneDecoration;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.util.Comparator;
-
-public class StageDecorationSkin extends SkinBase<StageDecoration> {
-    private final StageDecorationBehaviour behaviour;
+public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
+    private final SceneDecorationBehaviour behaviour;
     private final Stage stage;
 
-    private final Container container;
+    private final MainRegion mainRegion;
+    private final HeaderRegion headerRegion;
 
-    private final LeftRegion leftRegion;
-    private final RightRegion rightRegion;
+    private final HeaderLeftRegion leftRegion;
+    private final HeaderRightRegion rightRegion;
     private final StageButtonsRegion stageButtons;
 
     private IconRegion icon;
     private TitleRegion title;
 
-    public StageDecorationSkin(StageDecoration control, Stage stage) {
+    public SceneDecorationSkin(SceneDecoration control, Stage stage) {
         super(control);
-        this.behaviour = new StageDecorationBehaviour(control);
+        this.behaviour = new SceneDecorationBehaviour(control);
         this.stage = stage;
 
-        container = new Container();
-
-        leftRegion = new LeftRegion();
-        rightRegion = new RightRegion();
+        mainRegion = new MainRegion();
+        headerRegion = new HeaderRegion();
+        leftRegion = new HeaderLeftRegion();
+        rightRegion = new HeaderRightRegion();
         stageButtons = new StageButtonsRegion();
 
         ListenerHelper lh = ListenerHelper.get(this);
-        lh.addChangeListener(this::update, control.showIconProperty(), control.showTitleProperty(),
-                control.leftProperty(), control.rightProperty(), stage.fullScreenProperty());
+        lh.addChangeListener(this::updateHeader, control.showIconProperty(), control.showTitleProperty(),
+                control.headerLeftProperty(), control.headerRightProperty());
+
+        lh.addChangeListener(this::update, stage.fullScreenProperty(), control.contentProperty());
+
+        getChildren().add(mainRegion);
         update();
     }
 
     private void update() {
-        getChildren().clear();
+        mainRegion.getChildren().clear();
 
-        if (stage.isFullScreen()) {
-            return;
+        if (!stage.isFullScreen()) {
+            updateHeader();
         }
 
-        getChildren().add(container);
+        mainRegion.getChildren().add(getSkinnable().getContent());
+    }
+
+    private void updateHeader() {
+        headerRegion.getChildren().clear();
+        mainRegion.getChildren().add(headerRegion);
 
         if (getSkinnable().isShowIcon()) {
             if (icon == null) {
                 icon = new IconRegion();
             }
-            container.getChildren().add(icon);
+            headerRegion.getChildren().add(icon);
             HBox.setHgrow(icon, Priority.NEVER);
         }
 
-        if (getSkinnable().getLeft() != null) {
-            container.getChildren().add(leftRegion);
+        if (getSkinnable().getHeaderLeft() != null) {
+            headerRegion.getChildren().add(leftRegion);
             HBox.setHgrow(leftRegion, Priority.SOMETIMES);
         }
 
-        container.getChildren().add(getSpanPane());
+        headerRegion.getChildren().add(getSpanPane());
 
         if (getSkinnable().isShowTitle()) {
             if (title == null) {
                 title = new TitleRegion();
             }
-            container.getChildren().add(title);
+            headerRegion.getChildren().add(title);
             HBox.setHgrow(title, Priority.ALWAYS);
         }
 
-        container.getChildren().add(getSpanPane());
+        headerRegion.getChildren().add(getSpanPane());
 
-
-        if (getSkinnable().getRight() != null) {
-            container.getChildren().add(rightRegion);
+        if (getSkinnable().getHeaderRight() != null) {
+            headerRegion.getChildren().add(rightRegion);
             HBox.setHgrow(rightRegion, Priority.SOMETIMES);
         }
 
-        container.getChildren().add(stageButtons);
+        headerRegion.getChildren().add(stageButtons);
         HBox.setHgrow(stageButtons, Priority.NEVER);
     }
 
@@ -128,15 +134,19 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
         behaviour.dispose();
     }
 
-    class Container extends HBox {
-        Container() {
-            getStyleClass().setAll("container");
+    class HeaderRegion extends HBox {
+        HeaderRegion() {
+            getStyleClass().setAll("header");
         }
     }
 
     class IconRegion extends ImageView {
         IconRegion() {
             getStyleClass().add("icon");
+
+            fitHeightProperty().bind(headerRegion.heightProperty());
+
+            setPreserveRatio(true);
 
             ListenerHelper lh = new ListenerHelper(this);
             lh.addChangeListener(this::update, getSkinnable().heightProperty());
@@ -147,8 +157,10 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
             double height = getSkinnable().getHeight();
 
             setImage(null);
-            stage.getIcons().stream().filter(i -> i.getHeight() < height)
-                    .max(Comparator.comparingDouble(Image::getHeight))
+
+            //find best height
+            stage.getIcons().stream()
+                    .min((f1, f2) -> (int) ((f1.getHeight() - height) -  (f2.getHeight() - height)))
                     .ifPresent(this::setImage);
         }
     }
@@ -161,21 +173,16 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
     }
 
     class StageButtonsRegion extends HBox {
-        private final Button iconify;
-        private final Button maximize;
-        private final Button close;
+        private final StageButton iconify;
+        private final StageButton maximize;
+        private final StageButton close;
 
         StageButtonsRegion() {
             getStyleClass().setAll("stage-buttons");
 
-            iconify = new Button();
-            iconify.getStyleClass().add("iconify");
-
-            maximize = new Button();
-            maximize.getStyleClass().add("maximize");
-
-            close = new Button();
-            close.getStyleClass().add("close");
+            iconify = new StageButton("iconify");
+            maximize = new StageButton("maximize");
+            close = new StageButton("close");
 
             iconify.setOnAction(e -> stage.setIconified(!stage.isIconified()));
             maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
@@ -199,27 +206,48 @@ public class StageDecorationSkin extends SkinBase<StageDecoration> {
         }
     }
 
-    class LeftRegion extends StackPane {
-        LeftRegion() {
+    class HeaderLeftRegion extends StackPane {
+        HeaderLeftRegion() {
             getStyleClass().setAll("left");
             ListenerHelper lh = new ListenerHelper(this);
-            lh.addChangeListener(this::update, getSkinnable().leftProperty());
+            lh.addChangeListener(this::update, getSkinnable().headerLeftProperty());
         }
 
         private void update() {
-            getChildren().setAll(getSkinnable().getLeft());
+            getChildren().setAll(getSkinnable().getHeaderLeft());
         }
     }
 
-    class RightRegion extends StackPane {
-        RightRegion() {
+    class HeaderRightRegion extends StackPane {
+        HeaderRightRegion() {
             getStyleClass().setAll("right");
             ListenerHelper lh = new ListenerHelper(this);
-            lh.addChangeListener(this::update, getSkinnable().rightProperty());
+            lh.addChangeListener(this::update, getSkinnable().headerRightProperty());
         }
 
         private void update() {
-            getChildren().setAll(getSkinnable().getRight());
+            getChildren().setAll(getSkinnable().getHeaderRight());
+        }
+    }
+
+    class MainRegion extends VBox {
+        public MainRegion() {
+            setAlignment(Pos.TOP_LEFT);
+        }
+    }
+
+    class ContentRegion extends StackPane {
+        ContentRegion() {
+            getStyleClass().setAll("content");
+        }
+    }
+
+    class StageButton extends Button {
+        StageButton(final String css) {
+            StackPane icon = new StackPane();
+            icon.getStyleClass().setAll(css);
+            icon.setId(css);
+            setGraphic(icon);
         }
     }
 }

@@ -27,29 +27,21 @@
 package com.sun.javafx.scene.control.behavior;
 
 import com.sun.javafx.scene.control.inputmap.InputMap;
-import javafx.scene.control.StageDecoration;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.control.SceneDecoration;
 
-public class StageDecorationBehaviour extends BehaviorBase<StageDecoration> {
-    private final InputMap<StageDecoration> inputMap;
+public class SceneDecorationBehaviour extends BehaviorBase<SceneDecoration> {
+    private final InputMap<SceneDecoration> inputMap;
 
-    public StageDecorationBehaviour(StageDecoration headerBar) {
+    public SceneDecorationBehaviour(SceneDecoration headerBar) {
         super(headerBar);
         inputMap = createInputMap();
 
         // add focus traversal mappings
         addDefaultMapping(inputMap, FocusTraversalInputMap.getFocusTraversalMappings());
-
-        addDefaultMapping(
-            new InputMap.MouseMapping(MouseEvent.MOUSE_DRAGGED, this::mouseDragged)
-        );
-    }
-
-    private void mouseDragged(MouseEvent mouseEvent) {
     }
 
     @Override
-    public InputMap<StageDecoration> getInputMap() {
+    public InputMap<SceneDecoration> getInputMap() {
         return inputMap;
     }
 }

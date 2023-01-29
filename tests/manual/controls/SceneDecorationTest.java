@@ -25,26 +25,35 @@
  */
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
+import javafx.scene.control.SceneDecoration;
 import javafx.scene.control.StageDecoration;
 import javafx.scene.image.Image;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
-public class StageDecorationTest extends Application {
+public class SceneDecorationTest extends Application {
     public static void main(String[] args) {
-        launch(StageDecorationTest.class, args);
+        launch(SceneDecorationTest.class, args);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-        StageDecoration headerBar = new StageDecoration(stage);
-        Scene scene = new Scene(new VBox(headerBar));
-        stage.initStyle(StageStyle.TRANSPARENT);
-        stage.setScene(scene);
-        stage.getIcons().add(new Image("https://www.iconsdb.com/icons/download/black/skull-32-32.png"));
-        stage.setTitle("Olaaaaaaaaaaaaa");
+
+        ObservableList<PieChart.Data> pieChartData =
+                FXCollections.observableArrayList(
+                        new PieChart.Data("Me", 100));
+        final PieChart chart = new PieChart(pieChartData);
+        chart.setTitle("Who likes pie?");
+
+        SceneDecoration decoration = new SceneDecoration(stage, chart);
+        stage.setScene(new Scene(decoration, Color.TRANSPARENT));
+        stage.getIcons().add(new Image("https://openjdk.org/images/duke-thinking.png"));
+        stage.setTitle("Test Stage");
         stage.setWidth(400);
         stage.setHeight(200);
         stage.show();
