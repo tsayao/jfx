@@ -26,7 +26,6 @@
 
 package javafx.scene.control.skin;
 
-import com.sun.javafx.geom.Shape;
 import com.sun.javafx.scene.control.ListenerHelper;
 import com.sun.javafx.scene.control.behavior.SceneDecorationBehaviour;
 import javafx.geometry.Pos;
@@ -48,7 +47,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
     private final HeaderLeftRegion leftRegion;
     private final HeaderRightRegion rightRegion;
-    private final StageButtonsRegion stageButtons;
+    private final HeaderButtonsRegion stageButtons;
 
     private IconRegion icon;
     private TitleRegion title;
@@ -62,7 +61,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         headerRegion = new HeaderRegion();
         leftRegion = new HeaderLeftRegion();
         rightRegion = new HeaderRightRegion();
-        stageButtons = new StageButtonsRegion();
+        stageButtons = new HeaderButtonsRegion();
 
         ListenerHelper lh = ListenerHelper.get(this);
         lh.addChangeListener(this::updateHeader, control.showIconProperty(), control.showTitleProperty(),
@@ -172,17 +171,17 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
     }
 
-    class StageButtonsRegion extends HBox {
-        private final StageButton iconify;
-        private final StageButton maximize;
-        private final StageButton close;
+    class HeaderButtonsRegion extends HBox {
+        private final HeaderButton iconify;
+        private final HeaderButton maximize;
+        private final HeaderButton close;
 
-        StageButtonsRegion() {
-            getStyleClass().setAll("stage-buttons");
+        HeaderButtonsRegion() {
+            getStyleClass().setAll("buttons");
 
-            iconify = new StageButton("iconify");
-            maximize = new StageButton("maximize");
-            close = new StageButton("close");
+            iconify = new HeaderButton("iconify");
+            maximize = new HeaderButton("maximize");
+            close = new HeaderButton("close");
 
             iconify.setOnAction(e -> stage.setIconified(!stage.isIconified()));
             maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
@@ -242,10 +241,10 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
     }
 
-    class StageButton extends Button {
-        StageButton(final String css) {
+    class HeaderButton extends Button {
+        HeaderButton(final String css) {
             StackPane icon = new StackPane();
-            icon.getStyleClass().setAll(css);
+            icon.getStyleClass().setAll("icon", css);
             icon.setId(css);
             setGraphic(icon);
         }
