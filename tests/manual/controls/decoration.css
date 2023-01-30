@@ -97,6 +97,7 @@
     -fx-border-radius: 0.5em;
     -fx-border-color: derive(-fx-base, -10%);
     -fx-background-color: white;
+    -fx-padding: 0.666667em;
 }
 
 .decoration .header > .left .button:hover,
@@ -106,5 +107,5 @@
 
 .decoration .header > .left .button:pressed,
 .decoration .header > .right .button:pressed {
-    -fx-background-color: derive(-fx-base, -8%);
+    -fx-background-color: derive(-fx-base, -10%);
 }
