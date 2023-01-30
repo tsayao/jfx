@@ -1,6 +1,8 @@
 package javafx.scene.control;
 
 import javafx.beans.property.*;
+import javafx.css.PseudoClass;
+import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.control.skin.SceneDecorationSkin;
 import javafx.stage.Stage;
@@ -8,12 +10,25 @@ import javafx.stage.StageStyle;
 
 public class SceneDecoration extends Control {
     private static final String DEFAULT_STYLE_CLASS = "decoration";
+
+    private static final PseudoClass PSEUDO_CLASS_FOCUSED =
+            PseudoClass.getPseudoClass("focused");
+
+    private static final PseudoClass PSEUDO_CLASS_MAXIMIZED =
+            PseudoClass.getPseudoClass("maximized");
+
     private final Stage stage;
 
     public SceneDecoration(Stage stage) {
         this.stage = stage;
         stage.initStyle(StageStyle.TRANSPARENT);
         getStyleClass().setAll(DEFAULT_STYLE_CLASS);
+
+        stage.focusedProperty().addListener((observable, oldValue, newValue)
+                                                -> pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED, newValue));
+
+        stage.maximizedProperty().addListener((observable, oldValue, newValue)
+                                                -> pseudoClassStateChanged(PSEUDO_CLASS_MAXIMIZED, newValue));
     }
 
     public SceneDecoration(Stage stage, Node content) {
@@ -24,6 +39,20 @@ public class SceneDecoration extends Control {
     @Override
     protected Skin<?> createDefaultSkin() {
         return new SceneDecorationSkin(this, stage);
+    }
+
+    private ObjectProperty<HPos> headerButtonsPosition = new SimpleObjectProperty<>(HPos.RIGHT);
+
+    public HPos getHeaderButtonsPosition() {
+        return headerButtonsPosition.get();
+    }
+
+    public ObjectProperty<HPos> headerButtonsPositionProperty() {
+        return headerButtonsPosition;
+    }
+
+    public void setHeaderButtonsPosition(HPos headerButtonsPosition) {
+        this.headerButtonsPosition.set(headerButtonsPosition);
     }
 
     private ObjectProperty<Node> content;

@@ -26,33 +26,42 @@
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.geometry.HPos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.chart.PieChart;
-import javafx.scene.control.SceneDecoration;
-import javafx.scene.control.StageDecoration;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-import java.io.File;
-
 public class SceneDecorationTest extends Application {
+    GridPane pane = new GridPane();
+
     public static void main(String[] args) {
         launch(SceneDecorationTest.class, args);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
+        pane.prefWidthProperty().bind(stage.widthProperty().multiply(0.80));
+        CheckBox showIcon = new CheckBox();
+        showIcon.setSelected(true);
+        CheckBox showTitle = new CheckBox();
+        showTitle.setSelected(true);
+        ComboBox<HPos> position = new ComboBox<>(FXCollections.observableArrayList(HPos.values()));
+        position.getSelectionModel().select(HPos.RIGHT);
 
-        ObservableList<PieChart.Data> pieChartData =
-                FXCollections.observableArrayList(
-                        new PieChart.Data("Me", 100));
-        final PieChart chart = new PieChart(pieChartData);
-        chart.setTitle("Who likes pie?");
+        addOption("Show Icon", showIcon);
+        addOption("Show Title", showTitle);
+        addOption("Buttons Pos", position);
 
-        SceneDecoration decoration = new SceneDecoration(stage, chart);
+        SceneDecoration decoration = new SceneDecoration(stage, pane);
+
+        decoration.showIconProperty().bind(showIcon.selectedProperty());
+        decoration.showTitleProperty().bind(showTitle.selectedProperty());
+        decoration.headerButtonsPositionProperty().bind(position.valueProperty());
+
         var scene = new Scene(decoration, Color.TRANSPARENT);
         String css = getClass().getClassLoader().getResource("tests/manual/controls/decoration.css").toExternalForm();
         System.out.println(css);
@@ -63,6 +72,16 @@ public class SceneDecorationTest extends Application {
         stage.setTitle("Test Stage");
         stage.setWidth(400);
         stage.setHeight(200);
+        stage.setX(0);
+        stage.setY(0);
         stage.show();
+    }
+
+    int currentRow = 0;
+    void addOption(String lbl, Node opt) {
+        pane.add(new Label(lbl), 0, currentRow);
+        pane.add(opt, 1, currentRow);
+
+        currentRow++;
     }
 }
