@@ -142,9 +142,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
     class IconRegion extends ImageView {
         IconRegion() {
             getStyleClass().add("icon");
-
-            fitHeightProperty().bind(headerRegion.heightProperty());
-
+            fitHeightProperty().bind(headerRegion.heightProperty().multiply(0.80f));
             setPreserveRatio(true);
 
             ListenerHelper lh = new ListenerHelper(this);

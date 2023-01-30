@@ -1,0 +1,64 @@
+/*******************************************************************************
+ *                                                                             *
+ * Scene Decoration                                                            *
+ *                                                                             *
+ ******************************************************************************/
+
+.decoration {
+    -fx-background-color: -fx-base;
+    -fx-background-insets: 10px;
+    -fx-padding: 10px;
+    -fx-background-radius: 1em;
+    -fx-effect: dropshadow(gaussian, black, 10, 0, 0, 0);
+}
+
+.decoration .header {
+    -fx-background-color: derive(-fx-base, -5%);
+    -fx-background-radius: 1em 1em 0 0;
+    -fx-min-height: 3.083321em;
+    -fx-spacing: 0.333333em;
+    -fx-padding: 0.333333em 0.666666em 0.333333em 0.666666em;
+    -fx-fill-height: true;
+    -fx-alignment: center-left;
+}
+
+.decoration .header > .icon {
+}
+
+.decoration .header > .title {
+    -fx-alignment: center;
+    -fx-font-weight: bold;
+    -fx-wrap-text: false;
+    -fx-text-overrun: ellipsis;
+    -fx-text-fill: -fx-text-base-color;
+}
+
+.decoration .header > .buttons {
+    -fx-spacing: 0.333333em;
+    -fx-fill-height: true;
+    -fx-alignment: center-right;
+}
+
+.decoration .header > .buttons > .button {
+    -fx-background-color: derive(-fx-base, -20%);
+    -fx-padding: 0.333333em;
+    -fx-background-radius: 2em;
+}
+
+.decoration .header > .buttons > .button > .icon {
+    -fx-background-color: gray;
+    -fx-padding: 0.666667em;
+    -fx-margin: 0.333333em;
+}
+
+.decoration .header > .buttons > .button > .iconify {
+    -fx-shape: "M32 416c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z"
+}
+
+.decoration .header > .buttons > .button > .maximize {
+    -fx-shape: "M7.724 65.49C13.36 55.11 21.79 46.47 32 40.56C39.63 36.15 48.25 33.26 57.46 32.33C59.61 32.11 61.79 32 64 32H448C483.3 32 512 60.65 512 96V416C512 451.3 483.3 480 448 480H64C28.65 480 0 451.3 0 416V96C0 93.79 .112 91.61 .3306 89.46C1.204 80.85 3.784 72.75 7.724 65.49V65.49zM48 416C48 424.8 55.16 432 64 432H448C456.8 432 464 424.8 464 416V224H48V416z"
+}
+
+.decoration .header .stage-buttons .button .close {
+    -fx-shape: "M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"
+}

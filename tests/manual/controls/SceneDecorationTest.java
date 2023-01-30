@@ -36,6 +36,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.io.File;
+
 public class SceneDecorationTest extends Application {
     public static void main(String[] args) {
         launch(SceneDecorationTest.class, args);
@@ -51,7 +53,12 @@ public class SceneDecorationTest extends Application {
         chart.setTitle("Who likes pie?");
 
         SceneDecoration decoration = new SceneDecoration(stage, chart);
-        stage.setScene(new Scene(decoration, Color.TRANSPARENT));
+        var scene = new Scene(decoration, Color.TRANSPARENT);
+        String css = getClass().getClassLoader().getResource("tests/manual/controls/decoration.css").toExternalForm();
+        System.out.println(css);
+        scene.getStylesheets().add(css);
+
+        stage.setScene(scene);
         stage.getIcons().add(new Image("https://openjdk.org/images/duke-thinking.png"));
         stage.setTitle("Test Stage");
         stage.setWidth(400);

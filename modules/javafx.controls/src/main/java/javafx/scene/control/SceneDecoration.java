@@ -7,7 +7,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 public class SceneDecoration extends Control {
-    private static final String DEFAULT_STYLE_CLASS = "stage-decoration";
+    private static final String DEFAULT_STYLE_CLASS = "decoration";
     private final Stage stage;
 
     public SceneDecoration(Stage stage) {
