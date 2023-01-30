@@ -13,5 +13,6 @@
     <orderEntry type="module" module-name="rt" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" scope="TEST" name="junit4" level="application" />
+    <orderEntry type="module" module-name="jfx.graphics.main" />
   </component>
 </module>

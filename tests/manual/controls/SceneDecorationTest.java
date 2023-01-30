@@ -31,7 +31,9 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
@@ -82,13 +84,16 @@ public class SceneDecorationTest extends Application {
     private Button getHamburgerButton() {
         Button btn = new Button();
 
-        var p = new SVGPath();
-        p.setContent("M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z");
+        var svg = new SVGPath();
+        svg.setContent("M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z");
 
-        StackPane pane = new StackPane();
-        pane.setShape(p);
+        final StackPane svgShape = new StackPane();
+        svgShape.setScaleShape(true);
+        svgShape.setShape(svg);
+        svgShape.setPrefSize(16, 16);
+        svgShape.setBackground(Background.fill(Color.BLACK));
 
-        btn.setGraphic(pane);
+        btn.setGraphic(svgShape);
 
         return btn;
     }
