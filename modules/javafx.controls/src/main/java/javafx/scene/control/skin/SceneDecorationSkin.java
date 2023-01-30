@@ -233,26 +233,34 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
     }
 
     class HeaderLeftRegion extends StackPane {
+
         HeaderLeftRegion() {
             getStyleClass().setAll("left");
             ListenerHelper lh = new ListenerHelper(this);
             lh.addChangeListener(this::update, getSkinnable().headerLeftProperty());
+            update();
         }
 
         private void update() {
-            getChildren().setAll(getSkinnable().getHeaderLeft());
+            if (getSkinnable().getHeaderLeft() != null) {
+                getChildren().setAll(getSkinnable().getHeaderLeft());
+            }
         }
     }
 
     class HeaderRightRegion extends StackPane {
+
         HeaderRightRegion() {
             getStyleClass().setAll("right");
             ListenerHelper lh = new ListenerHelper(this);
             lh.addChangeListener(this::update, getSkinnable().headerRightProperty());
+            update();
         }
 
         private void update() {
-            getChildren().setAll(getSkinnable().getHeaderRight());
+            if (getSkinnable().getHeaderRight() != null) {
+                getChildren().setAll(getSkinnable().getHeaderRight());
+            }
         }
     }
 

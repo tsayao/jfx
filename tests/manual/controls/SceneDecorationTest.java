@@ -32,11 +32,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.SVGPath;
 import javafx.stage.Stage;
 
 public class SceneDecorationTest extends Application {
-    GridPane pane = new GridPane();
+    private GridPane pane;
 
     public static void main(String[] args) {
         launch(SceneDecorationTest.class, args);
@@ -44,7 +46,6 @@ public class SceneDecorationTest extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        pane.prefWidthProperty().bind(stage.widthProperty().multiply(0.80));
         CheckBox showIcon = new CheckBox();
         showIcon.setSelected(true);
         CheckBox showTitle = new CheckBox();
@@ -52,15 +53,18 @@ public class SceneDecorationTest extends Application {
         ComboBox<HPos> position = new ComboBox<>(FXCollections.observableArrayList(HPos.values()));
         position.getSelectionModel().select(HPos.RIGHT);
 
+        pane = new GridPane();
         addOption("Show Icon", showIcon);
         addOption("Show Title", showTitle);
         addOption("Buttons Pos", position);
 
         SceneDecoration decoration = new SceneDecoration(stage, pane);
+        pane.prefWidthProperty().bind(decoration.widthProperty().multiply(0.80));
 
         decoration.showIconProperty().bind(showIcon.selectedProperty());
         decoration.showTitleProperty().bind(showTitle.selectedProperty());
         decoration.headerButtonsPositionProperty().bind(position.valueProperty());
+        decoration.setHeaderLeft(getHamburgerButton());
 
         var scene = new Scene(decoration, Color.TRANSPARENT);
         String css = getClass().getClassLoader().getResource("tests/manual/controls/decoration.css").toExternalForm();
@@ -70,15 +74,27 @@ public class SceneDecorationTest extends Application {
         stage.setScene(scene);
         stage.getIcons().add(new Image("https://openjdk.org/images/duke-thinking.png"));
         stage.setTitle("Test Stage");
-        stage.setWidth(400);
-        stage.setHeight(200);
-        stage.setX(0);
-        stage.setY(0);
+        stage.setWidth(600);
+        stage.setHeight(400);
         stage.show();
     }
 
+    private Button getHamburgerButton() {
+        Button btn = new Button();
+
+        var p = new SVGPath();
+        p.setContent("M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z");
+
+        StackPane pane = new StackPane();
+        pane.setShape(p);
+
+        btn.setGraphic(pane);
+
+        return btn;
+    }
+
     int currentRow = 0;
-    void addOption(String lbl, Node opt) {
+    private void addOption(String lbl, Node opt) {
         pane.add(new Label(lbl), 0, currentRow);
         pane.add(opt, 1, currentRow);
 
