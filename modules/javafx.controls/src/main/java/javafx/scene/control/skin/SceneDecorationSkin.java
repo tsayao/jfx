@@ -37,6 +37,7 @@ import javafx.scene.control.SkinBase;
 import javafx.scene.control.SceneDecoration;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.shape.SVGPath;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -154,7 +155,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         behaviour.dispose();
     }
 
-    class HeaderRegion extends HBox {
+    static class HeaderRegion extends HBox {
         HeaderRegion() {
             getStyleClass().setAll("header");
         }
@@ -249,7 +250,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
     }
 
     class HeaderRightRegion extends StackPane {
-
         HeaderRightRegion() {
             getStyleClass().setAll("right");
             ListenerHelper lh = new ListenerHelper(this);
@@ -264,23 +264,17 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
     }
 
-    class MainRegion extends VBox {
+    static class MainRegion extends VBox {
         public MainRegion() {
             setAlignment(Pos.TOP_LEFT);
         }
     }
 
-    class ContentRegion extends StackPane {
-        ContentRegion() {
-            getStyleClass().setAll("content");
-        }
-    }
-
-    class HeaderButton extends Button {
+    static class HeaderButton extends Button {
         HeaderButton(final String css) {
             getStyleClass().setAll("header-button");
 
-            StackPane icon = new StackPane();
+            SVGPath icon = new SVGPath();
             icon.getStyleClass().setAll("icon", css);
             icon.setId(css);
             setGraphic(icon);

@@ -51,10 +51,10 @@
     -fx-alignment: CENTER;
     -fx-background-radius: 100%;
     -fx-content-display: graphic-only;
-    -fx-min-width: 2em;
-    -fx-max-width: 2em;
-    -fx-min-height: 2em;
-    -fx-max-height: 2em;
+    -fx-min-width: 1.833333333em;
+    -fx-max-width: 1.833333333em;
+    -fx-min-height: 1.833333333em;
+    -fx-max-height: 1.833333333em;
 }
 
 .decoration:focused .header > .header-buttons > .header-button {
@@ -71,22 +71,25 @@
 
 .decoration .header > .header-buttons > .header-button > .icon {
     -fx-background-color: derive(-fx-base, -60%);
-    -fx-padding: 0.5em;
-    -fx-max-width: 1em;
-    -fx-max-height: 1em;
-}
-
-.decoration .header > .header-buttons > .header-button > .iconify {
-    -fx-max-height: 0.25em;
-    -fx-shape: "M32 416c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z"
+    -fx-scale-y: 0.5;
+    -fx-scale-x: 0.5;
 }
 
 .decoration .header > .header-buttons > .header-button > .maximize {
-    -fx-shape: "M7.724 65.49C13.36 55.11 21.79 46.47 32 40.56C39.63 36.15 48.25 33.26 57.46 32.33C59.61 32.11 61.79 32 64 32H448C483.3 32 512 60.65 512 96V416C512 451.3 483.3 480 448 480H64C28.65 480 0 451.3 0 416V96C0 93.79 .112 91.61 .3306 89.46C1.204 80.85 3.784 72.75 7.724 65.49V65.49zM48 416C48 424.8 55.16 432 64 432H448C456.8 432 464 424.8 464 416V224H48V416z"
+    -fx-shape: "m 2.1151164,2.1089152 v 0.00103 h -0.0031 v 0.2651001 h 0.0031 v 1.5869833 0.2640665 0.00103 H 4.231783 V 3.9620321 h -0.00155 V 2.1089152 H 3.9651326 v 0.00103 H 2.3802165 v -0.00103 z M 2.3802165,2.3750488 H 3.9651326 V 3.9620321 H 2.3802165 Z"
+}
+
+.decoration:maximized .header > .header-buttons > .header-button > .maximize {
+    -fx-shape: "M 2.642,2.38 V 2.115 H 4.2296 V 2.38 Z M 4.23,3.7 H 3.965 V 2.377 H 4.23 Z M 2.112,2.908 V 2.643 H 3.6996 V 2.908 Z M 2.38,3.964 H 2.115 V 2.9056 H 2.38 Z m 1.32,0.00497 H 3.435 V 2.9084259 H 3.7 Z M 2.114,4.227 V 3.962 h 1.5876 v 0.265 z";
+}
+
+.decoration .header > .header-buttons > .header-button > .iconify {
+    -fx-shape: "M 2.112,3.962 V 3.697 h 2.1168 v 0.265 z";
+    -fx-scale-y: 0.05;
 }
 
 .decoration .header > .header-buttons > .header-button > .close {
-    -fx-shape: "M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"
+    -fx-shape: "m2.3037 2.1167-0.18707 0.18707 0.87023 0.86971-0.87023 0.87023 0.18707 0.18707 0.87023-0.87023 0.86971 0.87023 0.18707-0.18707-0.86971-0.87023 0.86971-0.86971-0.18707-0.18707-0.86971 0.86971z"
 }
 
 /*PREDICT CONTROLS INSIDE HEADER*/
