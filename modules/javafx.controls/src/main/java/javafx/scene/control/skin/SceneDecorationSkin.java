@@ -267,6 +267,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
     static class MainRegion extends VBox {
         public MainRegion() {
+            getStyleClass().setAll("main");
             setAlignment(Pos.TOP_LEFT);
         }
     }
