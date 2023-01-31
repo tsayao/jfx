@@ -236,7 +236,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
     }
 
     class HeaderLeftRegion extends StackPane {
-
         HeaderLeftRegion() {
             getStyleClass().setAll("left");
             ListenerHelper lh = new ListenerHelper(this);
