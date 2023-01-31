@@ -30,6 +30,7 @@ import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.GridPane;

@@ -33,11 +33,13 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.SkinBase;
 import javafx.scene.control.SceneDecoration;
+import javafx.scene.control.SkinBase;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
-import javafx.scene.shape.SVGPath;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -117,8 +119,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             HBox.setHgrow(leftRegion, Priority.SOMETIMES);
         }
 
-        headerRegion.getChildren().add(getSpanPane());
-
         if (getSkinnable().isShowTitle()) {
             if (title == null) {
                 title = new TitleRegion();
@@ -126,8 +126,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             headerRegion.getChildren().add(title);
             HBox.setHgrow(title, Priority.ALWAYS);
         }
-
-        headerRegion.getChildren().add(getSpanPane());
 
         if (getSkinnable().getHeaderRight() != null) {
             if (rightRegion == null) {
@@ -143,12 +141,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
 
         HBox.setHgrow(headerButtons, Priority.NEVER);
-    }
-
-    private StackPane getSpanPane() {
-        StackPane pane = new StackPane();
-        HBox.setHgrow(pane, Priority.SOMETIMES);
-        return pane;
     }
 
     @Override
@@ -186,10 +178,13 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
     }
 
-    class TitleRegion extends Label {
+    class TitleRegion extends StackPane {
         TitleRegion() {
-            getStyleClass().setAll("title");
-            textProperty().bind(stage.titleProperty());
+            Label label = new Label();
+            label.getStyleClass().setAll("title");
+
+            label.textProperty().bind(stage.titleProperty());
+            getChildren().add(label);
         }
     }
 
