@@ -41,7 +41,7 @@ public class SceneDecoration extends Control {
         return new SceneDecorationSkin(this, stage);
     }
 
-    private ObjectProperty<HPos> headerButtonsPosition = new SimpleObjectProperty<>(HPos.RIGHT);
+    private final ObjectProperty<HPos> headerButtonsPosition = new SimpleObjectProperty<>(HPos.RIGHT);
 
     public HPos getHeaderButtonsPosition() {
         return headerButtonsPosition.get();

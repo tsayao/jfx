@@ -85,6 +85,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         }
 
         mainRegion.getChildren().add(getSkinnable().getContent());
+        VBox.setVgrow(getSkinnable().getContent(), Priority.ALWAYS);
     }
 
     private void updateHeader() {
@@ -92,6 +93,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
         if (!mainRegion.getChildren().contains(headerRegion)) {
             mainRegion.getChildren().add(headerRegion);
+            VBox.setVgrow(headerRegion, Priority.NEVER);
         }
 
         if (getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
@@ -274,7 +276,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         HeaderButton(final String css) {
             getStyleClass().setAll("header-button");
 
-            SVGPath icon = new SVGPath();
+            StackPane icon = new StackPane();
             icon.getStyleClass().setAll("icon", css);
             icon.setId(css);
             setGraphic(icon);
