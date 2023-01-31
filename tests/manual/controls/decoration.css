@@ -29,7 +29,9 @@
 }
 
 .decoration:maximized,
-.decoration:maximized .header {
+.decoration:full-screen,
+.decoration:maximized .header,
+.decoration:full-screen .header {
     -fx-background-radius: 0;
     -fx-border-radius: 0;
 }

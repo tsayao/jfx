@@ -55,10 +55,14 @@ public class SceneDecorationTest extends Application {
         ComboBox<HPos> position = new ComboBox<>(FXCollections.observableArrayList(HPos.values()));
         position.getSelectionModel().select(HPos.RIGHT);
 
+        Button fullScrn = new Button("Full Screen");
+        fullScrn.setOnAction(e -> stage.setFullScreen(true));
+
         pane = new GridPane();
         addOption("Show Icon", showIcon);
         addOption("Show Title", showTitle);
         addOption("Buttons Pos", position);
+        addOption("Full Scrn", fullScrn);
 
         SceneDecoration decoration = new SceneDecoration(stage, pane);
         pane.prefWidthProperty().bind(decoration.widthProperty().multiply(0.80));

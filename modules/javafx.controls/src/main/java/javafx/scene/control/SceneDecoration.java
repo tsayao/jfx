@@ -17,6 +17,9 @@ public class SceneDecoration extends Control {
     private static final PseudoClass PSEUDO_CLASS_MAXIMIZED =
             PseudoClass.getPseudoClass("maximized");
 
+    private static final PseudoClass PSEUDO_CLASS_FULL_SCREEN =
+            PseudoClass.getPseudoClass("full-screen");
+
     private final Stage stage;
 
     public SceneDecoration(Stage stage) {
@@ -25,10 +28,13 @@ public class SceneDecoration extends Control {
         getStyleClass().setAll(DEFAULT_STYLE_CLASS);
 
         stage.focusedProperty().addListener((observable, oldValue, newValue)
-                                                -> pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED, newValue));
+                -> pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED, newValue));
 
         stage.maximizedProperty().addListener((observable, oldValue, newValue)
-                                                -> pseudoClassStateChanged(PSEUDO_CLASS_MAXIMIZED, newValue));
+                -> pseudoClassStateChanged(PSEUDO_CLASS_MAXIMIZED, newValue));
+
+        stage.fullScreenProperty().addListener((observable, oldValue, newValue)
+                -> pseudoClassStateChanged(PSEUDO_CLASS_FULL_SCREEN, newValue));
     }
 
     public SceneDecoration(Stage stage, Node content) {
@@ -86,7 +92,7 @@ public class SceneDecoration extends Control {
         this.showTitle.set(showTitle);
     }
 
-    private final BooleanProperty showIcon =  new SimpleBooleanProperty(this, "showIcon", true);
+    private final BooleanProperty showIcon = new SimpleBooleanProperty(this, "showIcon", true);
 
     public boolean isShowIcon() {
         return showIcon.get();
@@ -104,7 +110,7 @@ public class SceneDecoration extends Control {
 
     public final ObjectProperty<Node> headerLeftProperty() {
         if (headerLeft == null) {
-            headerLeft = new SimpleObjectProperty<>(this,"left");
+            headerLeft = new SimpleObjectProperty<>(this, "left");
         }
         return headerLeft;
     }
@@ -121,7 +127,7 @@ public class SceneDecoration extends Control {
 
     public final ObjectProperty<Node> headerRightProperty() {
         if (headerRight == null) {
-            headerRight = new SimpleObjectProperty<>(this,"right");
+            headerRight = new SimpleObjectProperty<>(this, "right");
         }
         return headerRight;
     }
