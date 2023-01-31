@@ -75,7 +75,6 @@ public class SceneDecorationTest extends Application {
 
         var scene = new Scene(decoration, Color.TRANSPARENT);
         String css = getClass().getClassLoader().getResource("tests/manual/controls/decoration.css").toExternalForm();
-        System.out.println(css);
         scene.getStylesheets().add(css);
 
         stage.setScene(scene);
