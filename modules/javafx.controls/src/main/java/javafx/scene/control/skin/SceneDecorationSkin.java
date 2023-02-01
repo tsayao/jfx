@@ -1,61 +1,102 @@
-    /*
-     *  Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
-     *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-     *
-     *  This code is free software; you can redistribute it and/or modify it
-     *  under the terms of the GNU General Public License version 2 only, as
-     *  published by the Free Software Foundation.  Oracle designates this
-     *  particular file as subject to the "Classpath" exception as provided
-     *  by Oracle in the LICENSE file that accompanied this code.
-     *
-     *  This code is distributed in the hope that it will be useful, but WITHOUT
-     *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-     *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-     *  version 2 for more details (a copy is included in the LICENSE file that
-     *  accompanied this code).
-     *
-     *  You should have received a copy of the GNU General Public License version
-     *  2 along with this work; if not, write to the Free Software Foundation,
-     *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-     *
-     *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-     *  or visit www.oracle.com if you need additional information or have any
-     *  questions.
-     *
-     */
+/*
+ *  Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 only, as
+ *  published by the Free Software Foundation.  Oracle designates this
+ *  particular file as subject to the "Classpath" exception as provided
+ *  by Oracle in the LICENSE file that accompanied this code.
+ *
+ *  This code is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ *  version 2 for more details (a copy is included in the LICENSE file that
+ *  accompanied this code).
+ *
+ *  You should have received a copy of the GNU General Public License version
+ *  2 along with this work; if not, write to the Free Software Foundation,
+ *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ *  or visit www.oracle.com if you need additional information or have any
+ *  questions.
+ *
+ */
 
-    package javafx.scene.control.skin;
+package javafx.scene.control.skin;
 
-    import com.sun.javafx.scene.control.ListenerHelper;
-    import com.sun.javafx.scene.control.behavior.SceneDecorationBehaviour;
-    import javafx.beans.InvalidationListener;
-    import javafx.beans.binding.Bindings;
-    import javafx.geometry.HPos;
-    import javafx.geometry.Pos;
-    import javafx.scene.Node;
-    import javafx.scene.control.Button;
-    import javafx.scene.control.Label;
-    import javafx.scene.control.SceneDecoration;
-    import javafx.scene.control.SkinBase;
-    import javafx.scene.image.ImageView;
-    import javafx.scene.layout.HBox;
-    import javafx.scene.layout.Priority;
-    import javafx.scene.layout.StackPane;
-    import javafx.scene.layout.VBox;
-    import javafx.stage.Stage;
-    import javafx.stage.WindowEvent;
+import com.sun.javafx.scene.control.ListenerHelper;
+import com.sun.javafx.scene.control.behavior.SceneDecorationBehaviour;
+import javafx.beans.InvalidationListener;
+import javafx.geometry.HPos;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.SceneDecoration;
+import javafx.scene.control.SkinBase;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
-    import java.util.ArrayList;
-    import java.util.Collections;
-    import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-    public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
-        private final SceneDecorationBehaviour behaviour;
-        private final Stage stage;
+public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
+    private final SceneDecorationBehaviour behaviour;
+    private final Stage stage;
 
-        private final MainRegion mainRegion;
-        private final HeaderRegion headerRegion;
+    private final MainRegion mainRegion;
+    private HeaderRegion headerRegion = null;
 
+    public SceneDecorationSkin(SceneDecoration control, Stage stage) {
+        super(control);
+        this.behaviour = new SceneDecorationBehaviour(control);
+        this.stage = stage;
+
+        mainRegion = new MainRegion();
+
+        ListenerHelper lh = ListenerHelper.get(this);
+        lh.addChangeListener(this::updateHeader, control.showIconProperty(), control.showTitleProperty(),
+                control.headerLeftProperty(), control.headerRightProperty(), control.headerButtonsPositionProperty());
+
+        lh.addChangeListener(this::update, true, stage.fullScreenProperty(), control.contentProperty());
+
+        getChildren().setAll(mainRegion);
+    }
+
+    private void update() {
+        mainRegion.getChildren().clear();
+
+        updateHeader();
+
+        mainRegion.getChildren().add(getSkinnable().getContent());
+        VBox.setVgrow(getSkinnable().getContent(), Priority.ALWAYS);
+    }
+
+    private void updateHeader() {
+        if (stage.isFullScreen()) {
+            return;
+        }
+
+        if (headerRegion == null) {
+            headerRegion = new HeaderRegion();
+        }
+
+        mainRegion.getChildren().add(headerRegion);
+        headerRegion.update();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        behaviour.dispose();
+    }
+
+    class HeaderRegion extends Region {
         private HeaderLeftRegion leftRegion = null;
         private HeaderRightRegion rightRegion = null;
         private HeaderButtonsRegion headerButtons = null;
@@ -63,258 +104,261 @@
         private IconRegion icon = null;
         private TitleRegion title = null;
 
-        public SceneDecorationSkin(SceneDecoration control, Stage stage) {
-            super(control);
-            this.behaviour = new SceneDecorationBehaviour(control);
-            this.stage = stage;
-
-            mainRegion = new MainRegion();
-            headerRegion = new HeaderRegion();
-
-
-            ListenerHelper lh = ListenerHelper.get(this);
-            lh.addChangeListener(this::updateHeader, control.showIconProperty(), control.showTitleProperty(),
-                    control.headerLeftProperty(), control.headerRightProperty(), control.headerButtonsPositionProperty());
-
-            lh.addChangeListener(this::update, true, stage.fullScreenProperty(), control.contentProperty());
-
-            getChildren().setAll(mainRegion);
+        HeaderRegion() {
+            getStyleClass().setAll("header");
         }
 
         private void update() {
-            mainRegion.getChildren().clear();
+            getChildren().clear();
+            updateIcon();
+            updateLeft();
+            updateTitle();
+            updateRight();
+            updateButtons();
 
-            if (!stage.isFullScreen()) {
-                updateHeader();
-            }
-
-            mainRegion.getChildren().add(getSkinnable().getContent());
-            VBox.setVgrow(getSkinnable().getContent(), Priority.ALWAYS);
+            requestLayout();
         }
 
-        private void updateHeader() {
-            headerRegion.getChildren().clear();
-
-            if (!mainRegion.getChildren().contains(headerRegion)) {
-                mainRegion.getChildren().add(headerRegion);
-                VBox.setVgrow(headerRegion, Priority.NEVER);
+        private void updateButtons() {
+            if (getSkinnable().isShowHeaderButtons()) {
+                headerButtons = new HeaderButtonsRegion();
+                getChildren().add(headerButtons);
+            } else {
+                headerButtons = null;
             }
+        }
 
-            if (getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
-                headerRegion.getChildren().add(headerButtons);
-            }
-
-            if (getSkinnable().isShowIcon()) {
-                if (icon == null) {
-                    icon = new IconRegion();
-                }
-                headerRegion.getChildren().add(icon);
-                HBox.setHgrow(icon, Priority.NEVER);
-            }
-
-            if (getSkinnable().getHeaderLeft() != null) {
-                if (leftRegion == null) {
-                    leftRegion = new HeaderLeftRegion();
-                }
-
-                headerRegion.getChildren().add(leftRegion);
-                HBox.setHgrow(leftRegion, Priority.SOMETIMES);
-            }
-
+        private void updateTitle() {
             if (getSkinnable().isShowTitle()) {
                 if (title == null) {
                     title = new TitleRegion();
+                    getChildren().add(title);
                 }
-                headerRegion.getChildren().add(title);
-                HBox.setHgrow(title, Priority.ALWAYS);
+            } else {
+                title = null;
             }
+        }
 
+        private void updateIcon() {
+            if (getSkinnable().isShowIcon()) {
+                if (icon == null) {
+                    icon = new IconRegion();
+                    getChildren().add(icon);
+                }
+            } else {
+                icon = null;
+            }
+        }
+
+        private void updateRight() {
             if (getSkinnable().getHeaderRight() != null) {
-                if (rightRegion == null) {
+                if (rightRegion != null) {
                     rightRegion = new HeaderRightRegion();
+                    getChildren().add(rightRegion);
                 }
-                headerRegion.getChildren().add(rightRegion);
-                HBox.setHgrow(rightRegion, Priority.SOMETIMES);
+            } else {
+                rightRegion = null;
             }
+        }
 
-            if (getSkinnable().getHeaderButtonsPosition() == HPos.RIGHT) {
-                headerButtons = new HeaderButtonsRegion();
-                headerRegion.getChildren().add(headerButtons);
+        private void updateLeft() {
+            if (getSkinnable().getHeaderLeft() != null) {
+                if (leftRegion == null) {
+                    leftRegion = new HeaderLeftRegion();
+                    getChildren().add(leftRegion);
+                }
+            } else {
+                leftRegion = null;
             }
+        }
 
-            HBox.setHgrow(headerButtons, Priority.NEVER);
+        private double getY(double h) {
+            return (getHeight() - h) / 2;
         }
 
         @Override
-        public void dispose() {
-            super.dispose();
-            behaviour.dispose();
-        }
+        protected void layoutChildren() {
+            //adjust the position to be in the middle
+            double left  = getInsets().getLeft();
+            double right = getInsets().getRight();
 
-        static class HeaderRegion extends HBox {
-            HeaderRegion() {
-                getStyleClass().setAll("header");
-            }
-        }
+            double w = snapSizeX(getWidth());
+            double mh = snapSizeY(getHeight());
 
-        class IconRegion extends ImageView {
-            IconRegion() {
-                getStyleClass().add("icon");
-                fitHeightProperty().bind(headerRegion.heightProperty().multiply(0.80f));
-                setPreserveRatio(true);
-
-                //TODO: does this need to be removed?
-                stage.getIcons().addListener((InvalidationListener) l -> update());
-
-                ListenerHelper lh = new ListenerHelper(this);
-                lh.addChangeListener(this::update, getSkinnable().heightProperty());
-                update();
+            if (headerButtons != null) {
+                headerButtons.setMaxHeight(mh);
+                headerButtons.autosize();
             }
 
-            private void update() {
-                double height = getSkinnable().getHeight();
+            if (icon != null && icon.getImage() != null) {
+                double imgH = icon.getImage().getHeight();
 
-                setImage(null);
-
-                //find best height
-                stage.getIcons().stream()
-                        .min((f1, f2) -> (int) ((f1.getHeight() - height) - (f2.getHeight() - height)))
-                        .ifPresent(this::setImage);
-            }
-        }
-
-        class TitleRegion extends StackPane {
-            private final Label label;
-
-            TitleRegion() {
-                label = new Label();
-                label.getStyleClass().setAll("title");
-
-                label.textProperty().bind(stage.titleProperty());
-                getChildren().add(label);
-
-                ListenerHelper lh = new ListenerHelper(this);
-                //TODO: this repeats
-                lh.addChangeListener(this::update, getSkinnable().showIconProperty(), getSkinnable().showTitleProperty(),
-                        getSkinnable().headerLeftProperty(), getSkinnable().headerRightProperty(),
-                        getSkinnable().headerButtonsPositionProperty());
-            }
-
-            void update() {
-                //adjust the position to be in the middle
-                double left = 0d;
-                double right = 0d;
-
-                if (leftRegion != null) {
-                    left += leftRegion.getWidth();
+                if (imgH > mh) {
+                    icon.setFitHeight(mh);
                 }
 
-                if (rightRegion != null) {
-                    right += rightRegion.getWidth();
-                }
-
-                if (icon != null) {
-                    left += icon.getFitWidth();
-                }
-
-                if (headerButtons != null) {
-                    if (getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
-                        left += headerButtons.getWidth();
-                    } else if (getSkinnable().getHeaderButtonsPosition() == HPos.RIGHT) {
-                        right += headerButtons.getWidth();
-                    }
-                }
-
-                double diff = left - right;
-
-                System.out.printf("Title adjust -> Left: %f, Right: %f, Diff: %f%n", left, right, diff);
-                label.setTranslateX(diff);
+                icon.relocate(left, getY(icon.getFitHeight()));
+                left += icon.getFitWidth();
             }
+
+            if (headerButtons != null
+                    && getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
+                headerButtons.relocate(left, getY(headerButtons.getHeight()));
+                left += headerButtons.getWidth();
+            }
+
+            if (leftRegion != null) {
+                leftRegion.relocate(left, getY(leftRegion.getHeight()));
+                left += leftRegion.getWidth();
+            }
+
+            //title goes in the middle;
+            if (title != null) {
+                double tw = title.getWidth();
+                double tx = (w - tw) / 2;
+                double ty = getY(title.getHeight());
+
+                double tmw = getWidth() - snappedLeftInset() - snappedRightInset();
+
+                tmw -= (headerButtons != null) ? headerButtons.getWidth() : 0;
+                tmw -= (icon != null) ? icon.getFitWidth() : 0;
+
+                title.setMaxWidth((tmw < 0) ? 0 : tmw);
+                title.setMaxHeight(mh);
+                title.autosize();
+
+//                System.out.printf("label w = %f, h = %f, x, y: %f, %f%n", tw, title.getHeight(), tx, ty);
+                title.relocate(tx, ty);
+            }
+
+            if (headerButtons != null
+                    && getSkinnable().getHeaderButtonsPosition() == HPos.RIGHT) {
+
+                double hbw = headerButtons.getWidth();
+                headerButtons.relocate(w  - right - hbw, getY(headerButtons.getHeight()));
+                right += hbw;
+            }
+
+        }
+    }
+
+    class TitleRegion extends Label {
+        TitleRegion() {
+            setManaged(false);
+            getStyleClass().add("title");
+            textProperty().bind(stage.titleProperty());
+        }
+    }
+
+    class IconRegion extends ImageView {
+        IconRegion() {
+            setManaged(false);
+            getStyleClass().add("icon");
+            setPreserveRatio(true);
+
+            //TODO: do it elsewhere
+//            stage.getIcons().addListener((InvalidationListener) l -> update());
+            update();
         }
 
-        class HeaderButtonsRegion extends HBox {
-            private final HeaderButton iconify;
-            private final HeaderButton maximize;
-            private final HeaderButton close;
+        private void update() {
+            double height = headerRegion.getHeight();
 
-            HeaderButtonsRegion() {
-                getStyleClass().setAll("header-buttons");
+            setImage(null);
 
-                iconify = new HeaderButton("iconify");
-                maximize = new HeaderButton("maximize");
-                close = new HeaderButton("close");
+            //find best height
+            stage.getIcons().stream()
+                    .min((f1, f2) -> (int) ((f1.getHeight() - height) - (f2.getHeight() - height)))
+                    .ifPresent(this::setImage);
+        }
+    }
 
-                iconify.setOnAction(e -> stage.setIconified(!stage.isIconified()));
-                maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
-                close.setOnAction(e -> stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST)));
+    class HeaderButtonsRegion extends HBox {
+        private final HeaderButton iconify;
+        private final HeaderButton maximize;
+        private final HeaderButton close;
 
-                ListenerHelper lh = new ListenerHelper(this);
-                lh.addChangeListener(this::update, true, stage.resizableProperty(), getSkinnable().headerButtonsPositionProperty());
-            }
+        HeaderButtonsRegion() {
+            setManaged(false);
+            getStyleClass().setAll("header-buttons");
 
-            private void update() {
-                getChildren().clear();
+            iconify = new HeaderButton("iconify");
+            maximize = new HeaderButton("maximize");
+            close = new HeaderButton("close");
 
-                List<Node> buttons = new ArrayList<>();
-                buttons.add(iconify);
+            iconify.setOnAction(e -> stage.setIconified(!stage.isIconified()));
+            maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+            close.setOnAction(e -> stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
-                if (stage.isResizable()) {
-                    buttons.add(maximize);
-                }
-
-                buttons.add(close);
-
-                if (getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
-                    Collections.reverse(buttons);
-                }
-
-                getChildren().addAll(buttons);
-            }
+            ListenerHelper lh = new ListenerHelper(this);
+            lh.addChangeListener(this::update, true, stage.resizableProperty(), getSkinnable().headerButtonsPositionProperty());
         }
 
-        class HeaderLeftRegion extends StackPane {
-            HeaderLeftRegion() {
-                getStyleClass().setAll("left");
-                ListenerHelper lh = new ListenerHelper(this);
-                lh.addChangeListener(this::update, true, getSkinnable().headerLeftProperty());
+        private void update() {
+            getChildren().clear();
+
+            List<Node> buttons = new ArrayList<>();
+            buttons.add(iconify);
+
+            if (stage.isResizable()) {
+                buttons.add(maximize);
             }
 
-            private void update() {
-                if (getSkinnable().getHeaderLeft() != null) {
-                    getChildren().setAll(getSkinnable().getHeaderLeft());
-                }
+            buttons.add(close);
+
+            if (getSkinnable().getHeaderButtonsPosition() == HPos.LEFT) {
+                Collections.reverse(buttons);
             }
+
+            getChildren().addAll(buttons);
+        }
+    }
+
+    class HeaderLeftRegion extends StackPane {
+        HeaderLeftRegion() {
+            setManaged(false);
+            getStyleClass().setAll("left");
+            ListenerHelper lh = new ListenerHelper(this);
+            lh.addChangeListener(this::update, true, getSkinnable().headerLeftProperty());
         }
 
-        class HeaderRightRegion extends StackPane {
-            HeaderRightRegion() {
-                getStyleClass().setAll("right");
-                ListenerHelper lh = new ListenerHelper(this);
-                lh.addChangeListener(this::update, true, getSkinnable().headerRightProperty());
-            }
-
-            private void update() {
-                if (getSkinnable().getHeaderRight() != null) {
-                    getChildren().setAll(getSkinnable().getHeaderRight());
-                }
-            }
-        }
-
-        static class MainRegion extends VBox {
-            public MainRegion() {
-                getStyleClass().setAll("main");
-                setAlignment(Pos.TOP_LEFT);
-            }
-        }
-
-        static class HeaderButton extends Button {
-            HeaderButton(final String css) {
-                getStyleClass().setAll("header-button");
-
-                StackPane icon = new StackPane();
-                icon.getStyleClass().setAll("icon", css);
-                icon.setId(css);
-                setGraphic(icon);
+        private void update() {
+            if (getSkinnable().getHeaderLeft() != null) {
+                getChildren().setAll(getSkinnable().getHeaderLeft());
             }
         }
     }
+
+    class HeaderRightRegion extends StackPane {
+        HeaderRightRegion() {
+            setManaged(false);
+            getStyleClass().setAll("right");
+            ListenerHelper lh = new ListenerHelper(this);
+            lh.addChangeListener(this::update, true, getSkinnable().headerRightProperty());
+        }
+
+        private void update() {
+            if (getSkinnable().getHeaderRight() != null) {
+                getChildren().setAll(getSkinnable().getHeaderRight());
+            }
+        }
+    }
+
+    static class MainRegion extends VBox {
+        public MainRegion() {
+            getStyleClass().setAll("main");
+            setAlignment(Pos.TOP_LEFT);
+        }
+    }
+
+    static class HeaderButton extends Button {
+        HeaderButton(final String css) {
+            getStyleClass().setAll("header-button");
+
+            StackPane icon = new StackPane();
+            icon.getStyleClass().setAll("icon", css);
+            icon.setId(css);
+            setGraphic(icon);
+        }
+    }
+}

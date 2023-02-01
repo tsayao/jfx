@@ -78,6 +78,20 @@ public class SceneDecoration extends Control {
         return content;
     }
 
+    private final BooleanProperty showHeaderButtons = new SimpleBooleanProperty(this, "showHeaderButtons", true);
+
+    public boolean isShowHeaderButtons() {
+        return showHeaderButtons.get();
+    }
+
+    public BooleanProperty showHeaderButtonsProperty() {
+        return showHeaderButtons;
+    }
+
+    public void setShowHeaderButtons(boolean showHeaderButtons) {
+        this.showHeaderButtons.set(showHeaderButtons);
+    }
+
     private final BooleanProperty showTitle = new SimpleBooleanProperty(this, "showTitle", true);
 
     public boolean isShowTitle() {
