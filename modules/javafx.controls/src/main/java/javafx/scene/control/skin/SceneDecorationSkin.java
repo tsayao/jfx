@@ -179,11 +179,11 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         @Override
         protected void layoutChildren() {
             //adjust the position to be in the middle
-            double left  = getInsets().getLeft();
-            double right = getInsets().getRight();
+            double left  = snappedLeftInset();
+            double right = snappedRightInset();
 
-            double w = snapSizeX(getWidth());
-            double mh = snapSizeY(getHeight());
+            double w = getWidth() - snappedLeftInset() - snappedRightInset();
+            double mh = getHeight() - snappedTopInset() - snappedBottomInset();
 
             if (headerButtons != null) {
                 headerButtons.setMaxHeight(mh);
@@ -215,10 +215,10 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             //title goes in the middle;
             if (title != null) {
                 double tw = title.getWidth();
-                double tx = (w - tw) / 2;
+                double tx = (getWidth() - tw) / 2;
                 double ty = getY(title.getHeight());
 
-                double tmw = getWidth() - snappedLeftInset() - snappedRightInset();
+                double tmw = w;
 
                 tmw -= (headerButtons != null) ? headerButtons.getWidth() : 0;
                 tmw -= (icon != null) ? icon.getFitWidth() : 0;
