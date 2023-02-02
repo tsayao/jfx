@@ -28,7 +28,6 @@ package javafx.scene.control.skin;
 
 import com.sun.javafx.scene.control.ListenerHelper;
 import com.sun.javafx.scene.control.behavior.SceneDecorationBehaviour;
-import javafx.beans.InvalidationListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -48,8 +47,7 @@ import java.util.List;
 public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
     private final SceneDecorationBehaviour behaviour;
     private final Stage stage;
-
-    private final MainRegion mainRegion;
+    private final StackPane container;
     private HeaderRegion headerRegion = null;
 
     public SceneDecorationSkin(SceneDecoration control, Stage stage) {
@@ -57,24 +55,32 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         this.behaviour = new SceneDecorationBehaviour(control);
         this.stage = stage;
 
-        mainRegion = new MainRegion();
+        container = new StackPane();
 
         ListenerHelper lh = ListenerHelper.get(this);
+
+        lh.addChangeListener(this::updateChildren, true, stage.fullScreenProperty(), control.contentProperty());
+
         lh.addChangeListener(this::updateHeader, control.showIconProperty(), control.showTitleProperty(),
-                control.headerLeftProperty(), control.headerRightProperty(), control.headerButtonsPositionProperty());
+                control.headerLeftProperty(), control.headerRightProperty(), control.headerButtonsPositionProperty(),
+                stage.resizableProperty());
 
-        lh.addChangeListener(this::update, true, stage.fullScreenProperty(), control.contentProperty());
-
-        getChildren().setAll(mainRegion);
+        lh.addListChangeListener(stage.getIcons(), lc -> updateHeader());
     }
 
-    private void update() {
-        mainRegion.getChildren().clear();
-
+    private void updateChildren() {
         updateHeader();
 
-        mainRegion.getChildren().add(getSkinnable().getContent());
-        VBox.setVgrow(getSkinnable().getContent(), Priority.ALWAYS);
+        var content = getSkinnable().getContent();
+
+        if (content != null) {
+            container.getChildren().add(content);
+
+            //FIXME
+            if (headerRegion != null) {
+                content.relocate(headerRegion.getWidth(), headerRegion.getHeight());
+            }
+        }
     }
 
     private void updateHeader() {
@@ -86,7 +92,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             headerRegion = new HeaderRegion();
         }
 
-        mainRegion.getChildren().add(headerRegion);
         headerRegion.update();
     }
 
@@ -121,8 +126,11 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
         private void updateButtons() {
             if (getSkinnable().isShowHeaderButtons()) {
-                headerButtons = new HeaderButtonsRegion();
+                if (headerButtons == null) {
+                    headerButtons = new HeaderButtonsRegion();
+                }
                 getChildren().add(headerButtons);
+                headerButtons.update();
             } else {
                 headerButtons = null;
             }
@@ -132,19 +140,20 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             if (getSkinnable().isShowTitle()) {
                 if (title == null) {
                     title = new TitleRegion();
-                    getChildren().add(title);
                 }
+                getChildren().add(title);
             } else {
                 title = null;
             }
         }
 
         private void updateIcon() {
-            if (getSkinnable().isShowIcon()) {
+            if (getSkinnable().isShowIcon() && !stage.getIcons().isEmpty()) {
                 if (icon == null) {
                     icon = new IconRegion();
-                    getChildren().add(icon);
                 }
+                getChildren().add(icon);
+                icon.update();
             } else {
                 icon = null;
             }
@@ -152,10 +161,11 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
         private void updateRight() {
             if (getSkinnable().getHeaderRight() != null) {
-                if (rightRegion != null) {
+                if (rightRegion == null) {
                     rightRegion = new HeaderRightRegion();
-                    getChildren().add(rightRegion);
                 }
+                getChildren().add(rightRegion);
+                rightRegion.update();
             } else {
                 rightRegion = null;
             }
@@ -165,8 +175,9 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             if (getSkinnable().getHeaderLeft() != null) {
                 if (leftRegion == null) {
                     leftRegion = new HeaderLeftRegion();
-                    getChildren().add(leftRegion);
                 }
+                getChildren().add(leftRegion);
+                leftRegion.update();
             } else {
                 leftRegion = null;
             }
@@ -178,8 +189,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
         @Override
         protected void layoutChildren() {
-            //adjust the position to be in the middle
-            double left  = snappedLeftInset();
+            double left = snappedLeftInset();
             double right = snappedRightInset();
 
             double w = getWidth() - snappedLeftInset() - snappedRightInset();
@@ -208,8 +218,14 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             }
 
             if (leftRegion != null) {
+                leftRegion.setMaxHeight(mh);
+
+                if (title != null) {
+                    double mw = left - title.getLayoutX();
+                    leftRegion.setMaxWidth(mw);
+                }
+                leftRegion.autosize();
                 leftRegion.relocate(left, getY(leftRegion.getHeight()));
-                left += leftRegion.getWidth();
             }
 
             //title goes in the middle;
@@ -227,7 +243,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
                 title.setMaxHeight(mh);
                 title.autosize();
 
-//                System.out.printf("label w = %f, h = %f, x, y: %f, %f%n", tw, title.getHeight(), tx, ty);
                 title.relocate(tx, ty);
             }
 
@@ -235,16 +250,20 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
                     && getSkinnable().getHeaderButtonsPosition() == HPos.RIGHT) {
 
                 double hbw = headerButtons.getWidth();
-                headerButtons.relocate(w  - right - hbw, getY(headerButtons.getHeight()));
+                headerButtons.relocate(getWidth() - right - hbw, getY(headerButtons.getHeight()));
                 right += hbw;
             }
 
+            if (rightRegion != null) {
+                rightRegion.relocate(getWidth() - right - rightRegion.getWidth(), getY(rightRegion.getHeight()));
+            }
         }
     }
 
     class TitleRegion extends Label {
         TitleRegion() {
             setManaged(false);
+            setMouseTransparent(true);
             getStyleClass().add("title");
             textProperty().bind(stage.titleProperty());
         }
@@ -258,7 +277,6 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
             //TODO: do it elsewhere
 //            stage.getIcons().addListener((InvalidationListener) l -> update());
-            update();
         }
 
         private void update() {
@@ -290,8 +308,7 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
             maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
             close.setOnAction(e -> stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
-            ListenerHelper lh = new ListenerHelper(this);
-            lh.addChangeListener(this::update, true, stage.resizableProperty(), getSkinnable().headerButtonsPositionProperty());
+            setMouseTransparent(true);
         }
 
         private void update() {
@@ -316,13 +333,11 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
     class HeaderLeftRegion extends StackPane {
         HeaderLeftRegion() {
-            setManaged(false);
             getStyleClass().setAll("left");
-            ListenerHelper lh = new ListenerHelper(this);
-            lh.addChangeListener(this::update, true, getSkinnable().headerLeftProperty());
         }
 
         private void update() {
+            getChildren().clear();
             if (getSkinnable().getHeaderLeft() != null) {
                 getChildren().setAll(getSkinnable().getHeaderLeft());
             }
@@ -331,23 +346,14 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
     class HeaderRightRegion extends StackPane {
         HeaderRightRegion() {
-            setManaged(false);
             getStyleClass().setAll("right");
-            ListenerHelper lh = new ListenerHelper(this);
-            lh.addChangeListener(this::update, true, getSkinnable().headerRightProperty());
         }
 
         private void update() {
+            getChildren().clear();
             if (getSkinnable().getHeaderRight() != null) {
                 getChildren().setAll(getSkinnable().getHeaderRight());
             }
-        }
-    }
-
-    static class MainRegion extends VBox {
-        public MainRegion() {
-            getStyleClass().setAll("main");
-            setAlignment(Pos.TOP_LEFT);
         }
     }
 

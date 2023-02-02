@@ -33,8 +33,10 @@
     -fx-background-color: derive(-fx-background, -5%);
 }
 
+.decoration:solid
 .decoration:maximized,
 .decoration:full-screen,
+.decoration:solid > .main > .header,
 .decoration:maximized > .main > .header,
 .decoration:full-screen > .main > .header {
     -fx-background-radius: 0;

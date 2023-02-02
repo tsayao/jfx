@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.skin.SceneDecorationSkin;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 public class SceneDecoration extends Control {
     private static final String DEFAULT_STYLE_CLASS = "decoration";
@@ -20,11 +21,13 @@ public class SceneDecoration extends Control {
     private static final PseudoClass PSEUDO_CLASS_FULL_SCREEN =
             PseudoClass.getPseudoClass("full-screen");
 
+    private static final PseudoClass PSEUDO_CLASS_SOLID =
+            PseudoClass.getPseudoClass("solid");
+
     private final Stage stage;
 
     public SceneDecoration(Stage stage) {
         this.stage = stage;
-        stage.initStyle(StageStyle.TRANSPARENT);
         getStyleClass().setAll(DEFAULT_STYLE_CLASS);
 
         stage.focusedProperty().addListener((observable, oldValue, newValue)
@@ -35,6 +38,9 @@ public class SceneDecoration extends Control {
 
         stage.fullScreenProperty().addListener((observable, oldValue, newValue)
                 -> pseudoClassStateChanged(PSEUDO_CLASS_FULL_SCREEN, newValue));
+
+        stage.addEventHandler(WindowEvent.WINDOW_SHOWN,
+             e -> pseudoClassStateChanged(PSEUDO_CLASS_SOLID, stage.getStyle() != StageStyle.TRANSPARENT));
     }
 
     public SceneDecoration(Stage stage, Node content) {
