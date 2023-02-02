@@ -55,7 +55,12 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
         this.behaviour = new SceneDecorationBehaviour(control);
         this.stage = stage;
 
-        container = new StackPane();
+        container = new StackPane() {
+            @Override
+            public Node getStyleableNode() {
+                return getSkinnable();
+            }
+        };
 
         ListenerHelper lh = ListenerHelper.get(this);
 
@@ -73,10 +78,14 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
         var content = getSkinnable().getContent();
 
+        if (headerRegion != null) {
+            container.getChildren().add(headerRegion);
+        }
+
         if (content != null) {
             container.getChildren().add(content);
 
-            //FIXME
+             //FIXME: visible?
             if (headerRegion != null) {
                 content.relocate(headerRegion.getWidth(), headerRegion.getHeight());
             }
@@ -359,10 +368,10 @@ public class SceneDecorationSkin extends SkinBase<SceneDecoration> {
 
     static class HeaderButton extends Button {
         HeaderButton(final String css) {
-            getStyleClass().setAll("header-button");
+            getStyleClass().setAll("header-button", css);
 
             StackPane icon = new StackPane();
-            icon.getStyleClass().setAll("icon", css);
+            icon.getStyleClass().add("icon");
             icon.setId(css);
             setGraphic(icon);
         }

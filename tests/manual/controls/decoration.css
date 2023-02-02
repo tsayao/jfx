@@ -13,11 +13,7 @@
     -fx-border-width: 0.083333em;
 }
 
-.decoration > .main {
-    -fx-background-color: transparent;
-}
-
-.decoration > .main > .header {
+.decoration > .header {
     -fx-background-color: -fx-background; /*non-focused*/
     -fx-background-radius: 1em 1em 0 0;
     -fx-min-height: 3.083333333em;
@@ -29,24 +25,24 @@
     -fx-alignment: center-left;
 }
 
-.decoration:focused > .main > .header {
+.decoration:focused > .header {
     -fx-background-color: derive(-fx-background, -5%);
 }
 
-.decoration:solid
+.decoration:solid,
 .decoration:maximized,
 .decoration:full-screen,
-.decoration:solid > .main > .header,
-.decoration:maximized > .main > .header,
-.decoration:full-screen > .main > .header {
+.decoration:solid > .header,
+.decoration:maximized > .header,
+.decoration:full-screen > .header {
     -fx-background-radius: 0;
     -fx-border-radius: 0;
 }
 
-.decoration > .main > .header > .icon {
+.decoration > .header > .icon {
 }
 
-.decoration > .main > .header .title {
+.decoration > .header > .title {
     -fx-alignment: center;
     -fx-font-weight: bold;
     -fx-wrap-text: false;
@@ -54,12 +50,12 @@
     -fx-text-fill: -fx-text-base-color;
 }
 
-.decoration > .main > .header > .header-buttons {
+.decoration > .header > .header-buttons {
     -fx-spacing: 0.666667em;
     -fx-alignment: center-right;
 }
 
-.decoration > .main > .header > .header-buttons > .header-button {
+.decoration > .header > .header-buttons > .header-button {
     -fx-background-color: transparent;
     -fx-alignment: CENTER;
     -fx-background-radius: 100%;
@@ -70,53 +66,53 @@
     -fx-max-height: 1.833333333em;
 }
 
-.decoration:focused > .main > .header > .header-buttons > .header-button {
+.decoration:focused > .header > .header-buttons > .header-button {
     -fx-background-color: derive(-fx-base, -8%);
 }
 
-.decoration > .main > .header > .header-buttons > .header-button:hover {
+.decoration > .header > .header-buttons > .header-button:hover {
     -fx-background-color: derive(-fx-base, -12%);
 }
 
-.decoration > .main > .header > .header-buttons > .header-button:pressed {
+.decoration > .header > .header-buttons > .header-button:pressed {
     -fx-background-color: derive(-fx-base, -20%);
 }
 
-.decoration > .main > .header > .header-buttons > .header-button > .icon {
+.decoration > .header > .header-buttons > .header-button > .icon {
     -fx-background-color: derive(-fx-base, -90%);
     -fx-scale-y: 0.4;
     -fx-scale-x: 0.4;
 }
 
-.decoration > .main > .header > .header-buttons > .header-button > .maximize {
+.decoration > .header > .header-buttons > .maximize > .icon {
     -fx-shape: "m 2.1151164,2.1089152 v 0.00103 h -0.0031 v 0.2651001 h 0.0031 v 1.5869833 0.2640665 0.00103 H 4.231783 V 3.9620321 h -0.00155 V 2.1089152 H 3.9651326 v 0.00103 H 2.3802165 v -0.00103 z M 2.3802165,2.3750488 H 3.9651326 V 3.9620321 H 2.3802165 Z"
 }
 
-.decoration:maximized .main > .header > .header-buttons > .header-button > .maximize {
+.decoration:maximized .header > .header-buttons > .maximize > .icon {
     -fx-shape: "M 2.642,2.38 V 2.115 H 4.2296 V 2.38 Z M 4.23,3.7 H 3.965 V 2.377 H 4.23 Z M 2.112,2.908 V 2.643 H 3.6996 V 2.908 Z M 2.38,3.964 H 2.115 V 2.9056 H 2.38 Z m 1.32,0.00497 H 3.435 V 2.9084259 H 3.7 Z M 2.114,4.227 V 3.962 h 1.5876 v 0.265 z";
 }
 
-.decoration > .main > .header > .header-buttons > .header-button > .iconify {
+.decoration > .header > .header-buttons > .iconify > .icon {
     -fx-shape: "M 2.112,3.962 V 3.697 h 2.1168 v 0.265 z";
     -fx-scale-y: 0.04;
     -fx-translate-y: 0.25em;
 }
 
-.decoration > .main > .header > .header-buttons > .header-button > .close {
+.decoration > .header > .header-buttons > .close > .icon {
     -fx-shape: "m2.3037 2.1167-0.18707 0.18707 0.87023 0.86971-0.87023 0.87023 0.18707 0.18707 0.87023-0.87023 0.86971 0.87023 0.18707-0.18707-0.86971-0.87023 0.86971-0.86971-0.18707-0.18707-0.86971 0.86971z"
 }
 
-.decoration > .main > .header > .left {
+.decoration > .header > .left {
     -fx-alignment: center-left;
 }
 
-.decoration .main > .header > .right {
+.decoration .header > .right {
     -fx-alignment: center-right;
 }
 /*PREDICT CONTROLS INSIDE HEADER*/
 
-.decoration > .main > .header > .left .button,
-.decoration > .main > .header > .right .button {
+.decoration > .header > .left .button,
+.decoration > .header > .right .button {
     -fx-background-radius: 0.5em;
     -fx-border-radius: 0.5em;
     -fx-border-color: derive(-fx-base, -10%);
@@ -124,12 +120,12 @@
     -fx-padding: 0.666667em;
 }
 
-.decoration > .main > .header > .left .button:hover,
-.decoration > .main > .header > .right .button:hover {
+.decoration > .header > .left .button:hover,
+.decoration > .header > .right .button:hover {
     -fx-background-color: -fx-base;
 }
 
-.decoration > .main > .header > .left .button:pressed,
-.decoration > .main > .header > .right .button:pressed {
+.decoration > .header > .left .button:pressed,
+.decoration > .header > .right .button:pressed {
     -fx-background-color: derive(-fx-base, -10%);
 }
