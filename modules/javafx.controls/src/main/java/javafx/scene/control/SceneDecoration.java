@@ -1,10 +1,14 @@
 package javafx.scene.control;
 
 import javafx.beans.property.*;
+import javafx.css.CssMetaData;
 import javafx.css.PseudoClass;
+import javafx.css.StyleableProperty;
+import javafx.css.converter.SizeConverter;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.control.skin.SceneDecorationSkin;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
@@ -26,10 +30,13 @@ public class SceneDecoration extends Control {
 
     private final Stage stage;
 
+    //TODO: spacing property
+
     public SceneDecoration(Stage stage) {
         this.stage = stage;
         getStyleClass().setAll(DEFAULT_STYLE_CLASS);
 
+        //TODO: move to skin
         stage.focusedProperty().addListener((observable, oldValue, newValue)
                 -> pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED, newValue));
 

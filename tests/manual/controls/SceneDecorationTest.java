@@ -39,6 +39,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class SceneDecorationTest extends Application {
     private GridPane pane;
@@ -79,6 +80,7 @@ public class SceneDecorationTest extends Application {
 
         stage.setScene(scene);
         stage.getIcons().add(new Image("https://openjdk.org/images/duke-thinking.png"));
+        stage.initStyle(StageStyle.TRANSPARENT);
         stage.setTitle("Test Stage");
         stage.setWidth(600);
         stage.setHeight(400);
