@@ -415,7 +415,7 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
         dx = t;
     }
 
-    if (jview) {
+    if (jview && (dx != 0 || dy != 0)) {
         mainEnv->CallVoidMethod(jview, jViewNotifyScroll,
                 (jint) event->x, (jint) event->y,
                 (jint) event->x_root, (jint) event->y_root,
