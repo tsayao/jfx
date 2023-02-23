@@ -382,12 +382,15 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
     jdouble dx = 0;
     jdouble dy = 0;
 
+    bool smooth = false;
+
     // converting direction to change in pixels
     switch (event->direction) {
 #ifdef GLASS_GTK3
         case GDK_SCROLL_SMOOTH:
             dx = event->delta_x;
             dy = event->delta_y;
+            smooth = true;
             break;
 #endif
         case GDK_SCROLL_UP:
@@ -404,6 +407,7 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
             break;
     }
     if (event->state & GDK_SHIFT_MASK) {
+        g_print("----------> oh no\n");
         jdouble t = dy;
         dy = dx;
         dx = t;
