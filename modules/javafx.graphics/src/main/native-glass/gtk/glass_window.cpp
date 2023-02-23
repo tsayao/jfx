@@ -404,6 +404,7 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
             break;
     }
     if (event->state & GDK_SHIFT_MASK) {
+        g_print("SHIFT MASK");
         jdouble t = dy;
         dy = dx;
         dx = t;
@@ -415,9 +416,6 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
 
         int mod = gdk_modifier_mask_to_glass(event->state);
 
-        g_print("modifier: %d\n", mod);
-        g_print("event: x %d y %d, xr %d yr %d\n", (jint) event->x, (jint) event->y,
-                                                                   (jint) event->x_root, (jint) event->y_root);
         mainEnv->CallVoidMethod(jview, jViewNotifyScroll,
                 (jint) event->x, (jint) event->y,
                 (jint) event->x_root, (jint) event->y_root,
