@@ -413,7 +413,7 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
         dx = t;
     }
 
-    g_print("dx = %f, y = %f -> %d\n", dx, dy, event->state);
+    g_print("dx = %f, y = %f -> %d -> %d\n", dx, dy, event->state, smooth);
 
     if (jview) {
 
