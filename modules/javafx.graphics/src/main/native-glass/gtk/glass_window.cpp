@@ -412,11 +412,17 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
     g_print("dx = %f, y = %f\n", dx, dy);
 
     if (jview) {
+
+        int mod = gdk_modifier_mask_to_glass(event->state);
+
+        g_print("modifier: %d\n", mod);
+        g_print("event: x %d y %d, xr %d yr %d\n", (jint) event->x, (jint) event->y,
+                                                                   (jint) event->x_root, (jint) event->y_root);
         mainEnv->CallVoidMethod(jview, jViewNotifyScroll,
                 (jint) event->x, (jint) event->y,
                 (jint) event->x_root, (jint) event->y_root,
                 dx, dy,
-                gdk_modifier_mask_to_glass(event->state),
+                mod,
                 (jint) 0, (jint) 0,
                 (jint) 0, (jint) 0,
                 (jdouble) 40.0, (jdouble) 40.0);
