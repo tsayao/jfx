@@ -390,10 +390,12 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
             dx = event->delta_x;
             dy = event->delta_y;
             fetched = true;
+            g_print("smooth\n");
         }
 #endif
 
     if (!fetched) {
+        g_print("not smooth\n");
         // converting direction to change in pixels
         if (event->direction == GDK_SCROLL_UP) {
             dy = 1;
