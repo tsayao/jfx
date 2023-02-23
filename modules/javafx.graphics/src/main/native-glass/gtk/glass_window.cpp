@@ -382,48 +382,42 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
     jdouble dx = 0;
     jdouble dy = 0;
 
-    bool smooth = false;
+    bool fetched = false;
 
-    // converting direction to change in pixels
-    switch (event->direction) {
 #ifdef GLASS_GTK3
-        case GDK_SCROLL_SMOOTH:
+        if (gdk_window_get_events(gdk_window) & GDK_SMOOTH_SCROLL_MASK
+            && event->direction == GDK_SCROLL_SMOOTH) {
             dx = event->delta_x;
             dy = event->delta_y;
-            smooth = true;
-            break;
+            fetched = true;
+        }
 #endif
-        case GDK_SCROLL_UP:
+
+    if (!fetched) {
+        // converting direction to change in pixels
+        if (event->direction == GDK_SCROLL_UP) {
             dy = 1;
-            break;
-        case GDK_SCROLL_DOWN:
-            dy = -1;
-            break;
-        case GDK_SCROLL_LEFT:
+        } else if (event->direction == GDK_SCROLL_DOWN) {
+            dy = -11;
+        } else if (event->direction == GDK_SCROLL_LEFT) {
             dx = 1;
-            break;
-        case GDK_SCROLL_RIGHT:
+        } else if (event->direction == GDK_SCROLL_RIGHT) {
             dx = -1;
-            break;
+        }
     }
+
     if (event->state & GDK_SHIFT_MASK) {
-        g_print("----------> oh no\n");
         jdouble t = dy;
         dy = dx;
         dx = t;
     }
 
-    g_print("dx = %f, y = %f -> %d -> %d\n", dx, dy, event->state, smooth);
-
     if (jview) {
-
-        int mod = gdk_modifier_mask_to_glass(event->state);
-
         mainEnv->CallVoidMethod(jview, jViewNotifyScroll,
                 (jint) event->x, (jint) event->y,
                 (jint) event->x_root, (jint) event->y_root,
                 dx, dy,
-                mod,
+                gdk_modifier_mask_to_glass(event->state),
                 (jint) 0, (jint) 0,
                 (jint) 0, (jint) 0,
                 (jdouble) 40.0, (jdouble) 40.0);
