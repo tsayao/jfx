@@ -11,5 +11,10 @@
       <entry name="!?*.kt" />
       <entry name="!?*.clj" />
     </wildcardResourcePatterns>
+    <bytecodeTargetLevel target="17">
+      <module name="manual.jfx.manualTests" target="17" />
+      <module name="manual.jfx.manualTests.main" target="17" />
+      <module name="manual.jfx.manualTests.test" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
