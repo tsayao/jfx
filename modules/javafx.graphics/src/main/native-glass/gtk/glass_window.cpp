@@ -404,13 +404,12 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
             break;
     }
     if (event->state & GDK_SHIFT_MASK) {
-        g_print("SHIFT MASK");
         jdouble t = dy;
         dy = dx;
         dx = t;
     }
 
-    g_print("dx = %f, y = %f\n", dx, dy);
+    g_print("dx = %f, y = %f -> %d\n", dx, dy, event->state);
 
     if (jview) {
 

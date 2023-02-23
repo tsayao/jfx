@@ -956,7 +956,6 @@ public abstract class View {
             double xMultiplier, double yMultiplier)
     {
         if (this.eventHandler != null) {
-            System.err.println("notifyScroll %f, %f\n".formatted(deltaX, deltaY));
             this.eventHandler.handleScrollEvent(this, System.nanoTime(),
                     x, y, xAbs, yAbs, deltaX, deltaY, modifiers, lines, chars,
                     defaultLines, defaultChars, xMultiplier, yMultiplier);
