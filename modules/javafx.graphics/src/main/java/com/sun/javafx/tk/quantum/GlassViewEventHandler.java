@@ -540,6 +540,8 @@ class GlassViewEventHandler extends View.EventHandler {
                             pScaleX = pScaleY = 1.0;
                             spx = spy = sx = sy = 0.0;
                         }
+
+                        System.out.printf("Deltas %f, %f\n".formatted(deltaX / pScaleX, deltaY / pScaleY));
                         scene.sceneListener.scrollEvent(ScrollEvent.SCROLL,
                             deltaX / pScaleX, deltaY / pScaleY, 0, 0,
                             xMultiplier, yMultiplier,
