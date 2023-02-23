@@ -398,13 +398,15 @@ void WindowContextBase::process_mouse_scroll(GdkEventScroll* event) {
         if (event->direction == GDK_SCROLL_UP) {
             dy = 1;
         } else if (event->direction == GDK_SCROLL_DOWN) {
-            dy = -11;
+            dy = -1;
         } else if (event->direction == GDK_SCROLL_LEFT) {
             dx = 1;
         } else if (event->direction == GDK_SCROLL_RIGHT) {
             dx = -1;
         }
     }
+
+    g_print("dx %f dy %f\n", dx, dy);
 
     if (event->state & GDK_SHIFT_MASK) {
         jdouble t = dy;
