@@ -1064,8 +1064,8 @@ void WindowContextTop::update_window_constraints() {
         hints.max_height = h;
     }
 
-    gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), NULL, &hints,
-                                  (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+//    gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), NULL, &hints,
+//                                  (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 }
 
 void WindowContextTop::set_resizable(bool res) {
