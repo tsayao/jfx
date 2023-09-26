@@ -550,12 +550,12 @@ void WindowContextBase::paint(void* data, jint width, jint height) {
 
 void WindowContextBase::add_child(WindowContextTop* child) {
     children.insert(child);
-    gtk_window_set_transient_for(child->get_gtk_window(), this->get_gtk_window());
+//    gtk_window_set_transient_for(child->get_gtk_window(), this->get_gtk_window());
 }
 
 void WindowContextBase::remove_child(WindowContextTop* child) {
     children.erase(child);
-    gtk_window_set_transient_for(child->get_gtk_window(), NULL);
+//    gtk_window_transient_for(child->get_gtk_window(), NULL);
 }
 
 void WindowContextBase::show_or_hide_children(bool show) {
