@@ -451,8 +451,6 @@ static void process_events(GdkEvent* event, gpointer data)
         return;
     }
 
-    g_print("Time: %d\n", gdk_event_get_time(event));
-
     glass_evloop_call_hooks(event);
 
     if (ctx != NULL) {

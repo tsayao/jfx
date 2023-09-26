@@ -66,6 +66,11 @@ jobject WindowContextBase::get_jwindow() {
     return jwindow;
 }
 
+static gboolean on_configure_event(GtkWidget* self, GdkEventConfigure *event, gpointer user_data) {
+    g_print("configuure %d, %d\n", event->width, event->height);
+    return FALSE;
+}
+
 bool WindowContextBase::isEnabled() {
     if (jwindow) {
         bool result = (JNI_TRUE == mainEnv->CallBooleanMethod(jwindow, jWindowIsEnabled));
@@ -748,6 +753,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
+
+    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure_event), this);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
