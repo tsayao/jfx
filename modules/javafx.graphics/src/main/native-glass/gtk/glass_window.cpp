@@ -797,8 +797,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     if (frame_type != TITLED) {
         gtk_window_set_decorated(GTK_WINDOW(gtk_widget), FALSE);
     } else {
-        request_frame_extents();
-        geometry.extents = get_cached_extents();
+//        request_frame_extents();
+//        geometry.extents = get_cached_extents();
     }
 }
 
@@ -960,11 +960,11 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
     static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 
     if (event->window == gdk_window) {
-        if (event->atom == get_net_frame_extents_atom()) {
-            update_frame_extents();
-        } else if (event->atom == atom_net_wm_state) {
-            work_around_compiz_state();
-        }
+//        if (event->atom == get_net_frame_extents_atom()) {
+//            update_frame_extents();
+//        } else if (event->atom == atom_net_wm_state) {
+//            work_around_compiz_state();
+//        }
     }
 }
 
