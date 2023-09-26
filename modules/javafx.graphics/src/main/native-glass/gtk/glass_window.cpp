@@ -761,12 +761,12 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 //        g_free(app_name);
 //    }
 
-    if (owner) {
-        owner->add_child(this);
-        if (on_top_inherited()) {
-            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), TRUE);
-        }
-    }
+//    if (owner) {
+//        owner->add_child(this);
+//        if (on_top_inherited()) {
+//            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), TRUE);
+//        }
+//    }
 
     if (type == UTILITY) {
         gtk_window_set_type_hint(GTK_WINDOW(gtk_widget), GDK_WINDOW_TYPE_HINT_UTILITY);
