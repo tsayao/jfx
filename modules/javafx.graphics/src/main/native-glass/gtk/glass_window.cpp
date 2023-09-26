@@ -756,10 +756,10 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
 
     g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(on_configure_event), this);
 
-    if (gchar* app_name = get_application_name()) {
-        gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
-        g_free(app_name);
-    }
+//    if (gchar* app_name = get_application_name()) {
+//        gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
+//        g_free(app_name);
+//    }
 
     if (owner) {
         owner->add_child(this);
