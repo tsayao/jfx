@@ -986,7 +986,7 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
-    g_print("configure: %d, %d\n", ww, wh);
+    g_print("configure: %d, %d, %d\n", ww, wh, event->send_event);
 
     if (!is_maximized && !is_fullscreen) {
         geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
