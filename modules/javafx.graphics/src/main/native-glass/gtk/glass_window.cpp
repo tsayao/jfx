@@ -986,6 +986,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
+    g_print("configure: %d, %d\n", ww, wh);
+
     if (!is_maximized && !is_fullscreen) {
         geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
                 ? event->width : ww;
@@ -1086,8 +1088,8 @@ void WindowContextTop::set_visible(bool visible) {
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch,
                                   float gravity_x, float gravity_y) {
-//     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
-//            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
+     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
+            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
     // newW / newH are view/content sizes
     int newW = 0;
     int newH = 0;

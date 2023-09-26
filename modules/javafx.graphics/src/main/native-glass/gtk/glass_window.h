@@ -268,7 +268,6 @@ class WindowContextTop: public WindowContextBase {
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
 
-    bool map_received;
     bool on_top;
     bool is_fullscreen;
 
