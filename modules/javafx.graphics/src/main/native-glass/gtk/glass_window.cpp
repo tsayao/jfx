@@ -975,6 +975,7 @@ void WindowContextTop::process_state(GdkEventWindowState* event) {
 
     if (event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED
         && !(event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED)) {
+        g_print("HELLLO\n");
         gtk_window_resize(GTK_WINDOW(gtk_widget), geometry_get_content_width(&geometry),
                                     geometry_get_content_height(&geometry));
     }
