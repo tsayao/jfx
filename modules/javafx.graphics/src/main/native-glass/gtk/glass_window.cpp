@@ -976,6 +976,8 @@ void WindowContextTop::process_state(GdkEventWindowState* event) {
 
     if (event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED
         && !(event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED)) {
+        g_print("gtk_window_resize %d, %d\n", geometry_get_content_width(&geometry), geometry_get_content_height(&geometry));
+
         gtk_window_resize(GTK_WINDOW(gtk_widget), geometry_get_content_width(&geometry),
                                     geometry_get_content_height(&geometry));
     }
@@ -987,9 +989,6 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
-    if (event->send_event) {
-        return;
-    }
     g_print("Configure: %d, %d, %d\n", ww, wh, event->send_event);
 
     if (!is_maximized && !is_fullscreen) {
@@ -1133,6 +1132,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         update_window_constraints();
 
         if (default_size_set) {
+            g_print("gtk_window_resize %d, %d\n", newW, newH);
             gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
         }
 
