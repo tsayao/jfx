@@ -564,7 +564,7 @@ void WindowContextBase::show_or_hide_children(bool show) {
 
 void WindowContextBase::set_visible(bool visible) {
     if (visible) {
-        gtk_widget_show(gtk_widget);
+        gtk_widget_show_all(gtk_widget);
     } else {
         gtk_widget_hide(gtk_widget);
         if (jview && is_mouse_entered) {
