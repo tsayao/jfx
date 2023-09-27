@@ -467,8 +467,8 @@ static void process_events(GdkEvent* event, gpointer data)
                     ctx->process_configure(&event->configure);
                     break;
                 case GDK_FOCUS_CHANGE:
-                    ctx->process_focus(&event->focus_change);
                     gtk_main_do_event(event);
+                    ctx->process_focus(&event->focus_change);
                     break;
                 case GDK_DESTROY:
                     destroy_and_delete_ctx(ctx);
@@ -482,8 +482,8 @@ static void process_events(GdkEvent* event, gpointer data)
                     ctx->process_expose(&event->expose);
                     break;
                 case GDK_WINDOW_STATE:
-                    ctx->process_state(&event->window_state);
                     gtk_main_do_event(event);
+                    ctx->process_state(&event->window_state);
                     break;
                 case GDK_BUTTON_PRESS:
                 case GDK_BUTTON_RELEASE:
@@ -510,16 +510,8 @@ static void process_events(GdkEvent* event, gpointer data)
                 case GDK_DRAG_MOTION:
                     process_dnd_target(ctx, &event->dnd);
                     break;
-                case GDK_MAP:
-                    // fall-through
-                case GDK_UNMAP:
-                case GDK_CLIENT_EVENT:
-                case GDK_VISIBILITY_NOTIFY:
-                case GDK_SETTING:
-                case GDK_OWNER_CHANGE:
-                    gtk_main_do_event(event);
-                    break;
                 default:
+                    gtk_main_do_event(event);
                     break;
             }
         } catch (jni_exception&) {
