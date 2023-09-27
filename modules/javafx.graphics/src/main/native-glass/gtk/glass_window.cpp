@@ -1078,6 +1078,9 @@ void WindowContextTop::set_resizable(bool res) {
 void WindowContextTop::set_visible(bool visible) {
     if (visible && !default_size_set) {
         default_size_set = true;
+        g_print("gtk_window_set_default_size %d, %d\n",
+                geometry_get_content_width(&geometry),
+                geometry_get_content_height(&geometry));
         gtk_window_set_default_size(GTK_WINDOW(gtk_widget),
                 geometry_get_content_width(&geometry),
                 geometry_get_content_height(&geometry));
