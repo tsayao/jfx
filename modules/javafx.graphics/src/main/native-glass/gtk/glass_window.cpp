@@ -1153,7 +1153,7 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
             geometry.y = y;
         }
 
-        gtk_window_move(GTK_WINDOW(gtk_widget), geometry.x, geometry.y);
+//        gtk_window_move(GTK_WINDOW(gtk_widget), geometry.x, geometry.y);
         notify_window_move();
     }
 }
