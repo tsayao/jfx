@@ -987,6 +987,9 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
+    if (event->send_event) {
+        return;
+    }
     g_print("Configure: %d, %d, %d\n", ww, wh, event->send_event);
 
     if (!is_maximized && !is_fullscreen) {
