@@ -515,7 +515,6 @@ void WindowContextBase::process_key(GdkEventKey* event) {
 }
 
 void WindowContextBase::paint(void* data, jint width, jint height) {
-g_print("Paint: %d, %d\n", width, height);
 #ifdef GLASS_GTK3
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
@@ -1081,6 +1080,9 @@ void WindowContextTop::set_visible(bool visible) {
     }
 
     WindowContextBase::set_visible(visible);
+
+    gtk_window_resize(GTK_WINDOW(gtk_widget), geometry_get_content_width(&geometry),
+                                              geometry_get_content_height(&geometry));
 
     if (visible && !geometry.size_assigned) {
         set_bounds(0, 0, false, false, 320, 200, -1, -1, 0, 0);
