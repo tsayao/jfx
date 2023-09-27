@@ -743,6 +743,7 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             owner(_owner),
             geometry(),
             resizable(),
+            default_size_set(false),
             on_top(false),
             is_fullscreen(false) {
     jwindow = mainEnv->NewGlobalRef(_jwindow);
@@ -1071,6 +1072,13 @@ void WindowContextTop::set_resizable(bool res) {
 }
 
 void WindowContextTop::set_visible(bool visible) {
+    if (visible && !default_size_set) {
+        default_size_set = true;
+        gtk_window_set_default_size(GTK_WINDOW(gtk_widget),
+                geometry_get_content_width(&geometry),
+                geometry_get_content_height(&geometry));
+    }
+
     WindowContextBase::set_visible(visible);
 
     if (visible && !geometry.size_assigned) {
@@ -1118,7 +1126,11 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
     if (newW > 0 || newH > 0) {
         // call update_window_constraints() to let gtk_window_resize succeed, because it's bound to geometry constraints
         update_window_constraints();
-        gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
+
+        if (default_size_set) {
+            gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
+        }
+
         geometry.size_assigned = true;
         notify_window_resize();
     }
