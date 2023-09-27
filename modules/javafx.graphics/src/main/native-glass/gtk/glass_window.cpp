@@ -1081,9 +1081,6 @@ void WindowContextTop::set_visible(bool visible) {
 
     WindowContextBase::set_visible(visible);
 
-    gtk_window_resize(GTK_WINDOW(gtk_widget), geometry_get_content_width(&geometry),
-                                              geometry_get_content_height(&geometry));
-
     if (visible && !geometry.size_assigned) {
         set_bounds(0, 0, false, false, 320, 200, -1, -1, 0, 0);
     }
@@ -1206,7 +1203,7 @@ void WindowContextTop::exit_fullscreen() {
 
 void WindowContextTop::request_focus() {
     if (is_visible()) {
-        gtk_window_present(GTK_WINDOW(gtk_widget));
+//        gtk_window_present(GTK_WINDOW(gtk_widget));
     }
 }
 
