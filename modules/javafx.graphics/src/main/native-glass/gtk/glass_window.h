@@ -142,7 +142,6 @@ public:
     virtual void process_mouse_cross(GdkEventCrossing*) = 0;
     virtual void process_key(GdkEventKey*) = 0;
     virtual void process_state(GdkEventWindowState*) = 0;
-    virtual void process_map() = 0;
 
     virtual void notify_state(jint) = 0;
     virtual void notify_on_top(bool) {}
@@ -269,7 +268,6 @@ class WindowContextTop: public WindowContextBase {
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
 
-    bool map_received;
     bool on_top;
     bool is_fullscreen;
 
@@ -316,7 +314,6 @@ public:
     GtkWindow *get_gtk_window();
     void detach_from_java();
 
-    void process_map();
 protected:
     void applyShapeMask(void*, uint width, uint height);
 private:

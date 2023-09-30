@@ -102,7 +102,6 @@ void WindowContextBase::notify_state(jint glass_state) {
 
 void WindowContextBase::process_state(GdkEventWindowState* event) {
     if (event->changed_mask & (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED)) {
-
         if (event->changed_mask & GDK_WINDOW_STATE_ICONIFIED) {
             is_iconified = event->new_window_state & GDK_WINDOW_STATE_ICONIFIED;
         }
@@ -743,7 +742,6 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
             owner(_owner),
             geometry(),
             resizable(),
-            map_received(false),
             on_top(false),
             is_fullscreen(false) {
     jwindow = mainEnv->NewGlobalRef(_jwindow);
@@ -1035,10 +1033,6 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     }
 }
 
-void WindowContextTop::process_map() {
-    map_received = true;
-}
-
 void WindowContextTop::update_window_constraints() {
     GdkGeometry hints;
 
@@ -1195,7 +1189,8 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
-    if (map_received) {
+    // gdk_window_is_visible will check if it's mapped
+    if (gdk_window_is_visible(gdk_window)) {
         gtk_window_present(GTK_WINDOW(gtk_widget));
     }
 }
