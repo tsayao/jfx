@@ -26,8 +26,6 @@
 #define        GLASS_WINDOW_H
 
 #include <gtk/gtk.h>
-#include <X11/Xlib.h>
-
 #include <jni.h>
 #include <set>
 #include <vector>
@@ -114,15 +112,14 @@ class WindowContext {
     bool is_disabled;
     bool can_be_deleted;
 
-    static WindowFrameExtents normal_extents;
-    static WindowFrameExtents utility_extents;
-
     std::set<WindowContext*> children;
     jobject jwindow;
     jobject jview;
 
-    GtkWidget* gtk_widget;
     GdkWindow* gdk_window;
+    GtkWidget* window;
+    GtkWidget* drawing_area;
+    GtkWidget* headerbar;
     GdkWMFunction gdk_windowManagerFunctions;
 
     /*
@@ -158,7 +155,6 @@ public:
     jobject get_jwindow();
     jobject get_jview();
     bool isEnabled();
-    WindowFrameExtents get_frame_extents();
     GtkWindow *get_gtk_window();
 
     void paint(void*, jint, jint);
@@ -172,6 +168,7 @@ public:
     void ungrab_focus();
     void ungrab_mouse_drag_focus();
 
+    void process_realize();
     void process_focus(GdkEventFocus*);
     void process_destroy();
     void process_delete();
@@ -182,7 +179,6 @@ public:
     void process_mouse_cross(GdkEventCrossing*);
     void process_key(GdkEventKey*);
     void process_state(GdkEventWindowState*);
-    void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
 
     void notify_state(jint);
@@ -226,11 +222,6 @@ protected:
     void applyShapeMask(void*, uint width, uint height);
 private:
     bool im_filter_keypress(GdkEventKey*);
-    void request_frame_extents();
-    void update_frame_extents();
-    void set_cached_extents(WindowFrameExtents ex);
-    WindowFrameExtents get_cached_extents();
-    bool get_frame_extents_property(int *, int *, int *, int *);
     void update_window_constraints();
     void update_ontop_tree(bool);
     bool on_top_inherited();
