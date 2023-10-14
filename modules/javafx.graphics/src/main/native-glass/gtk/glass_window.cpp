@@ -28,6 +28,7 @@
 #include "glass_screen.h"
 #include "glass_dnd.h"
 
+#include <com_sun_glass_ui_gtk_GtkWindow.h>
 #include <com_sun_glass_events_WindowEvent.h>
 #include <com_sun_glass_events_ViewEvent.h>
 #include <com_sun_glass_events_MouseEvent.h>
@@ -74,14 +75,14 @@ static gboolean event_button_press(GtkWidget* self, GdkEventButton* event, gpoin
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_button(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_button_release(GtkWidget* self, GdkEventButton* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_button(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_configure_view(GtkWidget* self, GdkEventConfigure* event, gpointer user_data) {
@@ -95,68 +96,68 @@ static gboolean event_configure_window(GtkWidget* self, GdkEventConfigure* event
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_configure_window(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_enter_notify(GtkWidget* self, GdkEventCrossing* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_cross(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_leave_notify(GtkWidget* self, GdkEventCrossing* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_cross(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_focus_in(GtkWidget* self, GdkEventFocus* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_focus(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_focus_out(GtkWidget* self, GdkEventFocus* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_focus(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_scroll(GtkWidget* self, GdkEventScroll* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_scroll(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_window_state(GtkWidget* self, GdkEventWindowState* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_state(event);
 
-    return TRUE;
+    return FALSE;
 }
 
 
 static gboolean event_delete(GtkWidget* self, GdkEvent* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_delete();
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_destroy(GtkWidget* self, GdkEvent* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     destroy_and_delete_ctx(ctx);
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_motion_notify(GtkWidget* self, GdkEventMotion* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_mouse_motion(event);
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_key_press(GtkWidget* self, GdkEventKey* event, gpointer user_data) {
@@ -166,25 +167,25 @@ static gboolean event_key_press(GtkWidget* self, GdkEventKey* event, gpointer us
         ctx->process_key(event);
     }
 
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_key_release(GtkWidget* self, GdkEventKey* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_key(event);
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_damage(GtkWidget* self, GdkEventExpose* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_paint();
-    return TRUE;
+    return FALSE;
 }
 
 static gboolean event_draw(GtkWidget* self, cairo_t* cr, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_paint();
-    return TRUE;
+    return FALSE;
 }
 
 static void event_realize(GtkWidget* self, gpointer user_data) {
@@ -195,7 +196,7 @@ static void event_realize(GtkWidget* self, gpointer user_data) {
 //------------------------- SIGNALS END
 
 WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _screen,
-        WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
+        WindowFrameType _frame_type, WindowType type, int mask) :
             im_ctx(),
             events_processing_cnt(0),
             screen(_screen),
@@ -223,6 +224,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
         gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
         gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "");
         gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
+        gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), mask & com_sun_glass_ui_gtk_GtkWindow_CLOSABLE);
     }
 
     // Create the drawing area
@@ -278,7 +280,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
 
 GdkWindow* WindowContext::get_gdk_window(){
-    return gdk_window;
+    return gtk_widget_get_window(drawing_area);
 }
 
 jobject WindowContext::get_jwindow() {
@@ -301,6 +303,26 @@ bool WindowContext::isEnabled() {
 
 GtkWindow *WindowContext::get_gtk_window() {
     return GTK_WINDOW(window);
+}
+
+int WindowContext::get_left_pos() {
+    gint x;
+    if (gtk_widget_translate_coordinates(drawing_area, window, 0, 0, &x, 0)) {
+        g_print("left_pos: %d\n", x);
+        return x;
+    }
+
+    return 0;
+}
+
+int WindowContext::get_top_pos() {
+    gint y;
+    if (gtk_widget_translate_coordinates(drawing_area, window, 0, 0, 0, &y)) {
+        g_print("top_pos: %d\n", y);
+        return y;
+    }
+
+    return 0;
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
@@ -761,12 +783,6 @@ void WindowContext::process_state(GdkEventWindowState* event) {
             stateChangeEvent = com_sun_glass_events_WindowEvent_MAXIMIZE;
         } else {
             stateChangeEvent = com_sun_glass_events_WindowEvent_RESTORE;
-            if ((gdk_windowManagerFunctions & GDK_FUNC_MINIMIZE) == 0
-                || (gdk_windowManagerFunctions & GDK_FUNC_MAXIMIZE) == 0) {
-                // in this case - the window manager will not support the programatic
-                // request to iconify / maximize - so we need to restore it now.
-                gdk_window_set_functions(gdk_window, gdk_windowManagerFunctions);
-            }
         }
 
         notify_state(stateChangeEvent);
@@ -795,14 +811,14 @@ void WindowContext::process_configure_view(GdkEventConfigure* event) {
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 
-    g_print("configure_view: %d, %d", w, h);
+    g_print("configure_view: %d, %d\n", w, h);
 }
 
 void WindowContext::process_configure_window(GdkEventConfigure* event) {
     int ww = event->width;
     int wh = event->height;
 
-    g_print("configure_window: %d, %d", ww, wh);
+    g_print("configure_window: %d, %d\n", ww, wh);
 //    if (!is_maximized && !is_fullscreen) {
 //        geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
 //                ? event->width : ww;
@@ -893,12 +909,6 @@ void WindowContext::set_background(float r, float g, float b) {
 void WindowContext::set_minimized(bool minimize) {
     is_iconified = minimize;
     if (minimize) {
-        if ((gdk_windowManagerFunctions & GDK_FUNC_MINIMIZE) == 0) {
-            // in this case - the window manager will not support the programatic
-            // request to iconify - so we need to disable this until we are restored.
-            GdkWMFunction wmf = (GdkWMFunction)(gdk_windowManagerFunctions | GDK_FUNC_MINIMIZE);
-            gdk_window_set_functions(gdk_window, wmf);
-        }
         gtk_window_iconify(GTK_WINDOW(window));
     } else {
         gtk_window_deiconify(GTK_WINDOW(window));
@@ -909,11 +919,6 @@ void WindowContext::set_minimized(bool minimize) {
 void WindowContext::set_maximized(bool maximize) {
     is_maximized = maximize;
     if (maximize) {
-        // enable the functionality on the window manager as it might ignore the maximize command,
-        // for example when the window is undecorated.
-        GdkWMFunction wmf = (GdkWMFunction)(gdk_windowManagerFunctions | GDK_FUNC_MAXIMIZE);
-        gdk_window_set_functions(gdk_window, wmf);
-
         gtk_window_maximize(GTK_WINDOW(window));
     } else {
         gtk_window_unmaximize(GTK_WINDOW(window));

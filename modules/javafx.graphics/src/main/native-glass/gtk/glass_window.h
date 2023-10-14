@@ -93,7 +93,6 @@ class WindowContext {
     GtkWidget* window;
     GtkWidget* drawing_area;
     GtkWidget* headerbar;
-    GdkWMFunction gdk_windowManagerFunctions;
 
     /*
      * sm_grab_window points to WindowContext holding a mouse grab.
@@ -115,7 +114,7 @@ class WindowContext {
     static WindowContext* sm_mouse_drag_window;
 
 public:
-    WindowContext(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
+    WindowContext(jobject, WindowContext*, long, WindowFrameType, WindowType, int);
 
     bool hasIME();
     bool filterIME(GdkEventKey *);
@@ -129,6 +128,9 @@ public:
     jobject get_jview();
     bool isEnabled();
     GtkWindow *get_gtk_window();
+
+    int get_left_pos();
+    int get_top_pos();
 
     void paint(void*, jint, jint);
     void add_child(WindowContext*);
