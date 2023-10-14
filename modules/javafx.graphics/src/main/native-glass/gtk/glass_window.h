@@ -47,40 +47,14 @@ enum WindowType {
 struct WindowFrameExtents {
     int top;
     int left;
-    int bottom;
-    int right;
 };
+
 
 static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
 
 enum BoundsType {
     BOUNDSTYPE_CONTENT,
     BOUNDSTYPE_WINDOW
-};
-
-struct WindowGeometry {
-    WindowGeometry(): final_width(), final_height(),
-    size_assigned(false), x(), y(), gravity_x(), gravity_y(), extents() {}
-    // estimate of the final width the window will get after all pending
-    // configure requests are processed by the window manager
-    struct {
-        int value;
-        BoundsType type;
-    } final_width;
-
-    struct {
-        int value;
-        BoundsType type;
-    } final_height;
-
-    bool size_assigned;
-
-    int x;
-    int y;
-    float gravity_x;
-    float gravity_y;
-
-    WindowFrameExtents extents;
 };
 
 class WindowContext {
@@ -96,7 +70,6 @@ class WindowContext {
     WindowFrameType frame_type;
     WindowType window_type;
     struct WindowContext *owner;
-    WindowGeometry geometry;
     struct _Resizable {// we can't use set/get gtk_window_resizable function
         _Resizable(): value(true),
                 minw(-1), minh(-1), maxw(-1), maxh(-1) {}
@@ -179,7 +152,8 @@ public:
     void process_mouse_cross(GdkEventCrossing*);
     void process_key(GdkEventKey*);
     void process_state(GdkEventWindowState*);
-    void process_configure(GdkEventConfigure*);
+    void process_configure_view(GdkEventConfigure*);
+    void process_configure_window(GdkEventConfigure*);
 
     void notify_state(jint);
 
@@ -226,8 +200,6 @@ private:
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
-    void notify_window_move();
-    void notify_window_resize();
     void notify_view_resize();
     WindowContext(WindowContext&);
     WindowContext& operator= (const WindowContext&);

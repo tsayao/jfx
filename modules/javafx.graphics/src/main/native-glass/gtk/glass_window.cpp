@@ -68,38 +68,6 @@ static inline jint gtk_button_number_to_mouse_button(guint button) {
     }
 }
 
-static int geometry_get_window_width(const WindowGeometry *windowGeometry) {
-     return (windowGeometry->final_width.type == BOUNDSTYPE_WINDOW)
-                   ? windowGeometry->final_width.value
-                   : windowGeometry->final_width.value
-                         + windowGeometry->extents.left
-                         + windowGeometry->extents.right;
-}
-
-static int geometry_get_window_height(const WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_height.type == BOUNDSTYPE_WINDOW)
-                   ? windowGeometry->final_height.value
-                   : windowGeometry->final_height.value
-                         + windowGeometry->extents.top
-                         + windowGeometry->extents.bottom;
-}
-
-static int geometry_get_content_width(WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_width.type == BOUNDSTYPE_CONTENT)
-                   ? windowGeometry->final_width.value
-                   : windowGeometry->final_width.value
-                         - windowGeometry->extents.left
-                         - windowGeometry->extents.right;
-}
-
-static int geometry_get_content_height(WindowGeometry *windowGeometry) {
-    return (windowGeometry->final_height.type == BOUNDSTYPE_CONTENT)
-                   ? windowGeometry->final_height.value
-                   : windowGeometry->final_height.value
-                         - windowGeometry->extents.top
-                         - windowGeometry->extents.bottom;
-}
-
 //------------------------- SIGNALS
 
 static gboolean event_button_press(GtkWidget* self, GdkEventButton* event, gpointer user_data) {
@@ -116,9 +84,16 @@ static gboolean event_button_release(GtkWidget* self, GdkEventButton* event, gpo
     return TRUE;
 }
 
-static gboolean event_configure(GtkWidget* self, GdkEventConfigure* event, gpointer user_data) {
+static gboolean event_configure_view(GtkWidget* self, GdkEventConfigure* event, gpointer user_data) {
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
-    ctx->process_configure(event);
+    ctx->process_configure_view(event);
+
+    return TRUE;
+}
+
+static gboolean event_configure_window(GtkWidget* self, GdkEventConfigure* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_configure_window(event);
 
     return TRUE;
 }
@@ -207,7 +182,6 @@ static gboolean event_damage(GtkWidget* self, GdkEventExpose* event, gpointer us
 }
 
 static gboolean event_draw(GtkWidget* self, cairo_t* cr, gpointer user_data) {
-    g_print("event_draw\n");
     WindowContext *ctx = USER_PTR_TO_CTX(user_data);
     ctx->process_paint();
     return TRUE;
@@ -228,7 +202,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
             frame_type(_frame_type),
             window_type(type),
             owner(_owner),
-            geometry(),
             resizable(),
             on_top(false),
             is_fullscreen(false),
@@ -245,6 +218,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     // Create a header bar and set it as the title bar of the window
     if (frame_type == TITLED) {
+        g_print ("gtk_header_bar_new\n");
         headerbar = gtk_header_bar_new();
         gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
         gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), "");
@@ -256,22 +230,23 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(drawing_area, GDK_FILTERED_EVENTS_MASK);
     g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(event_draw), this);
     g_signal_connect(G_OBJECT(drawing_area), "damage-event", G_CALLBACK(event_damage), this);
-    g_signal_connect(G_OBJECT(drawing_area), "button-press-event", G_CALLBACK(event_button_press), this);
-    g_signal_connect(G_OBJECT(drawing_area), "button-release-event", G_CALLBACK(event_button_release), this);
-    g_signal_connect(G_OBJECT(drawing_area), "focus-in-event", G_CALLBACK(event_focus_in), this);
-    g_signal_connect(G_OBJECT(drawing_area), "focus-out-event", G_CALLBACK(event_focus_out), this);
-    g_signal_connect(G_OBJECT(drawing_area), "key-press-event", G_CALLBACK(event_key_press), this);
-    g_signal_connect(G_OBJECT(drawing_area), "key-release-event", G_CALLBACK(event_key_release), this);
-    g_signal_connect(G_OBJECT(drawing_area), "enter-notify-event", G_CALLBACK(event_enter_notify), this);
-    g_signal_connect(G_OBJECT(drawing_area), "leave-notify-event", G_CALLBACK(event_leave_notify), this);
-    g_signal_connect(G_OBJECT(drawing_area), "scroll-event", G_CALLBACK(event_scroll), this);
-    g_signal_connect(G_OBJECT(drawing_area), "configure-event", G_CALLBACK(event_configure), this);
+    g_signal_connect(G_OBJECT(drawing_area), "configure-event", G_CALLBACK(event_configure_view), this);
     gtk_container_add(GTK_CONTAINER(window), drawing_area);
 
     g_signal_connect(G_OBJECT(window), "window-state-event", G_CALLBACK(event_window_state), this);
     g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(event_delete), this);
     g_signal_connect(G_OBJECT(window), "destroy-event", G_CALLBACK(event_destroy), this);
     g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(event_realize), this);
+    g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(event_button_press), this);
+    g_signal_connect(G_OBJECT(window), "button-release-event", G_CALLBACK(event_button_release), this);
+    g_signal_connect(G_OBJECT(window), "focus-in-event", G_CALLBACK(event_focus_in), this);
+    g_signal_connect(G_OBJECT(window), "focus-out-event", G_CALLBACK(event_focus_out), this);
+    g_signal_connect(G_OBJECT(window), "enter-notify-event", G_CALLBACK(event_enter_notify), this);
+    g_signal_connect(G_OBJECT(window), "leave-notify-event", G_CALLBACK(event_leave_notify), this);
+    g_signal_connect(G_OBJECT(window), "scroll-event", G_CALLBACK(event_scroll), this);
+    g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(event_key_press), this);
+    g_signal_connect(G_OBJECT(window), "key-release-event", G_CALLBACK(event_key_release), this);
+    g_signal_connect(G_OBJECT(window), "configure-event", G_CALLBACK(event_configure_window), this);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(window), app_name, app_name);
@@ -357,7 +332,6 @@ void WindowContext::paint(void* data, jint width, jint height) {
     cairo_destroy(context);
     cairo_surface_destroy(cairo_surface);
 }
-
 
 void WindowContext::add_child(WindowContext* child) {
     children.insert(child);
@@ -804,24 +778,38 @@ void WindowContext::process_state(GdkEventWindowState* event) {
         is_fullscreen = event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
     }
 
-    if (event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED
-        && !(event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED)) {
-        gtk_window_resize(GTK_WINDOW(window), geometry_get_content_width(&geometry),
-                                    geometry_get_content_height(&geometry));
-    }
+//FIXME
+//    if (event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED
+//        && !(event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED)) {
+//        gtk_window_resize(GTK_WINDOW(window), geometry_get_content_width(&geometry),
+//                                    geometry_get_content_height(&geometry));
+//    }
 }
 
-void WindowContext::process_configure(GdkEventConfigure* event) {
-    int ww = event->width + geometry.extents.left + geometry.extents.right;
-    int wh = event->height + geometry.extents.top + geometry.extents.bottom;
+void WindowContext::process_configure_view(GdkEventConfigure* event) {
+    int w = event->width;
+    int h = event->height;
 
-    if (!is_maximized && !is_fullscreen) {
-        geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
-                ? event->width : ww;
-
-        geometry.final_height.value = (geometry.final_height.type == BOUNDSTYPE_CONTENT)
-                ? event->height : wh;
+    if (jview) {
+        mainEnv->CallVoidMethod(jview, jViewNotifyResize, w, h);
+        CHECK_JNI_EXCEPTION(mainEnv)
     }
+
+    g_print("configure_view: %d, %d", w, h);
+}
+
+void WindowContext::process_configure_window(GdkEventConfigure* event) {
+    int ww = event->width;
+    int wh = event->height;
+
+    g_print("configure_window: %d, %d", ww, wh);
+//    if (!is_maximized && !is_fullscreen) {
+//        geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
+//                ? event->width : ww;
+//
+//        geometry.final_height.value = (geometry.final_height.type == BOUNDSTYPE_CONTENT)
+//                ? event->height : wh;
+//    }
 
     // Do not report if iconified, because Java side would set the state to NORMAL
     if (jwindow && !is_iconified) {
@@ -831,25 +819,18 @@ void WindowContext::process_configure(GdkEventConfigure* event) {
                     : com_sun_glass_events_WindowEvent_RESIZE,
                 ww, wh);
         CHECK_JNI_EXCEPTION(mainEnv)
-
-        if (jview) {
-            mainEnv->CallVoidMethod(jview, jViewNotifyResize, event->width, event->height);
-            CHECK_JNI_EXCEPTION(mainEnv)
-        }
     }
 
-    int x, y;
-    gdk_window_get_origin(gdk_window, &x, &y);
-    if (frame_type == TITLED) {
-        x -= geometry.extents.left;
-        y -= geometry.extents.top;
+    mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove, event->x, event->y);
+    CHECK_JNI_EXCEPTION(mainEnv)
+
+    if (jview) {
+        mainEnv->CallVoidMethod(jview, jViewNotifyView,
+                com_sun_glass_events_ViewEvent_MOVE);
+        CHECK_JNI_EXCEPTION(mainEnv)
     }
 
-    geometry.x = x;
-    geometry.y = y;
-    notify_window_move();
-
-    glong to_screen = getScreenPtrForLocation(geometry.x, geometry.y);
+    glong to_screen = getScreenPtrForLocation(event->x, event->y);
     if (to_screen != -1) {
         if (to_screen != screen) {
             if (jwindow) {
@@ -901,12 +882,12 @@ void WindowContext::set_cursor(GdkCursor* cursor) {
 }
 
 void WindowContext::set_background(float r, float g, float b) {
-//FIXME
-//    GdkRGBA rgba = {0, 0, 0, 1.};
-//    rgba.red = r;
-//    rgba.green = g;
-//    rgba.blue = b;
-//    gdk_window_set_background_rgba(gdk_window, &rgba);
+    GdkRGBA rgba = {0, 0, 0, 1.};
+    rgba.red = r;
+    rgba.green = g;
+    rgba.blue = b;
+
+    gtk_widget_override_background_color(window, GTK_STATE_FLAG_NORMAL, &rgba);
 }
 
 void WindowContext::set_minimized(bool minimize) {
@@ -944,51 +925,25 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
 //     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
 //            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
     // newW / newH are view/content sizes
-    int newW = 0;
-    int newH = 0;
 
-    geometry.gravity_x = gravity_x;
-    geometry.gravity_y = gravity_y;
+    if (w > 0 || h > 0) {
+//        update_window_constraints();
+        if (gtk_widget_get_realized(window)) {
+            gtk_window_resize(GTK_WINDOW(window), w, h);
+        } else {
+            gtk_window_set_default_size(GTK_WINDOW(window), w, h);
+        }
 
-    if (w > 0) {
-        geometry.final_width.type = BOUNDSTYPE_WINDOW;
-        geometry.final_width.value = w;
-        newW = w - (geometry.extents.left + geometry.extents.right);
-    } else if (cw > 0) {
-        geometry.final_width.type = BOUNDSTYPE_CONTENT;
-        geometry.final_width.value = cw;
-        newW = cw;
-    }
-
-    if (h > 0) {
-        geometry.final_height.type = BOUNDSTYPE_WINDOW;
-        geometry.final_height.value = h;
-        newH = h - (geometry.extents.top + geometry.extents.bottom);
-    } else if (ch > 0) {
-        geometry.final_height.type = BOUNDSTYPE_CONTENT;
-        geometry.final_height.value = ch;
-        newH = ch;
-    }
-
-    if (newW > 0 || newH > 0) {
-        // call update_window_constraints() to let gtk_window_resize succeed, because it's bound to geometry constraints
-        update_window_constraints();
-        gtk_window_resize(GTK_WINDOW(window), newW, newH);
-        geometry.size_assigned = true;
-        notify_window_resize();
+        mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                     com_sun_glass_events_WindowEvent_RESIZE, w, h);
+        CHECK_JNI_EXCEPTION(mainEnv)
+    } else if (cw > 0 || ch > 0) {
+        //TODO:
+        gtk_widget_set_size_request(drawing_area, cw, ch);
     }
 
     if (xSet || ySet) {
-        if (xSet) {
-            geometry.x = x;
-        }
-
-        if (ySet) {
-            geometry.y = y;
-        }
-
-        gtk_window_move(GTK_WINDOW(window), geometry.x, geometry.y);
-        notify_window_move();
+        gtk_window_move(GTK_WINDOW(window), x, y);
     }
 }
 
@@ -1058,11 +1013,12 @@ void WindowContext::set_level(int level) {
 
 void WindowContext::set_visible(bool visible) {
     if (visible) {
-        gtk_widget_show(window);
+        gtk_widget_show_all(window);
 
-        if (!geometry.size_assigned) {
-            set_bounds(0, 0, false, false, 320, 200, -1, -1, 0, 0);
-        }
+//FIXME
+//        if (!geometry.size_assigned) {
+//            set_bounds(0, 0, false, false, 320, 200, -1, -1, 0, 0);
+//        }
 
         //JDK-8220272 - fire event first because GDK_FOCUS_CHANGE is not always in order
         if (jwindow && isEnabled()) {
@@ -1170,41 +1126,40 @@ void WindowContext::applyShapeMask(void* data, uint width, uint height) {
 void WindowContext::update_window_constraints() {
     GdkGeometry hints;
 
-    if (resizable.value && !is_disabled) {
-        int min_w = (resizable.minw == -1) ? 1
-                      : resizable.minw - geometry.extents.left - geometry.extents.right;
-        int min_h =  (resizable.minh == -1) ? 1
-                      : resizable.minh - geometry.extents.top - geometry.extents.bottom;
-
-        hints.min_width = (min_w < 1) ? 1 : min_w;
-        hints.min_height = (min_h < 1) ? 1 : min_h;
-
-        hints.max_width = (resizable.maxw == -1) ? G_MAXINT
-                            : resizable.maxw - geometry.extents.left - geometry.extents.right;
-
-        hints.max_height = (resizable.maxh == -1) ? G_MAXINT
-                           : resizable.maxh - geometry.extents.top - geometry.extents.bottom;
-    } else {
-        int w = geometry_get_content_width(&geometry);
-        int h = geometry_get_content_height(&geometry);
-
-        hints.min_width = w;
-        hints.min_height = h;
-        hints.max_width = w;
-        hints.max_height = h;
-    }
-
-    gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints,
-                                  (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+//FIXME
+//    if (resizable.value && !is_disabled) {
+//
+//        //FIXME
+//        int min_w = (resizable.minw == -1) ? 1
+//                      : resizable.minw - geometry.extents.left;// - geometry.extents.right;
+//        int min_h =  (resizable.minh == -1) ? 1
+//                      : resizable.minh - geometry.extents.top; // - geometry.extents.bottom;
+//
+//        hints.min_width = (min_w < 1) ? 1 : min_w;
+//        hints.min_height = (min_h < 1) ? 1 : min_h;
+//
+//        hints.max_width = (resizable.maxw == -1) ? G_MAXINT
+//                            : resizable.maxw - geometry.extents.left;// - geometry.extents.right;
+//
+//        hints.max_height = (resizable.maxh == -1) ? G_MAXINT
+//                           : resizable.maxh - geometry.extents.top;// - geometry.extents.bottom;
+//    } else {
+//        int w = geometry_get_content_width(&geometry);
+//        int h = geometry_get_content_height(&geometry);
+//
+//        hints.min_width = w;
+//        hints.min_height = h;
+//        hints.max_width = w;
+//        hints.max_height = h;
+//    }
+//
+//    gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints,
+//                                  (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 }
 
-void WindowContext::update_view_size() {
-    // Notify the view size only if size is oriented by WINDOW, otherwise it knows its own size
-    if (geometry.final_width.type == BOUNDSTYPE_WINDOW
-        || geometry.final_height.type == BOUNDSTYPE_WINDOW) {
 
-        notify_view_resize();
-    }
+void WindowContext::update_view_size() {
+    notify_view_resize();
 }
 
 void WindowContext::update_ontop_tree(bool on_top) {
@@ -1236,36 +1191,10 @@ bool WindowContext::effective_on_top() {
     return on_top;
 }
 
-void WindowContext::notify_window_resize() {
-    int w = geometry_get_window_width(&geometry);
-    int h = geometry_get_window_height(&geometry);
-
-    mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-                 com_sun_glass_events_WindowEvent_RESIZE, w, h);
-    CHECK_JNI_EXCEPTION(mainEnv)
-
-    notify_view_resize();
-}
-
-
-void WindowContext::notify_window_move() {
-    if (jwindow) {
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove,
-                                 geometry.x, geometry.y);
-        CHECK_JNI_EXCEPTION(mainEnv)
-
-        if (jview) {
-            mainEnv->CallVoidMethod(jview, jViewNotifyView,
-                    com_sun_glass_events_ViewEvent_MOVE);
-            CHECK_JNI_EXCEPTION(mainEnv)
-        }
-    }
-}
-
 void WindowContext::notify_view_resize() {
     if (jview) {
-        int cw = geometry_get_content_width(&geometry);
-        int ch = geometry_get_content_height(&geometry);
+        int cw = gtk_widget_get_allocated_width(drawing_area);
+        int ch = gtk_widget_get_allocated_height(drawing_area);
 
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, cw, ch);
         CHECK_JNI_EXCEPTION(mainEnv)
@@ -1286,6 +1215,5 @@ void destroy_and_delete_ctx(WindowContext* ctx) {
 
 WindowContext::~WindowContext() {
     disableIME();
-//    g_signal_handlers_disconnect_matched(window, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
     gtk_widget_destroy(window);
 }
