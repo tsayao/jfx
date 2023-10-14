@@ -268,11 +268,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
 //    gdk_window_register_dnd(gdk_window);
 
-//    gdk_windowManagerFunctions = wmf;
-//    if (wmf) {
-//        gdk_window_set_functions(gdk_window, wmf);
-//    }
-
     if (frame_type != TITLED) {
         gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     }
@@ -326,8 +321,6 @@ int WindowContext::get_top_pos() {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
-    g_print("paint\n");
-
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
 
@@ -691,7 +684,6 @@ void WindowContext::process_mouse_scroll(GdkEventScroll* event) {
                 (jdouble) 40.0, (jdouble) 40.0);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
-
 }
 
 void WindowContext::process_mouse_cross(GdkEventCrossing* event) {
