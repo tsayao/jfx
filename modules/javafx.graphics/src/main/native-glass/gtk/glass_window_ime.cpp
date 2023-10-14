@@ -86,7 +86,7 @@ static void on_commit(GtkIMContext *im_context, gchar* str, gpointer user_data) 
     ctx->commitIME(str);
 }
 
-void WindowContextBase::commitIME(gchar *str) {
+void WindowContext::commitIME(gchar *str) {
     if (im_ctx.on_preedit) {
         jstring jstr = mainEnv->NewStringUTF(str);
         EXCEPTION_OCCURED(mainEnv);
@@ -104,11 +104,11 @@ void WindowContextBase::commitIME(gchar *str) {
     }
 }
 
-bool WindowContextBase::hasIME() {
+bool WindowContext::hasIME() {
     return im_ctx.enabled;
 }
 
-bool WindowContextBase::filterIME(GdkEvent *event) {
+bool WindowContext::filterIME(GdkEvent *event) {
     if (!hasIME()) {
         return false;
     }
@@ -123,11 +123,11 @@ bool WindowContextBase::filterIME(GdkEvent *event) {
     return filtered;
 }
 
-void WindowContextBase::setOnPreEdit(bool preedit) {
+void WindowContext::setOnPreEdit(bool preedit) {
     im_ctx.on_preedit = preedit;
 }
 
-void WindowContextBase::updateCaretPos() {
+void WindowContext::updateCaretPos() {
     double *nativePos;
 
     jdoubleArray pos = (jdoubleArray)mainEnv->CallObjectMethod(get_jview(),
@@ -148,7 +148,7 @@ void WindowContextBase::updateCaretPos() {
     }
 }
 
-void WindowContextBase::enableOrResetIME() {
+void WindowContext::enableOrResetIME() {
     if (!im_ctx.enabled) {
         im_ctx.ctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(GTK_IM_CONTEXT(im_ctx.ctx), gdk_window);
@@ -165,7 +165,7 @@ void WindowContextBase::enableOrResetIME() {
     im_ctx.enabled = true;
 }
 
-void WindowContextBase::disableIME() {
+void WindowContext::disableIME() {
     if (im_ctx.ctx != NULL) {
         g_signal_handlers_disconnect_matched(im_ctx.ctx, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
         g_object_unref(im_ctx.ctx);

@@ -91,6 +91,13 @@ struct WindowGeometry {
 };
 
 class WindowContext {
+    struct ImContext {
+        GtkIMContext *ctx;
+        bool enabled;
+        bool on_preedit;
+        bool send_keypress;
+    } im_ctx;
+
     size_t events_processing_cnt;
     jlong screen;
     WindowFrameType frame_type;
@@ -103,13 +110,6 @@ class WindowContext {
         bool value; //actual value of resizable for a window
         int minw, minh, maxw, maxh; //minimum and maximum window width/height;
     } resizable;
-
-    struct _XIM {
-        _XIM() : im(NULL), ic(NULL), enabled(false) {}
-        XIM im;
-        XIC ic;
-        bool enabled;
-    } xim;
 
     bool on_top;
     bool is_fullscreen;
@@ -156,6 +156,9 @@ public:
     bool hasIME();
     bool filterIME(GdkEvent *);
     void enableOrResetIME();
+    void updateCaretPos();
+    void setOnPreEdit(bool);
+    void commitIME(gchar *);
     void disableIME();
     GdkWindow *get_gdk_window();
     jobject get_jwindow();
@@ -223,6 +226,8 @@ public:
     size_t get_events_count();
     bool is_dead();
 
+    void update_view_size();
+
     ~WindowContext();
 protected:
     void applyShapeMask(void*, uint width, uint height);
@@ -239,6 +244,7 @@ private:
     bool effective_on_top();
     void notify_window_move();
     void notify_window_resize();
+    void notify_view_resize();
     WindowContext(WindowContext&);
     WindowContext& operator= (const WindowContext&);
 };

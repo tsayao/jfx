@@ -124,7 +124,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
             owner(_owner),
             geometry(),
             resizable(),
-            xim(),
             on_top(false),
             is_fullscreen(false),
             is_iconified(false),
@@ -156,8 +155,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     const char* wm_name = gdk_x11_screen_get_window_manager_name(gdk_screen_get_default());
     wmanager = (g_strcmp0("Compiz", wm_name) == 0) ? COMPIZ : UNKNOWN;
 
-//    glong xdisplay = (glong)mainEnv->GetStaticLongField(jApplicationCls, jApplicationDisplay);
-//    gint  xscreenID = (gint)mainEnv->GetStaticIntField(jApplicationCls, jApplicationScreen);
     glong xvisualID = (glong)mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
 
     if (xvisualID != 0) {
@@ -222,11 +219,9 @@ GtkWindow *WindowContext::get_gtk_window() {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
-#ifdef GLASS_GTK3
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
     gdk_window_begin_paint_region(gdk_window, region);
-#endif
     cairo_t* context = gdk_cairo_create(gdk_window);
 
     cairo_surface_t* cairo_surface =
@@ -241,10 +236,8 @@ void WindowContext::paint(void* data, jint width, jint height) {
     cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
     cairo_paint(context);
 
-#ifdef GLASS_GTK3
     gdk_window_end_paint(gdk_window);
     cairo_region_destroy(region);
-#endif
 
     cairo_destroy(context);
     cairo_surface_destroy(cairo_surface);
@@ -339,11 +332,11 @@ void WindowContext::process_focus(GdkEventFocus* event) {
         ungrab_focus();
     }
 
-    if (xim.enabled && xim.ic) {
+    if (im_ctx.enabled && im_ctx.ctx) {
         if (event->in) {
-            XSetICFocus(xim.ic);
+            gtk_im_context_focus_in(im_ctx.ctx);
         } else {
-            XUnsetICFocus(xim.ic);
+            gtk_im_context_focus_out(im_ctx.ctx);
         }
     }
 
@@ -756,14 +749,10 @@ void WindowContext::process_configure(GdkEventConfigure* event) {
     }
 
     int x, y;
-
+    gdk_window_get_origin(gdk_window, &x, &y);
     if (frame_type == TITLED) {
-        GdkRectangle rect;
-        gdk_window_get_frame_extents(gdk_window, &rect);
-        x = rect.x;
-        y = rect.y;
-    } else {
-        gdk_window_get_origin(gdk_window, &x, &y);
+        x -= geometry.extents.left;
+        y -= geometry.extents.top;
     }
 
     geometry.x = x;
@@ -864,19 +853,11 @@ void WindowContext::set_cursor(GdkCursor* cursor) {
 }
 
 void WindowContext::set_background(float r, float g, float b) {
-#ifdef GLASS_GTK3
     GdkRGBA rgba = {0, 0, 0, 1.};
     rgba.red = r;
     rgba.green = g;
     rgba.blue = b;
     gdk_window_set_background_rgba(gdk_window, &rgba);
-#else
-    GdkColor color;
-    color.red   = (guint16) (r * 65535);
-    color.green = (guint16) (g * 65535);
-    color.blue  = (guint16) (b * 65535);
-    gtk_widget_modify_bg(gtk_widget, GTK_STATE_NORMAL, &color);
-#endif
 }
 
 void WindowContext::set_minimized(bool minimize) {
@@ -1271,6 +1252,15 @@ void WindowContext::update_window_constraints() {
                                   (GdkWindowHints)(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 }
 
+void WindowContext::update_view_size() {
+    // Notify the view size only if size is oriented by WINDOW, otherwise it knows its own size
+    if (geometry.final_width.type == BOUNDSTYPE_WINDOW
+        || geometry.final_height.type == BOUNDSTYPE_WINDOW) {
+
+        notify_view_resize();
+    }
+}
+
 void WindowContext::update_ontop_tree(bool on_top) {
     bool effective_on_top = on_top || this->on_top;
     gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), effective_on_top ? TRUE : FALSE);
@@ -1300,6 +1290,18 @@ bool WindowContext::effective_on_top() {
     return on_top;
 }
 
+void WindowContext::notify_window_resize() {
+    int w = geometry_get_window_width(&geometry);
+    int h = geometry_get_window_height(&geometry);
+
+    mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
+                 com_sun_glass_events_WindowEvent_RESIZE, w, h);
+    CHECK_JNI_EXCEPTION(mainEnv)
+
+    notify_view_resize();
+}
+
+
 void WindowContext::notify_window_move() {
     if (jwindow) {
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyMove,
@@ -1314,14 +1316,7 @@ void WindowContext::notify_window_move() {
     }
 }
 
-void WindowContext::notify_window_resize() {
-    int w = geometry_get_window_width(&geometry);
-    int h = geometry_get_window_height(&geometry);
-
-    mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize,
-                 com_sun_glass_events_WindowEvent_RESIZE, w, h);
-    CHECK_JNI_EXCEPTION(mainEnv)
-
+void WindowContext::notify_view_resize() {
     if (jview) {
         int cw = geometry_get_content_width(&geometry);
         int ch = geometry_get_content_height(&geometry);
@@ -1344,14 +1339,6 @@ void destroy_and_delete_ctx(WindowContext* ctx) {
 }
 
 WindowContext::~WindowContext() {
-    if (xim.ic) {
-        XDestroyIC(xim.ic);
-        xim.ic = NULL;
-    }
-    if (xim.im) {
-        XCloseIM(xim.im);
-        xim.im = NULL;
-    }
-
+    disableIME();
     gtk_widget_destroy(gtk_widget);
 }
