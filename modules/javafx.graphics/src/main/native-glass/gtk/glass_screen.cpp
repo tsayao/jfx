@@ -34,39 +34,6 @@
 jfloat OverrideUIScale = -1.0f;
 int DEFAULT_DPI = 96;
 
-static guint get_current_desktop(GdkScreen *screen) {
-    return 0;
-//FIXME
-//    Display* display = gdk_x11_display_get_xdisplay(gdk_display_get_default());
-//    Atom currentDesktopAtom = XInternAtom(display, "_NET_CURRENT_DESKTOP", True);
-//    guint ret = 0;
-//
-//    Atom type;
-//    int format;
-//    gulong num, left;
-//    unsigned long *data = NULL;
-//
-//    if (currentDesktopAtom == None) {
-//        return 0;
-//    }
-//
-//    int result = XGetWindowProperty(display,
-//                                    GDK_WINDOW_XID(gdk_screen_get_root_window(screen)),
-//                                    currentDesktopAtom, 0, G_MAXLONG, False, XA_CARDINAL,
-//                                    &type, &format, &num, &left, (unsigned char **)&data);
-//
-//    if ((result == Success) && (data != NULL)) {
-//        if (type == XA_CARDINAL && format == 32) {
-//            ret = data[0];
-//        }
-//
-//        XFree(data);
-//    }
-//
-//    return ret;
-
-}
-
 static GdkRectangle get_screen_workarea(GdkScreen *screen) {
     gint monitor_num = gdk_screen_get_primary_monitor(screen);
 

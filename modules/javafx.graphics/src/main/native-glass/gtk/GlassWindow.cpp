@@ -563,7 +563,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_glass_ui_gtk_GtkWindow__1getNativeWindowImp
     GdkWindow *win = ctx->get_gdk_window();
 
     if (win == NULL) {
-        g_print("NOT REALIZED!\n");
         return 0;
     }
 
