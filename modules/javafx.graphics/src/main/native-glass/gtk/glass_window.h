@@ -34,11 +34,6 @@
 
 #include "glass_view.h"
 
-enum WindowManager {
-    COMPIZ,
-    UNKNOWN
-};
-
 enum WindowFrameType {
     TITLED,
     UNTITLED,
@@ -122,7 +117,6 @@ class WindowContext {
     static WindowFrameExtents normal_extents;
     static WindowFrameExtents utility_extents;
 
-    WindowManager wmanager;
     std::set<WindowContext*> children;
     jobject jwindow;
     jobject jview;
@@ -154,7 +148,7 @@ public:
     WindowContext(jobject, WindowContext*, long, WindowFrameType, WindowType, GdkWMFunction);
 
     bool hasIME();
-    bool filterIME(GdkEvent *);
+    bool filterIME(GdkEventKey *);
     void enableOrResetIME();
     void updateCaretPos();
     void setOnPreEdit(bool);
@@ -181,7 +175,7 @@ public:
     void process_focus(GdkEventFocus*);
     void process_destroy();
     void process_delete();
-    void process_expose(GdkEventExpose*);
+    void process_paint();
     void process_mouse_button(GdkEventButton*);
     void process_mouse_motion(GdkEventMotion*);
     void process_mouse_scroll(GdkEventScroll*);
@@ -192,7 +186,6 @@ public:
     void process_configure(GdkEventConfigure*);
 
     void notify_state(jint);
-    void work_around_compiz_state();
 
     void set_cursor(GdkCursor*);
     void set_background(float, float, float);

@@ -108,15 +108,15 @@ bool WindowContext::hasIME() {
     return im_ctx.enabled;
 }
 
-bool WindowContext::filterIME(GdkEvent *event) {
+bool WindowContext::filterIME(GdkEventKey *event) {
     if (!hasIME()) {
         return false;
     }
 
-    bool filtered = gtk_im_context_filter_keypress(im_ctx.ctx, &event->key);
+    bool filtered = gtk_im_context_filter_keypress(im_ctx.ctx, event);
 
     if (filtered && im_ctx.send_keypress) {
-        process_key(&event->key);
+        process_key(event);
         im_ctx.send_keypress = false;
     }
 

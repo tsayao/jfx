@@ -51,6 +51,8 @@
 #define MOUSE_BACK_BTN 8
 #define MOUSE_FORWARD_BTN 9
 
+#define USER_PTR_TO_CTX(value) ((WindowContext *) value)
+
 WindowContext * WindowContext::sm_grab_window = NULL;
 WindowContext * WindowContext::sm_mouse_drag_window = NULL;
 
@@ -115,8 +117,124 @@ static GdkAtom get_net_frame_extents_atom() {
     return gdk_atom_intern(extents_str, FALSE);
 }
 
+//------------------------- SIGNALS
+
+static gboolean event_button_press(GtkWidget* self, GdkEventButton* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_button(event);
+
+    return TRUE;
+}
+
+static gboolean event_button_release(GtkWidget* self, GdkEventButton* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_button(event);
+
+    return TRUE;
+}
+
+static gboolean event_configure(GtkWidget* self, GdkEventConfigure* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_configure(event);
+
+    return TRUE;
+}
+
+static gboolean event_enter_notify(GtkWidget* self, GdkEventCrossing* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_cross(event);
+
+    return TRUE;
+}
+
+static gboolean event_leave_notify(GtkWidget* self, GdkEventCrossing* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_cross(event);
+
+    return TRUE;
+}
+
+static gboolean event_focus_in(GtkWidget* self, GdkEventFocus* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_focus(event);
+
+    return TRUE;
+}
+
+static gboolean event_focus_out(GtkWidget* self, GdkEventFocus* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_focus(event);
+
+    return TRUE;
+}
+
+static gboolean event_scroll(GtkWidget* self, GdkEventScroll* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_scroll(event);
+
+    return TRUE;
+}
+
+static gboolean event_window_state(GtkWidget* self, GdkEventWindowState* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_state(event);
+
+    return TRUE;
+}
+
+static gboolean event_property_notify(GtkWidget* self, GdkEventProperty* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_property_notify(event);
+
+    return TRUE;
+}
+
+static gboolean event_delete(GtkWidget* self, GdkEvent* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_delete();
+    return TRUE;
+}
+
+static gboolean event_destroy(GtkWidget* self, GdkEvent* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    destroy_and_delete_ctx(ctx);
+    return TRUE;
+}
+
+static gboolean event_motion_notify(GtkWidget* self, GdkEventMotion* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_mouse_motion(event);
+    return TRUE;
+}
+
+static gboolean event_key_press(GtkWidget* self, GdkEventKey* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+
+    if (!ctx->filterIME(event)) {
+        ctx->process_key(event);
+    }
+
+    return TRUE;
+}
+
+static gboolean event_key_release(GtkWidget* self, GdkEventKey* event, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_key(event);
+    return TRUE;
+}
+
+static gboolean event_draw(GtkWidget* self, cairo_t* cr, gpointer user_data) {
+    WindowContext *ctx = USER_PTR_TO_CTX(user_data);
+    ctx->process_paint();
+    return TRUE;
+}
+
+
+//------------------------- SIGNALS END
+
 WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
+            im_ctx(),
             events_processing_cnt(0),
             screen(_screen),
             frame_type(_frame_type),
@@ -136,6 +254,22 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
 
+    g_signal_connect(gtk_widget, "draw", G_CALLBACK(event_draw), this);
+    g_signal_connect(gtk_widget, "button-press-event", G_CALLBACK(event_button_press), this);
+    g_signal_connect(gtk_widget, "button-release-event", G_CALLBACK(event_button_release), this);
+    g_signal_connect(gtk_widget, "focus-in-event", G_CALLBACK(event_focus_in), this);
+    g_signal_connect(gtk_widget, "focus-out-event", G_CALLBACK(event_focus_out), this);
+    g_signal_connect(gtk_widget, "key-press-event", G_CALLBACK(event_key_press), this);
+    g_signal_connect(gtk_widget, "key-release-event", G_CALLBACK(event_key_release), this);
+    g_signal_connect(gtk_widget, "enter-notify-event", G_CALLBACK(event_enter_notify), this);
+    g_signal_connect(gtk_widget, "leave-notify-event", G_CALLBACK(event_leave_notify), this);
+    g_signal_connect(gtk_widget, "scroll-event", G_CALLBACK(event_scroll), this);
+    g_signal_connect(gtk_widget, "window-state-event", G_CALLBACK(event_window_state), this);
+    g_signal_connect(gtk_widget, "configure-event", G_CALLBACK(event_configure), this);
+    g_signal_connect(gtk_widget, "delete-event", G_CALLBACK(event_delete), this);
+    g_signal_connect(gtk_widget, "destroy-event", G_CALLBACK(event_destroy), this);
+
+
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
         g_free(app_name);
@@ -151,9 +285,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     if (type == UTILITY) {
         gtk_window_set_type_hint(GTK_WINDOW(gtk_widget), GDK_WINDOW_TYPE_HINT_UTILITY);
     }
-
-    const char* wm_name = gdk_x11_screen_get_window_manager_name(gdk_screen_get_default());
-    wmanager = (g_strcmp0("Compiz", wm_name) == 0) ? COMPIZ : UNKNOWN;
 
     glong xvisualID = (glong)mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
 
@@ -219,6 +350,8 @@ GtkWindow *WindowContext::get_gtk_window() {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
+    g_print("paint\n");
+
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
     gdk_window_begin_paint_region(gdk_window, region);
@@ -404,9 +537,12 @@ void WindowContext::process_delete() {
     }
 }
 
-void WindowContext::process_expose(GdkEventExpose* event) {
+void WindowContext::process_paint() {
     if (jview) {
-        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, event->area.x, event->area.y, event->area.width, event->area.height);
+        int w = gtk_widget_get_allocated_width(gtk_widget);
+        int h = gtk_widget_get_allocated_height(gtk_widget);
+
+        mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, 0, 0, w, h);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
 }
@@ -611,22 +747,6 @@ void WindowContext::process_key(GdkEventKey* event) {
     jchar key = gdk_keyval_to_unicode(event->keyval);
     if (key >= 'a' && key <= 'z' && (event->state & GDK_CONTROL_MASK)) {
         key = key - 'a' + 1; // map 'a' to ctrl-a, and so on.
-    } else {
-#ifdef GLASS_GTK2
-        if (key == 0) {
-            // Work around "bug" fixed in gtk-3.0:
-            // http://mail.gnome.org/archives/commits-list/2011-March/msg06832.html
-            switch (event->keyval) {
-            case 0xFF08 /* Backspace */: key =  '\b';
-            case 0xFF09 /* Tab       */: key =  '\t';
-            case 0xFF0A /* Linefeed  */: key =  '\n';
-            case 0xFF0B /* Vert. Tab */: key =  '\v';
-            case 0xFF0D /* Return    */: key =  '\r';
-            case 0xFF1B /* Escape    */: key =  '\033';
-            case 0xFFFF /* Delete    */: key =  '\177';
-            }
-        }
-#endif
     }
 
     if (key > 0) {
@@ -638,31 +758,26 @@ void WindowContext::process_key(GdkEventKey* event) {
     } else {
         jChars = mainEnv->NewCharArray(0);
     }
-    if (jview) {
-        if (press) {
-            mainEnv->CallVoidMethod(jview, jViewNotifyKey,
-                    com_sun_glass_events_KeyEvent_PRESS,
-                    glassKey,
-                    jChars,
-                    glassModifier);
-            CHECK_JNI_EXCEPTION(mainEnv)
 
-            if (jview && key > 0) { // TYPED events should only be sent for printable characters.
-                mainEnv->CallVoidMethod(jview, jViewNotifyKey,
-                        com_sun_glass_events_KeyEvent_TYPED,
-                        com_sun_glass_events_KeyEvent_VK_UNDEFINED,
-                        jChars,
-                        glassModifier);
-                CHECK_JNI_EXCEPTION(mainEnv)
-            }
-        } else {
-            mainEnv->CallVoidMethod(jview, jViewNotifyKey,
-                    com_sun_glass_events_KeyEvent_RELEASE,
-                    glassKey,
-                    jChars,
-                    glassModifier);
-            CHECK_JNI_EXCEPTION(mainEnv)
-        }
+    if (!jview) {
+        return;
+    }
+
+    mainEnv->CallVoidMethod(jview, jViewNotifyKey,
+            (press) ? com_sun_glass_events_KeyEvent_PRESS
+                    : com_sun_glass_events_KeyEvent_RELEASE,
+            glassKey,
+            jChars,
+            glassModifier);
+    CHECK_JNI_EXCEPTION(mainEnv)
+
+    if (press && key > 0) { // TYPED events should only be sent for printable characters.
+        mainEnv->CallVoidMethod(jview, jViewNotifyKey,
+                com_sun_glass_events_KeyEvent_TYPED,
+                com_sun_glass_events_KeyEvent_VK_UNDEFINED,
+                jChars,
+                glassModifier);
+        CHECK_JNI_EXCEPTION(mainEnv)
     }
 }
 
@@ -710,13 +825,9 @@ void WindowContext::process_state(GdkEventWindowState* event) {
 }
 
 void WindowContext::process_property_notify(GdkEventProperty* event) {
-    static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
-
     if (event->window == gdk_window) {
         if (event->atom == get_net_frame_extents_atom()) {
             update_frame_extents();
-        } else if (event->atom == atom_net_wm_state) {
-            work_around_compiz_state();
         }
     }
 }
@@ -797,48 +908,6 @@ void WindowContext::notify_state(jint glass_state) {
     }
 }
 
-void WindowContext::work_around_compiz_state() {
-    // Workaround for https://bugs.launchpad.net/unity/+bug/998073
-    if (wmanager != COMPIZ) {
-        return;
-    }
-
-    static GdkAtom atom_atom = gdk_atom_intern_static_string("ATOM");
-    static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
-    static GdkAtom atom_net_wm_state_hidden = gdk_atom_intern_static_string("_NET_WM_STATE_HIDDEN");
-    static GdkAtom atom_net_wm_state_above = gdk_atom_intern_static_string("_NET_WM_STATE_ABOVE");
-
-    gint length;
-
-    glong* atoms = NULL;
-
-    if (gdk_property_get(gdk_window, atom_net_wm_state, atom_atom,
-            0, G_MAXLONG, FALSE, NULL, NULL, &length, (guchar**) &atoms)) {
-
-        bool is_hidden = false;
-        bool is_above = false;
-        for (gint i = 0; i < (gint)(length / sizeof(glong)); i++) {
-            if (atom_net_wm_state_hidden == (GdkAtom)atoms[i]) {
-                is_hidden = true;
-            } else if (atom_net_wm_state_above == (GdkAtom)atoms[i]) {
-                is_above = true;
-            }
-        }
-
-        g_free(atoms);
-
-        if (is_iconified != is_hidden) {
-            is_iconified = is_hidden;
-
-            notify_state((is_hidden)
-                    ? com_sun_glass_events_WindowEvent_MINIMIZE
-                    : com_sun_glass_events_WindowEvent_RESTORE);
-        }
-
-        notify_on_top(is_above);
-    }
-}
-
 void WindowContext::set_cursor(GdkCursor* cursor) {
     if (!is_in_drag()) {
         if (WindowContext::sm_mouse_drag_window) {
@@ -863,11 +932,6 @@ void WindowContext::set_background(float r, float g, float b) {
 void WindowContext::set_minimized(bool minimize) {
     is_iconified = minimize;
     if (minimize) {
-        if (frame_type == TRANSPARENT && wmanager == COMPIZ) {
-            // https://bugs.launchpad.net/ubuntu/+source/unity/+bug/1245571
-            glass_window_reset_input_shape_mask(gtk_widget_get_window(gtk_widget));
-        }
-
         if ((gdk_windowManagerFunctions & GDK_FUNC_MINIMIZE) == 0) {
             // in this case - the window manager will not support the programatic
             // request to iconify - so we need to disable this until we are restored.
@@ -1340,5 +1404,6 @@ void destroy_and_delete_ctx(WindowContext* ctx) {
 
 WindowContext::~WindowContext() {
     disableIME();
+    g_signal_handlers_disconnect_matched(gtk_widget, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
     gtk_widget_destroy(gtk_widget);
 }
