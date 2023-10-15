@@ -987,6 +987,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
+    g_print("process_configure: %d, %d\n", ww, wh);
+
     if (!is_maximized && !is_fullscreen) {
         geometry.final_width.value = (geometry.final_width.type == BOUNDSTYPE_CONTENT)
                 ? event->width : ww;
@@ -1196,7 +1198,7 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
-    if (gtk_widget_get_realized(gtk_widget) && is_visible()) {
+    if (is_visible()) {
         gtk_window_present(GTK_WINDOW(gtk_widget));
     }
 }
