@@ -1198,7 +1198,7 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
-    if (is_visible()) {
+    if (is_visible() && !gdk_window_has_focus(gdk_window)) {
         gdk_window_focus(gdk_window, GDK_CURRENT_TIME);
     }
 }
