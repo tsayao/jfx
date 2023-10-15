@@ -1196,7 +1196,7 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
-    if (is_visible()) {
+    if (gtk_widget_get_realized(gtk_widget) && is_visible()) {
         gtk_window_present(GTK_WINDOW(gtk_widget));
     }
 }
