@@ -759,20 +759,6 @@ glass_gdk_drag_context_get_dest_window (GdkDragContext * context)
 }
 
 
-void glass_gdk_x11_display_set_window_scale (GdkDisplay *display,
-                          gint scale)
-{
-#ifdef GLASS_GTK3
-    // Optional call, if it does not exist then GTK3 is not yet
-    // doing automatic scaling of coordinates so we do not need
-    // to override it.
-    wrapped_gdk_x11_display_set_window_scale(display, scale);
-#else
-    (void) display;
-    (void) scale;
-#endif
-}
-
 //-------- Glass utility ----------------------------------------
 
 void
