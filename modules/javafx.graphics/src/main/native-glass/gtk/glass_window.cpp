@@ -1198,8 +1198,8 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
-    if (is_visible() && !gdk_window_has_focus(gdk_window)) {
-        gdk_window_focus(gdk_window, GDK_CURRENT_TIME);
+    if (is_visible() && !gtk_window_has_toplevel_focus(GTK_WINDOW(gtk_widget))) {
+        gtk_window_present(GTK_WINDOW(gtk_widget));
     }
 }
 
