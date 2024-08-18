@@ -836,23 +836,23 @@ void WindowContextTop::update_frame_extents() {
 
                 // set bounds again to correct window size
                 // accounting decorations
-                int w = geometry_get_window_width(&geometry);
-                int h = geometry_get_window_height(&geometry);
-                int cw = geometry_get_content_width(&geometry);
-                int ch = geometry_get_content_height(&geometry);
-
-                int x = geometry.x;
-                int y = geometry.y;
-
-                if (geometry.gravity_x != 0) {
-                    x -= geometry.gravity_x * (float) (left + right);
-                }
-
-                if (geometry.gravity_y != 0) {
-                    y -= geometry.gravity_y * (float) (top + bottom);
-                }
-
-                set_bounds(x, y, true, true, w, h, cw, ch, 0, 0);
+//                int w = geometry_get_window_width(&geometry);
+//                int h = geometry_get_window_height(&geometry);
+//                int cw = geometry_get_content_width(&geometry);
+//                int ch = geometry_get_content_height(&geometry);
+//
+//                int x = geometry.x;
+//                int y = geometry.y;
+//
+//                if (geometry.gravity_x != 0) {
+//                    x -= geometry.gravity_x * (float) (left + right);
+//                }
+//
+//                if (geometry.gravity_y != 0) {
+//                    y -= geometry.gravity_y * (float) (top + bottom);
+//                }
+//
+////                set_bounds(x, y, true, true, w, h, cw, ch, 0, 0);
            }
         }
     }
