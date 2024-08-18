@@ -952,20 +952,6 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 }
 
 void WindowContextTop::process_state(GdkEventWindowState* event) {
-    g_print("process_state GDK_WINDOW_STATE_WITHDRAWN %d\n", event->changed_mask & GDK_WINDOW_STATE_WITHDRAWN);
-    g_print("process_state GDK_WINDOW_STATE_ICONIFIED %d\n", event->changed_mask & GDK_WINDOW_STATE_ICONIFIED);
-    g_print("process_state GDK_WINDOW_STATE_MAXIMIZED %d\n", event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED);
-    g_print("process_state GDK_WINDOW_STATE_FULLSCREEN %d\n", event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN);
-    g_print("process_state GDK_WINDOW_STATE_ABOVE %d\n", event->changed_mask & GDK_WINDOW_STATE_ABOVE);
-    g_print("process_state GDK_WINDOW_STATE_BELOW %d\n", event->changed_mask & GDK_WINDOW_STATE_BELOW);
-    g_print("process_state GDK_WINDOW_STATE_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_TILED);
-    g_print("process_state GDK_WINDOW_STATE_TOP_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_TOP_TILED);
-    g_print("process_state GDK_WINDOW_STATE_TOP_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_TOP_RESIZABLE);
-    g_print("process_state GDK_WINDOW_STATE_BOTTOM_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_BOTTOM_TILED);
-    g_print("process_state GDK_WINDOW_STATE_BOTTOM_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_BOTTOM_RESIZABLE);
-    g_print("process_state GDK_WINDOW_STATE_LEFT_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_LEFT_TILED);
-    g_print("process_state GDK_WINDOW_STATE_LEFT_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_LEFT_RESIZABLE);
-
     if (event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN) {
         is_fullscreen = event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
     }
