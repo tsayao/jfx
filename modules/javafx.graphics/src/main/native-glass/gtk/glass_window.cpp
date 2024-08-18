@@ -123,12 +123,15 @@ void WindowContextBase::process_state(GdkEventWindowState* event) {
                 || (gdk_windowManagerFunctions & GDK_FUNC_MAXIMIZE) == 0) {
                 // in this case - the window manager will not support the programatic
                 // request to iconify / maximize - so we need to restore it now.
+                g_print("---> gdk_window_set_functions\n");
                 gdk_window_set_functions(gdk_window, gdk_windowManagerFunctions);
             }
         }
 
         notify_state(stateChangeEvent);
+        g_print("---> notify_state\n");
     } else if (event->changed_mask & GDK_WINDOW_STATE_ABOVE) {
+        g_print("---> notify_on_top\n");
         notify_on_top(event->new_window_state & GDK_WINDOW_STATE_ABOVE);
     }
 }
@@ -814,6 +817,7 @@ void WindowContextTop::request_frame_extents() {
 
 void WindowContextTop::update_frame_extents() {
     int top, left, bottom, right;
+    g_print("update_frame_extents\n");
 
     if (get_frame_extents_property(&top, &left, &bottom, &right)) {
         if (top > 0 || right > 0 || bottom > 0 || left > 0) {
@@ -935,6 +939,7 @@ void WindowContextTop::work_around_compiz_state() {
 }
 
 void WindowContextTop::process_property_notify(GdkEventProperty* event) {
+    g_print("process_property_notify: %s\n", gdk_atom_name(event->atom));
     static GdkAtom atom_net_wm_state = gdk_atom_intern_static_string("_NET_WM_STATE");
 
     if (event->window == gdk_window) {
@@ -947,6 +952,20 @@ void WindowContextTop::process_property_notify(GdkEventProperty* event) {
 }
 
 void WindowContextTop::process_state(GdkEventWindowState* event) {
+    g_print("process_state GDK_WINDOW_STATE_WITHDRAWN %d\n", event->changed_mask & GDK_WINDOW_STATE_WITHDRAWN);
+    g_print("process_state GDK_WINDOW_STATE_ICONIFIED %d\n", event->changed_mask & GDK_WINDOW_STATE_ICONIFIED);
+    g_print("process_state GDK_WINDOW_STATE_MAXIMIZED %d\n", event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED);
+    g_print("process_state GDK_WINDOW_STATE_FULLSCREEN %d\n", event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN);
+    g_print("process_state GDK_WINDOW_STATE_ABOVE %d\n", event->changed_mask & GDK_WINDOW_STATE_ABOVE);
+    g_print("process_state GDK_WINDOW_STATE_BELOW %d\n", event->changed_mask & GDK_WINDOW_STATE_BELOW);
+    g_print("process_state GDK_WINDOW_STATE_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_TILED);
+    g_print("process_state GDK_WINDOW_STATE_TOP_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_TOP_TILED);
+    g_print("process_state GDK_WINDOW_STATE_TOP_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_TOP_RESIZABLE);
+    g_print("process_state GDK_WINDOW_STATE_BOTTOM_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_BOTTOM_TILED);
+    g_print("process_state GDK_WINDOW_STATE_BOTTOM_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_BOTTOM_RESIZABLE);
+    g_print("process_state GDK_WINDOW_STATE_LEFT_TILED %d\n", event->changed_mask & GDK_WINDOW_STATE_LEFT_TILED);
+    g_print("process_state GDK_WINDOW_STATE_LEFT_RESIZABLE %d\n", event->changed_mask & GDK_WINDOW_STATE_LEFT_RESIZABLE);
+
     if (event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN) {
         is_fullscreen = event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
     }
@@ -961,10 +980,12 @@ void WindowContextTop::process_state(GdkEventWindowState* event) {
 }
 
 void WindowContextTop::process_map() {
+    g_print("map\n");
     map_received = true;
 }
 
 void WindowContextTop::process_realize() {
+    g_print("realize\n");
     gdk_window = gtk_widget_get_window(gtk_widget);
     if (frame_type == TITLED) {
         request_frame_extents();
@@ -980,10 +1001,6 @@ void WindowContextTop::process_realize() {
 }
 
 void WindowContextTop::process_configure(GdkEventConfigure* event) {
-    if (!map_received) {
-        return;
-    }
-
     int ww = event->width + geometry.extents.left + geometry.extents.right;
     int wh = event->height + geometry.extents.top + geometry.extents.bottom;
 
@@ -1013,6 +1030,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
     int x, y;
     gdk_window_get_origin(gdk_window, &x, &y);
 
+    g_print("==========================================> Event: %d, %d / %d, %d -> %d\n", event->x, event->y, x, y, event->send_event);
+
     if (frame_type == TITLED && !is_fullscreen) {
         x -= geometry.extents.left;
         y -= geometry.extents.top;
@@ -1037,6 +1056,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
 }
 
 void WindowContextTop::update_window_constraints() {
+    g_print("update_window_constraints\n");
+
     bool is_floating = !is_iconified && !is_fullscreen && !is_maximized;
 
     if (!is_floating) {
@@ -1095,8 +1116,8 @@ void WindowContextTop::set_visible(bool visible) {
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch,
                                   float gravity_x, float gravity_y) {
-//     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
-//            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
+     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
+            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
     // newW / newH are view/content sizes
     int newW = 0;
     int newH = 0;
@@ -1204,6 +1225,8 @@ void WindowContextTop::exit_fullscreen() {
 }
 
 void WindowContextTop::request_focus() {
+    g_print("request_focus\n");
+
     if (is_visible()) {
         gtk_window_present(GTK_WINDOW(gtk_widget));
     }
@@ -1218,6 +1241,7 @@ void WindowContextTop::set_title(const char* title) {
 }
 
 void WindowContextTop::set_alpha(double alpha) {
+    g_print("set_alpha\n");
     gtk_window_set_opacity(GTK_WINDOW(gtk_widget), (gdouble)alpha);
 }
 
@@ -1269,6 +1293,8 @@ WindowFrameExtents WindowContextTop::get_frame_extents() {
 }
 
 void WindowContextTop::update_ontop_tree(bool on_top) {
+    g_print("update_ontop_tree\n");
+
     bool effective_on_top = on_top || this->on_top;
     gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), effective_on_top ? TRUE : FALSE);
     for (std::set<WindowContextTop*>::iterator it = children.begin(); it != children.end(); ++it) {
@@ -1315,6 +1341,8 @@ void WindowContextTop::notify_on_top(bool top) {
 }
 
 void WindowContextTop::set_level(int level) {
+    g_print("set_level\n");
+
     if (level == com_sun_glass_ui_Window_Level_NORMAL) {
         on_top = false;
     } else if (level == com_sun_glass_ui_Window_Level_FLOATING
