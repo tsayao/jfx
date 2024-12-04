@@ -736,6 +736,8 @@ WindowContextTop::WindowContextTop(jobject _jwindow, WindowContext* _owner, long
     jwindow = mainEnv->NewGlobalRef(_jwindow);
     gdk_windowManagerFunctions = wmf;
 
+    g_print("--------------------------------------------------------------\n");
+
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
     g_signal_connect(G_OBJECT(gtk_widget), "realize", G_CALLBACK(event_realize), this);
 
@@ -961,7 +963,7 @@ void WindowContextTop::process_state(GdkEventWindowState* event) {
 }
 
 void WindowContextTop::process_realize() {
-    gprint("-> realize\n");
+    g_print("-> realize\n");
     gdk_window = gtk_widget_get_window(gtk_widget);
     if (frame_type == TITLED) {
         request_frame_extents();
