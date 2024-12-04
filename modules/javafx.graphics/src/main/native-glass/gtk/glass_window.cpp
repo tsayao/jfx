@@ -555,6 +555,7 @@ void WindowContextBase::remove_child(WindowContextTop* child) {
 
 void WindowContextBase::set_visible(bool visible) {
     if (visible) {
+        g_print("gtk_widget_show\n");
         gtk_widget_show(gtk_widget);
     } else {
         gtk_widget_hide(gtk_widget);
@@ -960,6 +961,7 @@ void WindowContextTop::process_state(GdkEventWindowState* event) {
 }
 
 void WindowContextTop::process_realize() {
+    gprint("-> realize\n");
     gdk_window = gtk_widget_get_window(gtk_widget);
     if (frame_type == TITLED) {
         request_frame_extents();
@@ -986,6 +988,8 @@ void WindowContextTop::process_configure(GdkEventConfigure* event) {
                     : com_sun_glass_events_WindowEvent_RESIZE,
                 ww, wh);
         CHECK_JNI_EXCEPTION(mainEnv)
+
+        g_print("-> configure resize: %d/%d\n", event->width, event->height);
 
         if (jview) {
             mainEnv->CallVoidMethod(jview, jViewNotifyResize, event->width, event->height);
@@ -1073,6 +1077,7 @@ void WindowContextTop::set_visible(bool visible) {
     WindowContextBase::set_visible(visible);
 
     if (visible && !geometry.size_assigned) {
+        g_print("-> default size");
         set_bounds(0, 0, false, false, 320, 200, -1, -1, 0, 0);
     }
 
@@ -1085,8 +1090,8 @@ void WindowContextTop::set_visible(bool visible) {
 
 void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch,
                                   float gravity_x, float gravity_y) {
-//     fprintf(stderr, "set_bounds -> x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
-//            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
+     fprintf(stderr, "-> set_bounds x = %d, y = %d, xset = %d, yset = %d, w = %d, h = %d, cw = %d, ch = %d, gx = %f, gy = %f\n",
+            x, y, xSet, ySet, w, h, cw, ch, gravity_x, gravity_y);
     // newW / newH are view/content sizes
     int newW = 0;
     int newH = 0;
