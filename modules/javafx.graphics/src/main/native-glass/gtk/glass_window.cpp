@@ -1126,8 +1126,11 @@ void WindowContextTop::set_bounds(int x, int y, bool xSet, bool ySet, int w, int
         update_window_constraints();
 
         if (gtk_widget_get_realized(gtk_widget)) {
+            g_print("-> gtk_window_resize %d, %d\n", newW, newH);
+
             gtk_window_resize(GTK_WINDOW(gtk_widget), newW, newH);
         } else {
+            g_print("-> gtk_window_set_default_size %d, %d\n", newW, newH);
             gtk_window_set_default_size(GTK_WINDOW(gtk_widget), newW, newH);
         }
         geometry.size_assigned = true;
@@ -1224,12 +1227,15 @@ void WindowContextTop::set_enabled(bool enabled) {
 }
 
 void WindowContextTop::set_minimum_size(int w, int h) {
+    g_print("-> set_minimum_size %d, %d\n", w, h);
     resizable.minw = (w <= 0) ? 1 : w;
     resizable.minh = (h <= 0) ? 1 : h;
     update_window_constraints();
 }
 
 void WindowContextTop::set_maximum_size(int w, int h) {
+    g_print("-> set_maximum_size %d, %d\n", w, h);
+
     resizable.maxw = w;
     resizable.maxh = h;
     update_window_constraints();
@@ -1334,6 +1340,7 @@ void WindowContextTop::update_view_size() {
     if (geometry.final_width.type == BOUNDSTYPE_WINDOW
         || geometry.final_height.type == BOUNDSTYPE_WINDOW) {
 
+        g_print("-> notify_view_resize()\n");
         notify_view_resize();
     }
 }
