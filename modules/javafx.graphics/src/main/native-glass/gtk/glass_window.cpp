@@ -1343,6 +1343,7 @@ void WindowContextTop::notify_view_resize() {
         int cw = geometry_get_content_width(&geometry);
         int ch = geometry_get_content_height(&geometry);
 
+        g_print("-> jViewNotifyResize: %d, %d\n", cw, ch);
         mainEnv->CallVoidMethod(jview, jViewNotifyResize, cw, ch);
         CHECK_JNI_EXCEPTION(mainEnv)
     }
