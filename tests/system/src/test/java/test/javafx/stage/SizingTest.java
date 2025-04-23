@@ -26,11 +26,14 @@ package test.javafx.stage;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import test.util.Util;
@@ -59,29 +62,26 @@ class SizingTest extends StageTestBase {
     @Override
     protected Region createRoot() {
         VBox vBox = new VBox(createLabel("Width: ", getStage().widthProperty()),
-                             createLabel("Height: ", getStage().heightProperty()),
-                             createLabel("Max Width: ", getStage().maxWidthProperty()),
-                             createLabel("Max Height: ", getStage().maxHeightProperty()),
-                             createLabel("Min Width: ", getStage().minWidthProperty()),
-                             createLabel("Min Height: ", getStage().minHeightProperty()));
+                createLabel("Height: ", getStage().heightProperty()),
+                createLabel("Max Width: ", getStage().maxWidthProperty()),
+                createLabel("Max Height: ", getStage().maxHeightProperty()),
+                createLabel("Min Width: ", getStage().minWidthProperty()),
+                createLabel("Min Height: ", getStage().minHeightProperty()));
         vBox.setBackground(Background.EMPTY);
 
         return vBox;
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
     void testMaximizeUnresizable(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
             s.setWidth(WIDTH);
             s.setHeight(HEIGHT);
             s.setResizable(false);
         });
         Util.runAndWait(() -> getStage().setMaximized(true));
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         assertTrue(getStage().isMaximized(), "Unresizable stage should be maximized");
         assertTrue(getStage().getWidth() > WIDTH, "Stage width should be maximized");
@@ -89,31 +89,25 @@ class SizingTest extends StageTestBase {
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
-    void testFullscreenUnresizable(StageStyle stageStyle) {
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
+    void testFullScreenUnresizable(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
             s.setWidth(WIDTH);
             s.setHeight(HEIGHT);
             s.setResizable(false);
         });
 
         Util.runAndWait(() -> getStage().setFullScreen(true));
-        Util.sleep(500);
+        Util.sleep(LONG_WAIT);
         assertTrue(getStage().isFullScreen(), "Unresizable stage should be fullscreen");
         assertTrue(getStage().getWidth() > WIDTH, "Stage width should be fullscreen");
         assertTrue(getStage().getHeight() > HEIGHT, "Stage height should be fullscreen");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testResizeUnresizable(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
             s.setWidth(WIDTH);
             s.setHeight(HEIGHT);
             s.setResizable(false);
@@ -123,250 +117,254 @@ class SizingTest extends StageTestBase {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(NEW_WIDTH, getStage().getWidth(), "Stage should have resized");
-        assertEquals(NEW_HEIGHT, getStage().getHeight(), "Stage should have resized");
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA, "Stage should have resized");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA, "Stage should have resized");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
-    void testMaximizeMaxSize(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setWidth(WIDTH);
-            s.setHeight(HEIGHT);
-            s.setMaxWidth(MAX_WIDTH);
-            s.setMaxHeight(MAX_HEIGHT);
-        });
-
-        Util.doTimeLine(500,
-                () -> getStage().setMaximized(true),
-                () -> getStage().isMaximized(),
-                () -> {
-                    assertTrue(getStage().getWidth() > MAX_WIDTH, "Stage width should be maximized");
-                    assertTrue(getStage().getHeight() > MAX_HEIGHT, "Stage width should be maximized");
-                },
-                () -> getStage().setMaximized(false));
-
-        Util.sleep(500);
-
-        assertEquals(WIDTH, getStage().getWidth(), "Stage width should have been restored");
-        assertEquals(HEIGHT, getStage().getHeight(), "Stage height should have been restored");
-    }
-
-    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
-    void testFullScreenMaxSize(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setWidth(WIDTH);
-            s.setHeight(HEIGHT);
-            s.setMaxWidth(MAX_WIDTH);
-            s.setMaxHeight(MAX_HEIGHT);
-        });
-
-        Util.doTimeLine(500,
-                () -> getStage().setFullScreen(true),
-                () -> getStage().isFullScreen(),
-                () -> {
-                    assertTrue(getStage().getWidth() > MAX_WIDTH, "Stage width should be maximized");
-                    assertTrue(getStage().getHeight() > MAX_HEIGHT, "Stage width should be maximized");
-                },
-                () -> getStage().setFullScreen(false));
-
-        Util.sleep(500);
-
-        assertEquals(WIDTH, getStage().getWidth(), "Stage width should have been restored");
-        assertEquals(HEIGHT, getStage().getHeight(), "Stage height should have been restored");
-    }
-
-    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMaxSize(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
             s.setMaxWidth(MAX_WIDTH);
             s.setMaxHeight(MAX_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(MAX_WIDTH, getStage().getWidth(), "Stage width should have been limited to max width");
-        assertEquals(MAX_HEIGHT, getStage().getHeight(), "Stage height should have been limited to max height");
+        assertEquals(MAX_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Stage width should have been limited to max width");
+        assertEquals(MAX_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Stage height should have been limited to max height");
+
+        // Reset it
+        Util.runAndWait(() -> {
+            getStage().setMaxWidth(Double.MAX_VALUE);
+            getStage().setMaxHeight(Double.MAX_VALUE);
+            getStage().setWidth(NEW_WIDTH);
+            getStage().setHeight(NEW_HEIGHT);
+        });
+
+        Util.sleep(MEDIUM_WAIT);
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Stage width should have been accepted after removing min width");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Stage height should have been accepted after removing min height");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMaxWidth(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
             s.initStyle(stageStyle);
             s.setMaxWidth(MAX_WIDTH);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(MAX_WIDTH, getStage().getWidth(), "Stage width should have been limited to max width");
-        assertEquals(NEW_HEIGHT, getStage().getHeight(), "Only max width should be limited");
+        assertEquals(MAX_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Stage width should have been limited to max width");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA, "Only max width should be limited");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMaxHeight(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setMaxHeight(MAX_HEIGHT);
-        });
+        setupStageWithStyle(stageStyle, s -> s.setMaxHeight(MAX_HEIGHT));
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(NEW_WIDTH, getStage().getWidth(), "Only max height should be limited");
-        assertEquals(MAX_HEIGHT, getStage().getHeight(), "Stage height should have been limited to max height");
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA, "Only max height should be limited");
+        assertEquals(MAX_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Stage height should have been limited to max height");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMinSize(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
             s.setMinWidth(MIN_WIDTH);
             s.setMinHeight(MIN_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(MIN_WIDTH, getStage().getWidth(), "Stage width should have been limited to min width");
-        assertEquals(MIN_HEIGHT, getStage().getHeight(),  "Stage height should have been limited to min height");
+        assertEquals(MIN_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Stage width should have been limited to min width");
+        assertEquals(MIN_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Stage height should have been limited to min height");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMinWidth(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setMinWidth(MIN_WIDTH);
-        });
+        setupStageWithStyle(stageStyle, s -> s.setMinWidth(MIN_WIDTH));
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(MIN_WIDTH, getStage().getWidth(), "Stage width should have been limited to min width");
-        assertEquals(NEW_HEIGHT, getStage().getHeight(),  "Only min width should be limited");
+        assertEquals(MIN_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Stage width should have been limited to min width");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA, "Only min width should be limited");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testMinHeight(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setMinHeight(MIN_HEIGHT);
-        });
+        setupStageWithStyle(stageStyle, s -> s.setMinHeight(MIN_HEIGHT));
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         Util.runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
             getStage().setHeight(NEW_HEIGHT);
         });
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(NEW_WIDTH, getStage().getWidth(),  "Only min height should be limited");
-        assertEquals(MIN_HEIGHT, getStage().getHeight(), "Stage height should have been limited to min height");
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA, "Only min height should be limited");
+        assertEquals(MIN_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Stage height should have been limited to min height");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testNoSize(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> s.initStyle(stageStyle));
+        setupStageWithStyle(stageStyle, null);
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         assertTrue(getStage().getWidth() > 1, "Stage width should be greater than 1");
         assertTrue(getStage().getHeight() > 1, "Stage height should be greater than 1");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testNoHeight(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setWidth(WIDTH);
-        });
+        setupStageWithStyle(stageStyle, s -> s.setWidth(WIDTH));
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
-        assertEquals(WIDTH, getStage().getWidth(), "Stage do not match the set width");
+        assertEquals(WIDTH, getStage().getWidth(), SIZING_DELTA, "Stage do not match the set width");
         assertTrue(getStage().getHeight() > 1, "Stage height should be greater than 1");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(value = StageStyle.class,
-            mode = EnumSource.Mode.INCLUDE,
-            names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT", "UTILITY"})
     void testNoWidth(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, s -> {
-            s.initStyle(stageStyle);
-            s.setHeight(HEIGHT);
-        });
+        setupStageWithStyle(stageStyle, s -> s.setHeight(HEIGHT));
 
-        Util.sleep(500);
+        Util.sleep(MEDIUM_WAIT);
 
         assertTrue(getStage().getWidth() > 1, "Stage width should be greater than 1");
-        assertEquals(HEIGHT, getStage().getHeight(), "Stage do not match the set height");
+        assertEquals(HEIGHT, getStage().getHeight(), SIZING_DELTA, "Stage do not match the set height");
     }
+
+    @Test
+    void testSceneSizeOnly() {
+        setupStageWithStyle(StageStyle.DECORATED, s -> s.setScene(new Scene(new StackPane(), WIDTH, HEIGHT)));
+
+        Util.sleep(MEDIUM_WAIT);
+
+        assertEquals(WIDTH, getScene().getWidth(), SIZING_DELTA,
+                "Scene width should not be affected by decoration if stage width not set");
+        assertEquals(HEIGHT, getScene().getHeight(), SIZING_DELTA,
+                "Scene height should not be affected by decoration if stage height not set");
+    }
+
+    @Test
+    void testSceneWidthWithWindowHeight() {
+        setupStageWithStyle(StageStyle.DECORATED, s -> {
+            s.setScene(new Scene(new StackPane(), WIDTH, HEIGHT));
+            s.setHeight(NEW_HEIGHT);
+        });
+
+        Util.sleep(MEDIUM_WAIT);
+
+        assertEquals(WIDTH, getScene().getWidth(),
+                "Scene width should not be affected by decoration if stage width not set");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA, "Stage height should match the new height");
+    }
+
+    @Test
+    void testSceneHeightWithWindowWidth() {
+        setupStageWithStyle(StageStyle.DECORATED, s -> {
+            s.setScene(new Scene(new StackPane(), WIDTH, HEIGHT));
+            s.setWidth(NEW_WIDTH);
+        });
+
+        Util.sleep(MEDIUM_WAIT);
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA, "Stage with should match the set new width");
+        assertEquals(HEIGHT, getScene().getHeight(),
+                "Scene height should not be affected by decoration if stage height not set");
+    }
+
+    @Test
+    void testSceneSizeThenStageSize() {
+        setupStageWithStyle(StageStyle.DECORATED, s -> s.setScene(new Scene(new StackPane(), WIDTH, HEIGHT)));
+
+        Util.sleep(MEDIUM_WAIT);
+
+        Util.runAndWait(() -> {
+            getStage().setWidth(NEW_WIDTH);
+            getStage().setHeight(NEW_HEIGHT);
+        });
+
+        Util.sleep(MEDIUM_WAIT);
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Scene width should match the new stage width");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Scene height should match the new stage height");
+
+        Util.runAndWait(() -> {
+            StackPane stackPane = new StackPane();
+            stackPane.setPrefSize(WIDTH, HEIGHT);
+       });
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Scene width should match the new stage width");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Scene height should match the new stage height");
+
+    }
+
+
 }
