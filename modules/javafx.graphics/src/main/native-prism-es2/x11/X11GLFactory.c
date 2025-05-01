@@ -215,11 +215,40 @@ JNIEXPORT jlong JNICALL Java_com_sun_prism_es2_X11GLFactory_nInitialize
         return 0;
     }
 
-    visualInfo = glXGetVisualFromFBConfig(display, fbConfigList[0]);
+    GLXFBConfig fbConfig;
+    // X Visual of depth = 32 is required for window transparency
+    for (int i = 0; i < numFBConfigs; i++) {
+        XVisualInfo *vi = glXGetVisualFromFBConfig(display, fbConfigList[i]);
+        if (!vi) continue;
+
+        if (vi->depth == 32) {
+            fbConfig = fbConfigList[i];
+            visualInfo = vi;
+            break;
+        }
+
+        XFree(vi);
+    }
+
+    if (visualInfo = NULL) {
+        fbConfig = fbConfigList[0];
+        visualInfo = glXGetVisualFromFBConfig(display, fbConfig);
+    }
+
     if (visualInfo == NULL) {
         printAndReleaseResources(display, fbConfigList, visualInfo,
                 win, ctx, cmap,
                 "Failed in  glXGetVisualFromFBConfig");
+        return 0;
+    }
+
+    int caveat;
+    glXGetFBConfigAttrib(display, fbConfig, GLX_CONFIG_CAVEAT, &caveat);
+
+    if (caveat != GLX_NONE) {
+        printAndReleaseResources(display, fbConfigList, visualInfo, win, ctx, cmap,
+                "GLXFBConfig has caveat");
+
         return 0;
     }
 
@@ -249,7 +278,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_prism_es2_X11GLFactory_nInitialize
     int (*old_error_handler) (Display *, XErrorEvent *);
     old_error_handler = XSetErrorHandler(x11errorDetector);
 
-    ctx = glXCreateNewContext(display, fbConfigList[0], GLX_RGBA_TYPE, NULL, True);
+    ctx = glXCreateNewContext(display, fbConfig, GLX_RGBA_TYPE, NULL, True);
 
     XSync(display, 0); // sync needed for the GLX error detection.
 
