@@ -88,6 +88,9 @@ void setGLXAttrs(jint *attrs, int *glxAttrs) {
     glxAttrs[index++] = GLX_DEPTH_SIZE;
     glxAttrs[index++] = attrs[DEPTH_SIZE];
 
+    glxAttrs[index++] = GLX_CONFIG_CAVEAT;
+    glxAttrs[index++] = None;
+
     glxAttrs[index] = None;
 }
 
@@ -230,7 +233,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_prism_es2_X11GLFactory_nInitialize
         XFree(vi);
     }
 
-    if (visualInfo = NULL) {
+    if (visualInfo == NULL) {
         fbConfig = fbConfigList[0];
         visualInfo = glXGetVisualFromFBConfig(display, fbConfig);
     }
@@ -239,16 +242,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_prism_es2_X11GLFactory_nInitialize
         printAndReleaseResources(display, fbConfigList, visualInfo,
                 win, ctx, cmap,
                 "Failed in  glXGetVisualFromFBConfig");
-        return 0;
-    }
-
-    int caveat;
-    glXGetFBConfigAttrib(display, fbConfig, GLX_CONFIG_CAVEAT, &caveat);
-
-    if (caveat != GLX_NONE) {
-        printAndReleaseResources(display, fbConfigList, visualInfo, win, ctx, cmap,
-                "GLXFBConfig has caveat");
-
         return 0;
     }
 
