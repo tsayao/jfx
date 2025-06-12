@@ -808,10 +808,10 @@ void WindowContext::update_frame_extents() {
             GdkRectangle rect = { left, top, (left + right), (top + bottom) };
             set_cached_extents(rect);
 
-            if (!is_window_floating(gdk_window_get_state(gdk_window))
-                && !geometry.needs_to_update_frame_extents) {
+            if (!is_window_floating(gdk_window_get_state(gdk_window))) {
                 // Delay for then window is restored
                 geometry.needs_to_update_frame_extents = true;
+                LOG("Frame extents will be updated on restore");
                 return;
             }
 
@@ -989,12 +989,12 @@ void WindowContext::process_state(GdkEventWindowState *event) {
     // window, request view position change
     notify_view_move();
 
-    bool restored = (event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED
-                                            | GDK_WINDOW_STATE_FULLSCREEN))
-                    && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED
-                                            | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
+    bool restored = (event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN))
+                    && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
 
     if (restored && geometry.needs_to_update_frame_extents) {
+        LOG("Restored & Needs to update frame extents");
+        geometry.needs_to_update_frame_extents = false;
         load_cached_extents();
     }
 }
