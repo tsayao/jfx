@@ -50,12 +50,6 @@ constexpr int nonnegative_or(int val, int fallback) {
     return (val < 0) ? fallback : val;
 }
 
-static void process_pending_events() {
-    while (gtk_events_pending()) {
-        gtk_main_iteration_do(FALSE);
-    }
-}
-
 void destroy_and_delete_ctx(WindowContext* ctx) {
     LOG("destroy_and_delete_ctx\n");
     if (ctx) {
