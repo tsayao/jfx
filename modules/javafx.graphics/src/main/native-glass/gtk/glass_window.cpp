@@ -266,7 +266,6 @@ void WindowContext::process_map() {
     mapped = true;
 
     if (initial_state_mask != 0) {
-        process_pending_events();
         update_initial_state();
     }
 }
