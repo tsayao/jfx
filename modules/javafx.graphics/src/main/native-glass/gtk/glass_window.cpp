@@ -977,17 +977,23 @@ void WindowContext::process_state(GdkEventWindowState *event) {
     }
 
     if (jview && event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN) {
-        if (event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN) {
-            notify_fullscreen(true);
-        } else {
-            notify_fullscreen(false);
-        }
+        notify_fullscreen(event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN);
     }
 
     notify_view_resize();
     // Since FullScreen (or custom modes of maximized) can undecorate the
     // window, request view position change
     notify_view_move();
+
+    bool restored = (event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED
+                                            | GDK_WINDOW_STATE_FULLSCREEN))
+                    && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED
+                                            | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
+
+    if (restored && frame_type == TITLED && geometry.frame_extents_received) {
+        // When frame extents are received when fullscreen or maximized
+        move_resize(0, 0, false, false, geometry.width.view, geometry.height.view);
+    }
 }
 
 void WindowContext::notify_fullscreen(bool enter) {
@@ -1489,9 +1495,7 @@ void WindowContext::set_owner(WindowContext * owner_ctx) {
 }
 
 void WindowContext::update_view_size() {
-    if (jview) {
-        notify_view_resize();
-    }
+    notify_view_resize();
 }
 
 WindowContext::~WindowContext() {
