@@ -859,9 +859,7 @@ void WindowContext::update_frame_extents() {
 
             update_window_constraints();
 
-            if (is_window_floating(gdk_window_get_state(gdk_window))) {
-                move_resize(x, y, true, true, newW, newH);
-            }
+            move_resize(x, y, true, true, newW, newH);
         }
     }
 }
@@ -984,16 +982,6 @@ void WindowContext::process_state(GdkEventWindowState *event) {
     // Since FullScreen (or custom modes of maximized) can undecorate the
     // window, request view position change
     notify_view_move();
-
-    bool restored = (event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED
-                                            | GDK_WINDOW_STATE_FULLSCREEN))
-                    && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED
-                                            | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
-
-    if (restored && frame_type == TITLED && geometry.frame_extents_received) {
-        // When frame extents are received when fullscreen or maximized
-        move_resize(0, 0, false, false, geometry.width.view, geometry.height.view);
-    }
 }
 
 void WindowContext::notify_fullscreen(bool enter) {
