@@ -808,6 +808,13 @@ void WindowContext::update_frame_extents() {
             GdkRectangle rect = { left, top, (left + right), (top + bottom) };
             set_cached_extents(rect);
 
+            if (!is_window_floating(gdk_window_get_state(gdk_window))
+                && !geometry.needs_to_update_frame_extents) {
+                // Delay for then window is restored
+                geometry.needs_to_update_frame_extents = true;
+                return;
+            }
+
             int newW = geometry.width.view;
             int newH = geometry.height.view;
 
@@ -858,10 +865,7 @@ void WindowContext::update_frame_extents() {
                     geometry.width.view, geometry.height.view, geometry.width.window, geometry.height.window);
 
             update_window_constraints();
-
-            if (is_window_floating(gdk_window_get_state(gdk_window))) {
-                move_resize(x, y, true, true, newW, newH);
-            }
+            move_resize(x, y, true, true, newW, newH);
         }
     }
 }
@@ -990,9 +994,8 @@ void WindowContext::process_state(GdkEventWindowState *event) {
                     && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED
                                             | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
 
-    if (restored && frame_type == TITLED && geometry.frame_extents_received) {
-        // When frame extents are received when fullscreen or maximized
-        move_resize(0, 0, false, false, geometry.width.view, geometry.height.view);
+    if (restored && geometry.needs_to_update_frame_extents) {
+        load_cached_extents();
     }
 }
 
