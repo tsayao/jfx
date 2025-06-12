@@ -50,6 +50,12 @@ constexpr int nonnegative_or(int val, int fallback) {
     return (val < 0) ? fallback : val;
 }
 
+static void process_pending_events() {
+    while (gtk_events_pending()) {
+        gtk_main_iteration_do(FALSE);
+    }
+}
+
 void destroy_and_delete_ctx(WindowContext* ctx) {
     LOG("destroy_and_delete_ctx\n");
     if (ctx) {
@@ -260,6 +266,7 @@ void WindowContext::process_map() {
     mapped = true;
 
     if (initial_state_mask != 0) {
+        process_pending_events();
         update_initial_state();
     }
 }
