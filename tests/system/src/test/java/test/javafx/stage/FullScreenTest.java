@@ -50,8 +50,8 @@ class FullScreenTest extends StageTestBase {
     };
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
-    void testFullScreenShouldKeepGeometryOnRestore(StageStyle stageStyle) {
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED", "TRANSPARENT"})
+    void fullScreenShouldKeepGeometryOnRestore(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, TEST_SETTINGS);
 
         Util.doTimeLine(LONG_WAIT,
@@ -64,8 +64,8 @@ class FullScreenTest extends StageTestBase {
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(names = {"DECORATED", "UNDECORATED", "TRANSPARENT"})
-    void testFullScreenBeforeShowShouldKeepGeometryOnRestore(StageStyle stageStyle) {
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED", "TRANSPARENT"})
+    void fFullScreenBeforeShowShouldKeepGeometryOnRestore(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, TEST_SETTINGS.andThen(s -> s.setFullScreen(true)));
 
         Util.sleep(LONG_WAIT);
