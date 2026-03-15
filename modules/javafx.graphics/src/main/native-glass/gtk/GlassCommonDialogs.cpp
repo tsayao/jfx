@@ -332,6 +332,9 @@ JNIEXPORT jobject JNICALL Java_com_sun_glass_ui_gtk_GtkCommonDialogs__1showFileC
     gchar *parent_handle = get_parent_window_handle(get_gdk_window(parent));
     const gchar *method = (type == 0) ? "OpenFile" : "SaveFile";
 
+    // Release any active popup/menu grab so it closes before the dialog appears
+    WindowContext::dismiss_grab();
+
     GVariant *ret = g_dbus_connection_call_sync(bus,
             "org.freedesktop.portal.Desktop",
             "/org/freedesktop/portal/desktop",
@@ -454,6 +457,9 @@ JNIEXPORT jstring JNICALL Java_com_sun_glass_ui_gtk_GtkCommonDialogs__1showFolde
     }
 
     gchar *parent_handle = get_parent_window_handle(get_gdk_window(parent));
+
+    // Release any active popup/menu grab so it closes before the dialog appears
+    WindowContext::dismiss_grab();
 
     GVariant *ret = g_dbus_connection_call_sync(bus,
             "org.freedesktop.portal.Desktop",

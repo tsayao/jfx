@@ -364,6 +364,8 @@ public:
     void show_system_menu(int, int);
     void set_system_minimum_size(int, int);
 
+    static void dismiss_grab();
+
     virtual ~WindowContext();
 
 private:
