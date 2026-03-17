@@ -206,7 +206,7 @@ LINUX.strip = "${toolchainDir}strip"
 LINUX.stripArgs = [ "-x" ]
 
 LINUX.glass = [:]
-LINUX.glass.variants = ["glass", "glassgtk3"]
+LINUX.glass.variants = ["glass", "glassgtk3", "glassgtk4controls"]
 
 FileTree ft_gtk_launcher = fileTree("${project(":graphics").projectDir}/src/main/native-glass/gtk/") {
     include("**/launcher.c")
@@ -214,6 +214,11 @@ FileTree ft_gtk_launcher = fileTree("${project(":graphics").projectDir}/src/main
 
 FileTree ft_gtk = fileTree("${project(":graphics").projectDir}/src/main/native-glass/gtk/") {
     exclude("**/launcher.c")
+    exclude("**/gtk4_header_buttons.c")
+}
+
+FileTree ft_gtk4_controls = fileTree("${project(":graphics").projectDir}/src/main/native-glass/gtk/") {
+    include("**/gtk4_header_buttons.c")
 }
 
 LINUX.glass.glass = [:]
@@ -233,6 +238,16 @@ LINUX.glass.glassgtk3.ccFlags = IS_STATIC_BUILD ?
 LINUX.glass.glassgtk3.linker = linker
 LINUX.glass.glassgtk3.linkFlags = IS_STATIC_BUILD ? linkFlags : [linkFlags, gtk3LinkFlags].flatten()
 LINUX.glass.glassgtk3.lib = "glassgtk3"
+
+// GTK4 header button controls - a separate library that dynamically loads GTK4 at runtime.
+// It does NOT link against GTK4 - it uses dlopen/dlsym. Only needs JNI headers and basic C flags.
+LINUX.glass.glassgtk4controls = [:]
+LINUX.glass.glassgtk4controls.nativeSource = ft_gtk4_controls.getFiles()
+LINUX.glass.glassgtk4controls.compiler = compiler
+LINUX.glass.glassgtk4controls.ccFlags = [cFlags, "-Wno-deprecated-declarations"].flatten()
+LINUX.glass.glassgtk4controls.linker = linker
+LINUX.glass.glassgtk4controls.linkFlags = IS_STATIC_BUILD ? linkFlags : [linkFlags, "-ldl"].flatten()
+LINUX.glass.glassgtk4controls.lib = "glassgtk4controls"
 
 LINUX.decora = [:]
 LINUX.decora.compiler = compiler

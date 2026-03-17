@@ -164,8 +164,19 @@ final class GtkView extends View {
     @Override
     protected boolean handleNonClientMouseEvent(long time, int type, int button, int x, int y, int xAbs, int yAbs,
                                                 int modifiers, int clickCount) {
-        return getWindow() instanceof GtkWindow window
-            && window.headerButtonOverlayProperty().get() instanceof HeaderButtonOverlay overlay
-            && overlay.handleMouseEvent(type, button, x / window.getPlatformScaleX(), y / window.getPlatformScaleY());
+        if (!(getWindow() instanceof GtkWindow window)) {
+            return false;
+        }
+
+        double wx = x / window.getPlatformScaleX();
+        double wy = y / window.getPlatformScaleY();
+
+        if (window.headerButtonOverlayProperty().get() instanceof HeaderButtonOverlay overlay) {
+            return overlay.handleMouseEvent(type, button, wx, wy);
+        } else if (window.headerButtonOverlayProperty().get() instanceof Gtk4HeaderButtonOverlay gtk4Overlay) {
+            return gtk4Overlay.handleMouseEvent(type, button, wx, wy);
+        }
+
+        return false;
     }
 }

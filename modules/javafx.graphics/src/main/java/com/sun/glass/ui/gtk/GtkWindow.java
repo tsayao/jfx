@@ -32,6 +32,7 @@ import com.sun.glass.ui.Screen;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 import com.sun.glass.ui.HeaderButtonOverlay;
+import javafx.scene.layout.Region;
 import java.lang.annotation.Native;
 
 class GtkWindow extends Window {
@@ -226,24 +227,66 @@ class GtkWindow extends Window {
             return;
         }
 
+        // Dispose existing overlay (either CSS-based or GTK4-based)
         if (headerButtonOverlay.get() instanceof HeaderButtonOverlay overlay) {
             overlay.dispose();
+        } else if (headerButtonOverlay.get() instanceof Gtk4HeaderButtonOverlay gtk4Overlay) {
+            gtk4Overlay.dispose();
         }
 
         if (height.doubleValue() == 0) {
             headerButtonOverlay.set(null);
             headerButtonMetrics.set(HeaderButtonMetrics.EMPTY);
         } else {
-            HeaderButtonOverlay overlay = createHeaderButtonOverlay();
-            overlay.metricsProperty().subscribe(headerButtonMetrics::set);
+            Region overlay = createHeaderButtonOverlayRegion();
             headerButtonOverlay.set(overlay);
         }
     }
 
     /**
-     * Creates a new {@code HeaderButtonOverlay} instance.
+     * Creates a header button overlay, using GTK4 native rendering if available,
+     * or falling back to the CSS-based {@link HeaderButtonOverlay}.
+     *
+     * @return the overlay as a {@link Region}
      */
-    private HeaderButtonOverlay createHeaderButtonOverlay() {
+    private Region createHeaderButtonOverlayRegion() {
+        // Try GTK4 native rendering first
+        if (Gtk4WindowControls.isAvailable()) {
+            try {
+                var gtk4Overlay = new Gtk4HeaderButtonOverlay(
+                    PlatformThemeObserver.getInstance().stylesheetProperty(),
+                    isModal() || getOwner() != null, isUtilityWindow(),
+                    (getStyleMask() & RIGHT_TO_LEFT) != 0);
+
+                gtk4Overlay.metricsProperty().subscribe(metrics -> {
+                    int w = (int)(metrics.totalInsetWidth() * platformScaleX);
+                    int h = (int)(metrics.maxInsetHeight() * platformScaleY);
+                    _setSystemMinimumSize(super.getRawHandle(), w, h);
+                });
+                gtk4Overlay.metricsProperty().subscribe(headerButtonMetrics::set);
+                gtk4Overlay.prefButtonHeightProperty().bind(prefHeaderButtonHeightProperty());
+
+                if (Boolean.getBoolean("javafx.verbose")) {
+                    System.err.println("GtkWindow: using GTK4 native header button overlay");
+                }
+
+                return gtk4Overlay;
+            } catch (Exception e) {
+                if (Boolean.getBoolean("javafx.verbose")) {
+                    System.err.println("GtkWindow: GTK4 overlay failed, falling back to CSS: "
+                        + e.getMessage());
+                }
+            }
+        }
+
+        // Fallback to CSS-based overlay
+        return createCssHeaderButtonOverlay();
+    }
+
+    /**
+     * Creates a new CSS-based {@code HeaderButtonOverlay} instance.
+     */
+    private HeaderButtonOverlay createCssHeaderButtonOverlay() {
         var overlay = new HeaderButtonOverlay(
             PlatformThemeObserver.getInstance().stylesheetProperty(),
             isModal() || getOwner() != null, isUtilityWindow(),
@@ -257,6 +300,7 @@ class GtkWindow extends Window {
             _setSystemMinimumSize(super.getRawHandle(), w, h);
         });
 
+        overlay.metricsProperty().subscribe(headerButtonMetrics::set);
         overlay.prefButtonHeightProperty().bind(prefHeaderButtonHeightProperty());
         return overlay;
     }
@@ -284,6 +328,8 @@ class GtkWindow extends Window {
         double wy = y / platformScaleY;
 
         if (headerButtonOverlay.get() instanceof HeaderButtonOverlay overlay && overlay.buttonAt(wx, wy) != null) {
+            return HT_CLIENT;
+        } else if (headerButtonOverlay.get() instanceof Gtk4HeaderButtonOverlay gtk4Overlay && gtk4Overlay.buttonAt(wx, wy) != null) {
             return HT_CLIENT;
         }
 
