@@ -27,7 +27,6 @@ package test.robot.javafx.stage;
 import com.sun.javafx.PlatformUtil;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -51,12 +50,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static javax.swing.text.StyleConstants.Background;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.TIMEOUT;
+import static test.util.Util.waitForBoolean;
 
 @Timeout(value = TIMEOUT, unit = TimeUnit.MILLISECONDS)
 class StageOwnershipTest extends VisualTestBase {
@@ -178,9 +179,6 @@ class StageOwnershipTest extends VisualTestBase {
         assertColorEquals(expected, color, TOLERANCE);
     }
 
-    /**
-     * Shows the given stages and waits for all of them to fire their onShown event.
-     */
     private void showStageAndWait(Stage... stages) {
         CountDownLatch latch = new CountDownLatch(stages.length);
         runAndWait(() -> {
@@ -192,31 +190,6 @@ class StageOwnershipTest extends VisualTestBase {
         try {
             assertTrue(latch.await(TIMEOUT, TimeUnit.MILLISECONDS),
                     "Timeout waiting for stage(s) to be shown");
-        } catch (InterruptedException e) {
-            fail(e);
-        }
-    }
-
-    /**
-     * Waits for a boolean property to reach the expected value.
-     * If the property already has the expected value, returns immediately.
-     */
-    private void waitForBoolean(ReadOnlyBooleanProperty property, boolean expected, String message) {
-        CountDownLatch latch = new CountDownLatch(1);
-        runAndWait(() -> {
-            if (property.get() == expected) {
-                latch.countDown();
-            } else {
-                property.addListener((obs, old, val) -> {
-                    if (val == expected) {
-                        latch.countDown();
-                    }
-                });
-            }
-        });
-        try {
-            assertTrue(latch.await(TIMEOUT, TimeUnit.MILLISECONDS),
-                    "Timeout waiting for: " + message);
         } catch (InterruptedException e) {
             fail(e);
         }
