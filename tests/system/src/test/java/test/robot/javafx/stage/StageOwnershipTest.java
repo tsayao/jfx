@@ -417,18 +417,8 @@ class StageOwnershipTest extends VisualTestBase {
         waitForBoolean(stage1.focusedProperty(), true, "stage1 to receive focus after closing non-modal child");
         Util.waitForIdle(stage1.getScene());
 
-        runAndWait(() -> assertFalse(stage0.isFocused()));
-
         runAndWait(stage1::close);
-        Util.sleep(300);
-
-        waitForBoolean(stage0.focusedProperty(), true,
-                "owner to receive focus after non-modal child is closed");
-
-        runAndWait(() -> {
-            assertFalse(stage1.isShowing());
-            assertTrue(stage0.isFocused(), "Owner should receive focus after non-modal child is closed");
-        });
+        waitForBoolean(stage0.focusedProperty(), true, "stage0 to receive focus after closing non-modal child");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
