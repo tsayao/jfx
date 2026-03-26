@@ -216,7 +216,6 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(() -> {
             assertTrue(bottomStage.isMaximized());
-            // Make sure state is still maximized
             assertColorEqualsVisualBounds(BOTTOM_COLOR);
 
             Color color = getColor(100, 100);
@@ -241,7 +240,6 @@ class StageOwnershipTest extends VisualTestBase {
         runAndWait(() -> {
             assertTrue(bottomStage.isFullScreen());
 
-            // Make sure state is still fullscreen
             assertColorEqualsVisualBounds(BOTTOM_COLOR);
 
             Color color = getColor(100, 100);
@@ -363,14 +361,12 @@ class StageOwnershipTest extends VisualTestBase {
         Util.waitForIdle(stage1.getScene());
 
         runAndWait(() -> {
-            // Owned stage (stage1) should be visible on top of owner (stage0)
             assertColorEquals(COLOR1, stage1);
         });
 
         runAndWait(stage0::toFront);
         Util.waitForIdle(stage0.getScene());
 
-        // Even after bringing owner to front, owned stage should remain on top
         runAndWait(() -> assertColorEquals(COLOR1, stage1));
     }
 
@@ -389,7 +385,6 @@ class StageOwnershipTest extends VisualTestBase {
         Util.waitForIdle(stage0.getScene());
 
         runAndWait(() -> {
-            // Both children should be visible on top of the owner
             assertColorEquals(COLOR1, stage1);
             assertColorEquals(COLOR2, stage2);
         });
@@ -398,7 +393,6 @@ class StageOwnershipTest extends VisualTestBase {
         waitForBoolean(stage1.showingProperty(), false, "stage1 to be hidden");
 
         runAndWait(() -> {
-            // After closing one child, the other should still be visible
             assertFalse(stage1.isShowing());
             assertTrue(stage2.isShowing());
             assertColorEquals(COLOR2, stage2);
@@ -439,7 +433,6 @@ class StageOwnershipTest extends VisualTestBase {
         runAndWait(() -> {
             assertTrue(stage0.isMaximized());
             assertTrue(stage1.isShowing());
-            // Owned child should still be visible on top of maximized owner
             assertColorEquals(COLOR1, stage1);
         });
     }
@@ -448,7 +441,6 @@ class StageOwnershipTest extends VisualTestBase {
     @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED"})
     void iconifyParentShouldHideChildren(StageStyle style) {
         if (style == StageStyle.EXTENDED || style == StageStyle.DECORATED) {
-            // Windows just hides the first-level ownership (bug?)
             assumeTrue(!PlatformUtil.isWindows());
         }
 
