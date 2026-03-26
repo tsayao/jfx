@@ -45,6 +45,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import test.robot.testharness.VisualTestBase;
+import test.util.Util;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -95,7 +96,7 @@ class StageOwnershipTest extends VisualTestBase {
             bottomStage.setY(0);
         });
         showStageAndWait(bottomStage);
-        waitFirstFrame();
+        Util.waitForIdle(bottomStage.getScene());
     }
 
     private void setupTopStage(Stage owner, StageStyle stageStyle, Modality modality) {
@@ -208,10 +209,10 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(() -> bottomStage.setMaximized(true));
         waitForBoolean(bottomStage.maximizedProperty(), true, "bottom stage to be maximized");
-        waitNextFrame();
+        Util.waitForIdle(bottomStage.getScene());
 
         showStageAndWait(topStage);
-        waitNextFrame();
+        Util.waitForIdle(topStage.getScene());
 
         runAndWait(() -> {
             assertTrue(bottomStage.isMaximized());
@@ -232,10 +233,10 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(() -> bottomStage.setFullScreen(true));
         waitForBoolean(bottomStage.fullScreenProperty(), true, "bottom stage to be fullscreen");
-        waitNextFrame();
+        Util.waitForIdle(bottomStage.getScene());
 
         showStageAndWait(topStage);
-        waitNextFrame();
+        Util.waitForIdle(topStage.getScene());
 
         runAndWait(() -> {
             assertTrue(bottomStage.isFullScreen());
@@ -265,7 +266,7 @@ class StageOwnershipTest extends VisualTestBase {
         showStageAndWait(stage0);
         showStageAndWait(stage1);
         showStageAndWait(stage2);
-        waitNextFrame();
+        Util.waitForIdle(stage2.getScene());
 
         runAndWait(() -> {
             assertTrue(stage2.isFocused());
@@ -276,7 +277,7 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(stage2::close);
         waitForBoolean(stage1.focusedProperty(), true, "stage1 to receive focus after closing modal stage2");
-        waitNextFrame();
+        Util.waitForIdle(stage1.getScene());
 
         runAndWait(() -> {
             assertTrue(stage1.isFocused());
@@ -286,7 +287,7 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(stage1::close);
         waitForBoolean(stage0.focusedProperty(), true, "stage0 to receive focus after closing stage1");
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
         runAndWait(() -> {
             assertTrue(stage0.isFocused());
@@ -304,7 +305,7 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1, stage2);
-        waitNextFrame();
+        Util.waitForIdle(stage2.getScene());
 
         runAndWait(() -> {
             assertTrue(stage0.isShowing());
@@ -314,7 +315,6 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(stage0::close);
         waitForBoolean(stage0.showingProperty(), false, "stage0 to be hidden");
-        waitNextFrame();
 
         runAndWait(() -> {
             assertFalse(stage0.isShowing());
@@ -333,7 +333,7 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1, stage2);
-        waitNextFrame();
+        Util.waitForIdle(stage2.getScene());
 
         runAndWait(() -> {
             assertTrue(stage0.isShowing());
@@ -343,7 +343,6 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(stage1::close);
         waitForBoolean(stage1.showingProperty(), false, "stage1 to be hidden");
-        waitNextFrame();
 
         runAndWait(() -> {
             assertTrue(stage0.isShowing(), "Owner (stage0) should still be showing");
@@ -361,7 +360,7 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1);
-        waitNextFrame();
+        Util.waitForIdle(stage1.getScene());
 
         runAndWait(() -> {
             // Owned stage (stage1) should be visible on top of owner (stage0)
@@ -369,12 +368,10 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         runAndWait(stage0::toFront);
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
-        runAndWait(() -> {
-            // Even after bringing owner to front, owned stage should remain on top
-            assertColorEquals(COLOR1, stage1);
-        });
+        // Even after bringing owner to front, owned stage should remain on top
+        runAndWait(() -> assertColorEquals(COLOR1, stage1));
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
@@ -389,7 +386,7 @@ class StageOwnershipTest extends VisualTestBase {
 
         showStageAndWait(stage0, stage1, stage2);
         waitForBoolean(stage0.maximizedProperty(), true, "stage0 to be maximized");
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
         runAndWait(() -> {
             // Both children should be visible on top of the owner
@@ -399,7 +396,6 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(stage1::close);
         waitForBoolean(stage1.showingProperty(), false, "stage1 to be hidden");
-        waitNextFrame();
 
         runAndWait(() -> {
             // After closing one child, the other should still be visible
@@ -418,17 +414,13 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1);
-        waitNextFrame();
+        waitForBoolean(stage1.focusedProperty(), true, "stage1 to receive focus after closing non-modal child");
 
-        runAndWait(() -> {
-            assertTrue(stage1.isFocused());
-            assertFalse(stage0.isFocused());
-        });
+        runAndWait(() -> assertFalse(stage0.isFocused()));
 
         runAndWait(stage1::close);
         waitForBoolean(stage0.focusedProperty(), true,
                 "owner to receive focus after non-modal child is closed");
-        waitNextFrame();
 
         runAndWait(() -> {
             assertFalse(stage1.isShowing());
@@ -445,11 +437,11 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1);
-        waitNextFrame();
+        Util.waitForIdle(stage1.getScene());
 
         runAndWait(() -> stage0.setMaximized(true));
         waitForBoolean(stage0.maximizedProperty(), true, "stage0 to be maximized");
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
         runAndWait(() -> {
             assertTrue(stage0.isMaximized());
@@ -474,21 +466,16 @@ class StageOwnershipTest extends VisualTestBase {
 
         showStageAndWait(stage1, stage2, stage0);
         waitForBoolean(stage0.maximizedProperty(), true, "stage0 to be maximized");
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
-        runAndWait(() -> {
-            // Unrelated stage0 should be on top, hiding stage1/stage2
-            assertColorEquals(COLOR0, stage1);
-        });
+        runAndWait(() -> assertColorEquals(COLOR0, stage1));
 
         runAndWait(stage1::toFront);
-        // Wait for the focus change that follows toFront, indicating the
-        // window manager has processed the z-order change
+
         waitForBoolean(stage0.focusedProperty(), false, "stage0 to lose focus after stage1.toFront");
-        waitNextFrame();
+        Util.sleep(300);
 
         runAndWait(() -> {
-            // After toFront on owner, the owned child should also come to front
             assertTrue(stage2.isShowing());
             assertColorEquals(COLOR2, stage2);
         });
@@ -512,11 +499,11 @@ class StageOwnershipTest extends VisualTestBase {
 
         showStageAndWait(stage0, stage1, stage2, stage3);
         waitForBoolean(stage0.maximizedProperty(), true, "stage0 to be maximized");
-        waitNextFrame();
+        Util.waitForIdle(stage0.getScene());
 
         runAndWait(() -> stage1.setIconified(true));
         waitForBoolean(stage1.iconifiedProperty(), true, "stage1 to be iconified");
-        waitNextFrame();
+        Util.sleep(300);
 
         runAndWait(() -> {
             assertTrue(stage1.isIconified());
@@ -527,7 +514,7 @@ class StageOwnershipTest extends VisualTestBase {
 
         runAndWait(() -> stage1.setIconified(false));
         waitForBoolean(stage1.iconifiedProperty(), false, "stage1 to be de-iconified");
-        waitNextFrame();
+        Util.sleep(300);
 
         runAndWait(() -> {
             assertFalse(stage1.isIconified());

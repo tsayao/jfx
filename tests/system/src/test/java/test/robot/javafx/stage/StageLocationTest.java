@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import test.robot.testharness.VisualTestBase;
+import test.util.Util;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -108,7 +109,7 @@ class StageLocationTest extends VisualTestBase {
             stage.setY(Y);
         });
         showStageAndWait(stage);
-        waitFirstFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, X + 100, Y + 100));
 
@@ -116,7 +117,7 @@ class StageLocationTest extends VisualTestBase {
             stage.setX(TO_X);
             stage.setY(TO_Y);
         });
-        waitNextFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, TO_X + 100, TO_Y + 100));
     }
@@ -130,12 +131,12 @@ class StageLocationTest extends VisualTestBase {
             stage.setY(Y);
         });
         showStageAndWait(stage);
-        waitFirstFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, X + 100, Y + 100));
 
         runAndWait(() -> stage.setX(TO_X));
-        waitNextFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, TO_X + 100, Y + 100));
     }
@@ -149,12 +150,12 @@ class StageLocationTest extends VisualTestBase {
             stage.setY(Y);
         });
         showStageAndWait(stage);
-        waitFirstFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, X + 100, Y + 100));
 
         runAndWait(() -> stage.setY(TO_Y));
-        waitNextFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, X + 100, TO_Y + 100));
     }
@@ -168,13 +169,13 @@ class StageLocationTest extends VisualTestBase {
             stage.setY(Y);
         });
         showStageAndWait(stage);
-        waitFirstFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> {
             stage.setX(TO_X);
             stage.setY(TO_Y);
         });
-        waitNextFrame();
+        Util.waitForIdle(stage.getScene());
 
         runAndWait(() -> assertColorEquals(COLOR, TO_X + 100, TO_Y + 100));
     }
