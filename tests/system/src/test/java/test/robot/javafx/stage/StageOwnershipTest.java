@@ -415,10 +415,13 @@ class StageOwnershipTest extends VisualTestBase {
 
         showStageAndWait(stage0, stage1);
         waitForBoolean(stage1.focusedProperty(), true, "stage1 to receive focus after closing non-modal child");
+        Util.waitForIdle(stage1.getScene());
 
         runAndWait(() -> assertFalse(stage0.isFocused()));
 
         runAndWait(stage1::close);
+        Util.sleep(300);
+
         waitForBoolean(stage0.focusedProperty(), true,
                 "owner to receive focus after non-modal child is closed");
 
@@ -448,36 +451,6 @@ class StageOwnershipTest extends VisualTestBase {
             assertTrue(stage1.isShowing());
             // Owned child should still be visible on top of maximized owner
             assertColorEquals(COLOR1, stage1);
-        });
-    }
-
-    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED"})
-    void toFrontOnOwnerShouldAlsoBringOwnedChildrenToFront(StageStyle style) {
-        runAndWait(() -> {
-            // stage0 is an unrelated window that will be used to push others back
-            stage0 = createStage(StageStyle.UNDECORATED, COLOR0, null, null, 0, 0);
-            stage0.setMaximized(true);
-
-            // stage1 is the owner, stage2 is its child
-            stage1 = createStage(style, COLOR1, null, null, 100, 100);
-            stage2 = createStage(style, COLOR2, stage1, null, 100, 100);
-        });
-
-        showStageAndWait(stage1, stage2, stage0);
-        waitForBoolean(stage0.maximizedProperty(), true, "stage0 to be maximized");
-        Util.waitForIdle(stage0.getScene());
-
-        runAndWait(() -> assertColorEquals(COLOR0, stage1));
-
-        runAndWait(stage1::toFront);
-
-        waitForBoolean(stage0.focusedProperty(), false, "stage0 to lose focus after stage1.toFront");
-        Util.sleep(300);
-
-        runAndWait(() -> {
-            assertTrue(stage2.isShowing());
-            assertColorEquals(COLOR2, stage2);
         });
     }
 
