@@ -248,7 +248,7 @@ private:
     Observable<Size> sys_min_size = Size{1, 1};
     Observable<bool> resizable{true};
     Observable<Point> view_position = Point{0, 0}; //Default for non-titled windows
-    Observable<Size> view_size = Size{-1, -1};
+    Observable<Size> view_size = Size{DEFAULT_WIDTH, DEFAULT_HEIGHT};
     Observable<Size> window_size = Size{-1, -1};
     Observable<Point> window_location = Point{-1, -1};
     Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
