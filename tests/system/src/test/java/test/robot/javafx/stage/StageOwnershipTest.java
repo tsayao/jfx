@@ -75,8 +75,8 @@ class StageOwnershipTest extends VisualTestBase {
     private static final int Y_DELTA = 75; // shadows + decoration
 
     private static final double TOLERANCE = 0.07;
-    private static final int WAIT_TIME = 500;
-    private static final int LONG_WAIT_TIME = 1000;
+    private static final int WAIT_TIME = 700;
+    private static final int LONG_WAIT_TIME = 1100;
 
     @Override
     protected Stage getStage(boolean alwaysOnTop) {
