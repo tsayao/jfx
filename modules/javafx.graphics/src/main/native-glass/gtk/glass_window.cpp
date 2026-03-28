@@ -27,7 +27,6 @@
 #include "glass_key.h"
 #include "glass_screen.h"
 #include "glass_dnd.h"
-#include "glass_evloop.h"
 
 #include <com_sun_glass_events_WindowEvent.h>
 #include <com_sun_glass_events_ViewEvent.h>
@@ -192,8 +191,8 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     });
 
     view_size.setOnChange([this](const Size& size) {
-        notify_view_resize();
         update_window_constraints();
+        notify_view_resize();
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
@@ -284,8 +283,10 @@ void WindowContext::process_map() {
     Point loc = window_location.get();
     Size size = view_size.get();
 
-    move_resize(loc.x, loc.y, (loc.x >= 0), (loc.y >= 0), size.width, size.height);
     mapped = true;
+    view_size.invalidate();
+    window_size.invalidate();
+    LOG("WindowContext::process_map:")
 
     if (initial_state_mask == 0) return;
 

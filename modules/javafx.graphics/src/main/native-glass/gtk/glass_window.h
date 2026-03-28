@@ -39,14 +39,11 @@
 
 #include <jni.h>
 #include <set>
-#include <vector>
 #include <optional>
 
 #include "DeletedMemDebug.h"
-#include "glass_view.h"
 #include "glass_general.h"
 
-#include <iostream>
 #include <functional>
 
 template<typename T>
