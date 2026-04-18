@@ -284,9 +284,7 @@ void WindowContext::process_realize() {
 
 // Returns de XWindow ID to be used in rendering
 XID WindowContext::get_native_window() {
-    // This is used to delay the window map (it's only really mapped when there's
-    // something rendered)
-    if (!is_visible()) return 0;
+    if (!gtk_widget_get_realized(gtk_widget)) return 0;
 
     return GDK_WINDOW_XID(gdk_window);
 }
@@ -316,7 +314,6 @@ void WindowContext::notify_focus_disabled() {
 }
 
 void WindowContext::process_expose(GdkEventExpose* event) {
-    LOG(LIFECYCLE, log_id, "process_expose\n");
     GdkRectangle r = event->area;
     notify_repaint({ r.x, r.y, r.width, r.height });
 }
