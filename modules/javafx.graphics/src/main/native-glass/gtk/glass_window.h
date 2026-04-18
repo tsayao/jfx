@@ -406,6 +406,7 @@ private:
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
+    void ensure_window_geometry();
 
     void update_initial_state();
     bool grab_mouse_drag_focus();
