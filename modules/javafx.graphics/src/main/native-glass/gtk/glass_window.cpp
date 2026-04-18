@@ -260,6 +260,10 @@ GtkWindow* WindowContext::get_gtk_window() {
 void WindowContext::process_realize() {
     gdk_window = gtk_widget_get_window(gtk_widget);
 
+    if (frame_type != TRANSPARENT) {
+        gdk_window_set_background_rgba(gdk_window, &background_color);
+    }
+
     if (log_id.empty()) {
         log_id = std::to_string(GDK_WINDOW_XID(gdk_window));
     }
@@ -855,8 +859,11 @@ void WindowContext::set_cursor_override(GdkCursor* cursor) {
 }
 
 void WindowContext::set_background(float r, float g, float b) {
-    GdkRGBA rgba = {r, g, b, 1.0};
-    gtk_widget_override_background_color(gtk_widget, GTK_STATE_FLAG_NORMAL, &rgba);
+    background_color = {r, g, b, 1.0};
+
+    if (mapped) {
+        gdk_window_set_background_rgba(gdk_window, &background_color);
+    }
 }
 
 GdkAtom WindowContext::get_net_frame_extents_atom() {
@@ -1168,10 +1175,10 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     LOG(SIZE, log_id, "process_configure: send_event=%d, x=%d, y=%d, w=%d, h=%d\n",
             event->send_event, event->x, event->y, event->width, event->height);
 
-    if (mapped && !event->send_event) {
-        // This is used to let the compositor detect the resize
-        gdk_window_invalidate_rect(gdk_window, nullptr, false);
-    }
+//    if (mapped && !event->send_event) {
+//        // This is used to let the compositor detect the resize
+//        gdk_window_invalidate_rect(gdk_window, nullptr, false);
+//    }
 
     int x, y;
     int view_x = 0, view_y = 0;

@@ -264,6 +264,7 @@ private:
     float gravity_y{0};
     BoundsType width_type{BOUNDSTYPE_UNKNOWN};
     BoundsType height_type{BOUNDSTYPE_UNKNOWN};
+    GdkRGBA background_color = {1, 1, 1, 1};
 
     /*
      * sm_grab_window points to WindowContext holding a mouse grab.
