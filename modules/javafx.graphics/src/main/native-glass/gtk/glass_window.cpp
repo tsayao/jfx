@@ -332,7 +332,7 @@ void WindowContext::process_map() {
 
 void WindowContext::process_focus(GdkEventFocus *event) {
     LOG(FOCUS, log_id, "process_focus: %s\n", event->in ? "GAINED" : "LOST");
-    if (!event->in && WindowContext::sm_grab_window == this) {
+    if (!event->in && sm_grab_window == this) {
         ungrab_focus();
     }
 
