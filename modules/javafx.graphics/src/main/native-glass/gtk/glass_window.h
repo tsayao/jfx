@@ -265,6 +265,7 @@ private:
     BoundsType width_type{BOUNDSTYPE_UNKNOWN};
     BoundsType height_type{BOUNDSTYPE_UNKNOWN};
     GdkRGBA background_color = {1, 1, 1, 1};
+    bool is_enabled{true};
 
     /*
      * sm_grab_window points to WindowContext holding a mouse grab.

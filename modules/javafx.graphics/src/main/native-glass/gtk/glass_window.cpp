@@ -294,9 +294,7 @@ XID WindowContext::get_native_window() {
 bool WindowContext::isEnabled() {
     if (!jwindow) return false;
 
-    bool result = (JNI_TRUE == mainEnv->CallBooleanMethod(jwindow, jWindowIsEnabled));
-    LOG_EXCEPTION(mainEnv)
-    return result;
+    return is_enabled;
 }
 
 void WindowContext::notify_focus(int focus_type) {
@@ -381,11 +379,11 @@ void WindowContext::process_destroy() {
         owner->remove_child(this);
     }
 
-    if (WindowContext::sm_mouse_drag_window == this) {
+    if (sm_mouse_drag_window == this) {
         ungrab_mouse_drag_focus();
     }
 
-    if (WindowContext::sm_grab_window == this) {
+    if (sm_grab_window == this) {
         ungrab_focus();
     }
 
@@ -535,7 +533,7 @@ void WindowContext::process_mouse_motion(GdkEventMotion *event) {
             com_sun_glass_events_KeyEvent_MODIFIER_BUTTON_FORWARD);
     jint button = com_sun_glass_events_MouseEvent_BUTTON_NONE;
 
-    if (isDrag && WindowContext::sm_mouse_drag_window == nullptr) {
+    if (isDrag && sm_mouse_drag_window == nullptr) {
         // Upper layers expects from us Windows behavior:
         // all mouse events should be delivered to window where drag begins
         // and no exit/enter event should be reported during this drag.
@@ -1125,7 +1123,7 @@ void WindowContext::notify_view_resize() {
     Size size = view_size.get();
 
     if (!size.is_valid()) {
-        LOG(SIZE, log_id, "notify_view_resize: invalid size: %d, %d\n", size.width, size.h);
+        LOG(SIZE, log_id, "notify_view_resize: invalid size: %d, %d\n", size.width, size.height);
         return;
     }
 
@@ -1448,7 +1446,7 @@ void WindowContext::set_alpha(double alpha) {
 
 void WindowContext::set_enabled(bool enabled) {
     LOG(FOCUS, log_id, "set_enabled: %s\n", enabled ? "true" : "false");
-    // will use isEnabled
+    is_enabled = enabled;
     update_window_constraints();
 }
 
