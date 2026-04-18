@@ -390,8 +390,8 @@ void WindowContext::process_destroy() {
         // WindowContextTop::process_destroy() to call remove_child() (because children
         // is being iterated here) but also prevents gtk_window_set_transient_for from
         // being called - this causes the crash on gnome.
-        gtk_window_set_transient_for((*it)->get_gtk_window(), NULL);
-        (*it)->set_owner(NULL);
+        gtk_window_set_transient_for((*it)->get_gtk_window(), nullptr);
+        (*it)->set_owner(nullptr);
         destroy_and_delete_ctx(*it);
     }
     children.clear();
