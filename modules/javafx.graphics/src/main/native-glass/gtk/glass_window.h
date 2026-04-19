@@ -372,7 +372,7 @@ public:
     void set_modal(bool, const WindowContext* parent = nullptr) const;
     void set_level(int);
     void set_owner(WindowContext*);
-    void update_view_size();
+    void update_view_size() const;
     void enter_fullscreen();
     void exit_fullscreen();
     void show_system_menu(int, int);
@@ -394,7 +394,7 @@ private:
     void notify_window_move() const;
     void notify_view_resize() const;
     void notify_view_move() const;
-    void notify_window_size();
+    void notify_window_size() const;
     void notify_repaint() const;
     void notify_repaint(Rectangle) const;
     static GdkAtom get_net_frame_extents_atom();
@@ -411,7 +411,7 @@ private:
 
     void update_initial_state();
     bool grab_mouse_drag_focus();
-    static void ungrab_mouse_drag_focus();
+    void ungrab_mouse_drag_focus();
 
     void add_child(WindowContext*);
     void remove_child(WindowContext*);
@@ -432,7 +432,7 @@ public:
     void process_mouse_cross(GdkEventCrossing*) override;
 
 private:
-    bool get_window_edge(int, int, GdkWindowEdge*);
+    bool get_window_edge(int, int, GdkWindowEdge*) const;
 };
 
 void destroy_and_delete_ctx(WindowContext* ctx);

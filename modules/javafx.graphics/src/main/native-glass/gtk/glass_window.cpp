@@ -683,7 +683,7 @@ void WindowContext::process_key(GdkEventKey *event) const {
     }
 }
 
-void WindowContext::paint(void* data, jint width, jint height) const {
+void WindowContext::paint(void* data, const jint width, const jint height) const {
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
     gdk_window_begin_paint_region(gdk_window, region);
@@ -717,8 +717,7 @@ void WindowContext::remove_child(WindowContext* child) {
     children.erase(child);
 }
 
-bool WindowContext::is_visible() const
-{
+bool WindowContext::is_visible() const {
     return gtk_widget_get_visible(gtk_widget);
 }
 
@@ -780,8 +779,7 @@ bool WindowContext::grab_focus() {
     return false;
 }
 
-void WindowContext::ungrab_focus() const
-{
+void WindowContext::ungrab_focus() const {
     LOG(FOCUS, log_id, "ungrab_focus\n");
     if (!sm_mouse_drag_window) {
         glass_gdk_mouse_devices_ungrab();
@@ -837,7 +835,7 @@ void WindowContext::set_cursor_override(GdkCursor* cursor) {
     }
 }
 
-void WindowContext::set_background(float r, float g, float b) {
+void WindowContext::set_background(const float r, const float g, const float b) {
     background_color = {r, g, b, 1.0};
 
     if (mapped) {
@@ -995,8 +993,7 @@ bool WindowContext::get_frame_extents_property(int *top, int *left, int *bottom,
     return false;
 }
 
-void WindowContext::set_cached_extents(Rectangle ex) const
-{
+void WindowContext::set_cached_extents(Rectangle ex) const {
     if (window_type == UTILITY) {
         utility_extents = ex;
     } else {
@@ -1085,7 +1082,7 @@ void WindowContext::process_state(const GdkEventWindowState *event) {
     }
 }
 
-void WindowContext::notify_fullscreen(bool enter) const {
+void WindowContext::notify_fullscreen(const bool enter) const {
     LOG(STATE, log_id, "notify_fullscreen: %s\n", enter ? "ENTER" : "EXIT");
 
     if (jview) {
@@ -1129,7 +1126,7 @@ void WindowContext::notify_view_resize() const {
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-void WindowContext::notify_window_size() {
+void WindowContext::notify_window_size() const {
     if (is_iconified()) {
         notify_window_resize(com_sun_glass_events_WindowEvent_MINIMIZE);
     } else if (is_maximized()) {
@@ -1233,8 +1230,8 @@ void WindowContext::update_window_constraints() {
         hints.max_height = std::clamp(max.height - extents.height, 1, MAX_WINDOW_SIZE);
     } else {
         Size size = view_size.get();
-        int w = std::clamp(size.width, 1, MAX_WINDOW_SIZE);
-        int h = std::clamp(size.height, 1, MAX_WINDOW_SIZE);
+        const int w = std::clamp(size.width, 1, MAX_WINDOW_SIZE);
+        const int h = std::clamp(size.height, 1, MAX_WINDOW_SIZE);
 
         hints.min_width = w;
         hints.min_height = h;
@@ -1356,7 +1353,7 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
     move_resize(x, y, xSet, ySet, newW, newH);
 }
 
-void WindowContext::iconify(bool state) {
+void WindowContext::iconify(const bool state) {
     if (state) {
         add_wmf(GDK_FUNC_MINIMIZE);
         gtk_window_iconify(GTK_WINDOW(gtk_widget));
@@ -1365,7 +1362,7 @@ void WindowContext::iconify(bool state) {
     }
 }
 
-void WindowContext::maximize(bool state) {
+void WindowContext::maximize(const bool state) {
     if (state) {
         add_wmf(GDK_FUNC_MAXIMIZE);
         gtk_window_maximize(GTK_WINDOW(gtk_widget));
@@ -1374,7 +1371,7 @@ void WindowContext::maximize(bool state) {
     }
 }
 
-void WindowContext::set_minimized(bool state) {
+void WindowContext::set_minimized(const bool state) {
     LOG(STATE, log_id, "set_minimized: %s\n", state ? "true" : "false");
     if (mapped) {
         iconify(state);
@@ -1385,7 +1382,7 @@ void WindowContext::set_minimized(bool state) {
     }
 }
 
-void WindowContext::set_maximized(bool state) {
+void WindowContext::set_maximized(const bool state) {
     LOG(STATE, log_id, "set_maximized: %s\n", state ? "true" : "false");
     if (mapped) {
         maximize(state);
@@ -1427,7 +1424,7 @@ void WindowContext::request_focus() {
     }
 }
 
-void WindowContext::set_focusable(bool focusable) const {
+void WindowContext::set_focusable(const bool focusable) const {
     LOG(FOCUS, log_id, "set_focusable %s\n", focusable ? "true" : "false");
     gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), (focusable) ? true : false);
 }
@@ -1437,27 +1434,27 @@ void WindowContext::set_title(const char* title) {
     log_id = title;
 }
 
-void WindowContext::set_alpha(double alpha) const {
+void WindowContext::set_alpha(const double alpha) const {
     gtk_widget_set_opacity(gtk_widget, alpha);
 }
 
-void WindowContext::set_enabled(bool enabled) {
+void WindowContext::set_enabled(const bool enabled) {
     LOG(FOCUS, log_id, "set_enabled: %s\n", enabled ? "true" : "false");
     is_enabled = enabled;
     update_window_constraints();
 }
 
-void WindowContext::set_minimum_size(int w, int h) {
+void WindowContext::set_minimum_size(const int w, const int h) {
     LOG(SIZE, log_id, "set_minimum_size: w=%d, h=%d\n", w, h);
     minimum_size.set({w, h});
 }
 
-void WindowContext::set_system_minimum_size(int w, int h) {
+void WindowContext::set_system_minimum_size(const int w, const int h) {
     LOG(SIZE, log_id, "set_system_minimum_size: w=%d, h=%d\n", w, h);
     sys_min_size.set({w, h});
 }
 
-void WindowContext::set_maximum_size(int w, int h) {
+void WindowContext::set_maximum_size(const int w, const int h) {
     LOG(SIZE, log_id, "set_maximum_size: w=%d, h=%d\n", w, h);
     int maxw = (w == -1) ? G_MAXINT : w;
     int maxh = (h == -1) ? G_MAXINT : h;
@@ -1486,7 +1483,7 @@ void WindowContext::to_back() const {
     }
 }
 
-void WindowContext::set_modal(bool modal, const WindowContext* parent) const {
+void WindowContext::set_modal(const bool modal, const WindowContext* parent) const {
     if (modal) {
         if (parent) {
             gtk_window_set_transient_for(GTK_WINDOW(gtk_widget), parent->get_gtk_window());
@@ -1541,7 +1538,8 @@ void WindowContext::update_window_size() {
     }
 }
 
-void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height) {
+void WindowContext::move_resize(const int x, const int y, const bool xSet, const bool ySet,
+                                const int width, const int height) {
     LOG(SIZE, log_id, "move_resize: x=%d, y=%d, w=%d, h=%d\n", x, y, width, height);
     Size size = view_size.get();
     int newW = (width > 0) ? width : size.width;
@@ -1585,8 +1583,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 
     Point loc = window_location.get();
-    int newX = (xSet) ? x : loc.x;
-    int newY = (ySet) ? y : loc.y;
+    const int newX = (xSet) ? x : loc.x;
+    const int newY = (ySet) ? y : loc.y;
 
     if (!mapped) {
         // When not mapped, set properties directly instead of waiting for process_configure.
@@ -1630,7 +1628,7 @@ void WindowContext::ensure_window_geometry() {
     move_resize(loc.x, loc.y, loc_changed, loc_changed, w, h);
 }
 
-void WindowContext::add_wmf(GdkWMFunction wmf) {
+void WindowContext::add_wmf(const GdkWMFunction wmf) {
     if (initial_wmf & wmf) return;
 
     current_wmf = static_cast<GdkWMFunction>(static_cast<int>(current_wmf) | static_cast<int>(wmf));
@@ -1640,7 +1638,7 @@ void WindowContext::add_wmf(GdkWMFunction wmf) {
     }
 }
 
-void WindowContext::remove_wmf(GdkWMFunction wmf) {
+void WindowContext::remove_wmf(const GdkWMFunction wmf) {
     if (initial_wmf & wmf) return;
 
      current_wmf = static_cast<GdkWMFunction>(static_cast<int>(current_wmf) & ~static_cast<int>(wmf));
@@ -1650,7 +1648,7 @@ void WindowContext::remove_wmf(GdkWMFunction wmf) {
     }
 }
 
-void WindowContext::notify_on_top(bool top) {
+void WindowContext::notify_on_top(const bool top) {
     // Do not report effective (i.e. native) values to the FX, only if the user sets it manually
     if (top != effective_on_top() && jwindow) {
         if (on_top_inherited() && !top) {
@@ -1667,7 +1665,7 @@ void WindowContext::notify_on_top(bool top) {
     }
 }
 
-void WindowContext::set_level(int level) {
+void WindowContext::set_level(const int level) {
     if (level == com_sun_glass_ui_Window_Level_NORMAL) {
         on_top = false;
     } else if (level == com_sun_glass_ui_Window_Level_FLOATING
@@ -1685,12 +1683,12 @@ void WindowContext::set_owner(WindowContext * owner_ctx) {
     owner = owner_ctx;
 }
 
-void WindowContext::update_view_size() {
+void WindowContext::update_view_size() const {
     LOG(SIZE, log_id, "update_view_size\n");
     notify_view_resize();
 }
 
-void WindowContext::show_system_menu(int x, int y) {
+void WindowContext::show_system_menu(const int x, const int y) {
     GdkDisplay* display = gdk_display_get_default();
     if (!display) {
         return;
@@ -1911,7 +1909,7 @@ void WindowContextExtended::process_mouse_motion(GdkEventMotion* event) {
  * Determines the GdkWindowEdge at the specified coordinate; returns true if the coordinate
  * identifies a window edge, false otherwise.
  */
-bool WindowContextExtended::get_window_edge(int x, int y, GdkWindowEdge* window_edge) {
+bool WindowContextExtended::get_window_edge(const int x, const int y, GdkWindowEdge* window_edge) const {
     GdkWindowEdge edge;
     Size size = get_view_size();
 
