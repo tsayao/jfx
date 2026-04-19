@@ -1600,11 +1600,6 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         update_window_constraints();
     }
 
-    if (!size.is_valid()) {
-        LOG(SIZE, log_id, "gtk_window_resize: size is not valid yet: %d, %d\n", size.width, size.height);
-        return;
-    }
-
     // The compositor/window manager may adjust the requested size or position.
     // For example, a request to place the window at (0,0) can be offset to account
     // for desktop panels or reserved areas. Because of this, we cannot rely on
@@ -1614,11 +1609,11 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
 
     if (is_visible()) {
-        LOG(SIZE, log_id, "gtk_window_resize: %d, %d\n", size.width, size.height);
-        gtk_window_resize(GTK_WINDOW(gtk_widget), size.width, size.height);
+        LOG(SIZE, log_id, "gtk_window_resize: %d, %d\n", boundsW, boundsH);
+        gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     } else {
-        LOG(SIZE, log_id, "gtk_window_set_default_size: %d, %d\n", size.width, size.height);
-        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), size.width, size.height);
+        LOG(SIZE, log_id, "gtk_window_set_default_size: %d, %d\n", boundsW, boundsH);
+        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     }
 }
 
