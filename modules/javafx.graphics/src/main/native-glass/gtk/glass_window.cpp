@@ -320,6 +320,7 @@ void WindowContext::process_map() {
 
     LOG(LIFECYCLE, log_id, "process_map -------------------------------------------\n");
     mapped = true;
+    ensure_window_geometry();
 
     if (initial_state_mask != 0) {
         update_initial_state();
@@ -1286,7 +1287,6 @@ void WindowContext::set_visible(bool visible) {
     LOG(LIFECYCLE, log_id, "set_visible: %s\n", visible ? "true" : "false");
 
     if (visible) {
-        ensure_window_geometry();
         gtk_widget_show(gtk_widget);
 
         if (jwindow && isEnabled()) {
