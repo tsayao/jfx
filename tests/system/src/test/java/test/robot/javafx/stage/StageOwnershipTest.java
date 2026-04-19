@@ -177,10 +177,7 @@ class StageOwnershipTest extends VisualTestBase {
     }
 
     private void assertColorEquals(Color expected, Stage stage) {
-        int x = (int) (stage.getX() + getStage().getScene().getX() + X_DELTA);
-        int y = (int) (stage.getY() + getStage().getScene().getY() + Y_DELTA);
-
-        Color color = getColor(x, y);
+        Color color = getColor((int) stage.getX() + X_DELTA, (int) stage.getY() + Y_DELTA);
         assertColorEquals(expected, color, TOLERANCE);
     }
 
@@ -344,6 +341,7 @@ class StageOwnershipTest extends VisualTestBase {
         });
 
         showStageAndWait(stage0, stage1);
+
         runAndWait(() -> assertColorEquals(COLOR1, stage1));
         runAndWait(stage0::toFront);
         Util.sleep(FOCUS_DELAY);
