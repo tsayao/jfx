@@ -1457,7 +1457,7 @@ void WindowContext::set_enabled(bool enabled) {
     LOG(FOCUS, log_id, "set_enabled: %s\n", enabled ? "true" : "false");
     is_enabled = enabled;
 
-    gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), enabled);
+    // gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), enabled);
 
     if (frame_type == TITLED && (initial_wmf & GDK_FUNC_MINIMIZE)) {
         if (!enabled) {
