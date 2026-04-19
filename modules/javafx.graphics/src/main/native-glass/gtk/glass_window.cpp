@@ -163,9 +163,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
     gtk_window_set_title(GTK_WINDOW(gtk_widget), "");
 
-    if (frame_type != TITLED) {
-        gtk_window_set_decorated(GTK_WINDOW(gtk_widget), FALSE);
-    }
+    gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
 
     update_window_constraints();
 
@@ -220,10 +218,9 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     load_cached_extents();
 }
 
-GdkVisual* WindowContext::find_best_visual() const
-{
+GdkVisual* WindowContext::find_best_visual() const {
     // This comes from prism-es2
-    static glong xvisualID = (glong)mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
+    static glong xvisualID = mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
     static GdkVisual *prismVisual = (xvisualID != 0)
                 ? gdk_x11_screen_lookup_visual(gdk_screen_get_default(), xvisualID)
                 : nullptr;
@@ -282,23 +279,20 @@ void WindowContext::process_realize() {
     }
 }
 
-// Returns de XWindow ID to be used in rendering
-XID WindowContext::get_native_window() const
-{
+// Returns de XWindow ID to be used in prism es2
+XID WindowContext::get_native_window() const {
     if (!gtk_widget_get_realized(gtk_widget)) return 0;
 
     return GDK_WINDOW_XID(gdk_window);
 }
 
-bool WindowContext::isEnabled() const
-{
+bool WindowContext::isEnabled() const {
     if (!jwindow) return false;
 
     return is_enabled;
 }
 
-void WindowContext::notify_focus(int focus_type) const
-{
+void WindowContext::notify_focus(int focus_type) const {
     if (jwindow) {
         LOG(FOCUS, log_id, "notify_focus: %s\n",
                 focus_type == com_sun_glass_events_WindowEvent_FOCUS_GAINED ? "FOCUS_GAINED" : "FOCUS_LOST");
@@ -308,8 +302,7 @@ void WindowContext::notify_focus(int focus_type) const
     }
 }
 
-void WindowContext::notify_focus_disabled() const
-{
+void WindowContext::notify_focus_disabled() const {
     if (jwindow) {
         LOG(FOCUS, log_id, "notify_focus_disabled\n");
         mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusDisabled);
@@ -317,7 +310,7 @@ void WindowContext::notify_focus_disabled() const
     }
 }
 
-void WindowContext::process_expose(GdkEventExpose* event) {
+void WindowContext::process_expose(const GdkEventExpose* event) {
     GdkRectangle r = event->area;
     notify_repaint({ r.x, r.y, r.width, r.height });
 }
@@ -334,7 +327,7 @@ void WindowContext::process_map() {
     }
 }
 
-void WindowContext::process_focus(GdkEventFocus *event) {
+void WindowContext::process_focus(const GdkEventFocus *event) {
     LOG(FOCUS, log_id, "process_focus: %s\n", event->in ? "GAINED" : "LOST");
     if (!event->in && sm_grab_window == this) {
         ungrab_focus();
@@ -366,13 +359,11 @@ void WindowContext::decrement_events_counter() {
     --events_processing_cnt;
 }
 
-size_t WindowContext::get_events_count() const
-{
+size_t WindowContext::get_events_count() const {
     return events_processing_cnt;
 }
 
-bool WindowContext::is_dead() const
-{
+bool WindowContext::is_dead() const {
     return can_be_deleted;
 }
 
@@ -420,7 +411,7 @@ void WindowContext::process_destroy() {
     can_be_deleted = true;
 }
 
-void WindowContext::process_delete() {
+void WindowContext::process_delete() const {
     LOG(LIFECYCLE, log_id, "process_delete\n");
 
     if (jwindow && isEnabled()) {
@@ -429,13 +420,12 @@ void WindowContext::process_delete() {
     }
 }
 
-void WindowContext::notify_repaint() {
-    Size size = view_size.get();
-    notify_repaint({ 0, 0, size.width, size.height });
+void WindowContext::notify_repaint() const {
+    auto [width, height] = view_size.get();
+    notify_repaint({ 0, 0, width, height });
 }
 
-void WindowContext::notify_repaint(Rectangle rect) const
-{
+void WindowContext::notify_repaint(Rectangle rect) const {
     if (!jview) return;
 
     mainEnv->CallVoidMethod(jview, jViewNotifyRepaint, rect.x, rect.y, rect.width, rect.height);
@@ -572,7 +562,7 @@ void WindowContext::process_mouse_motion(GdkEventMotion *event) {
     }
 }
 
-void WindowContext::process_mouse_scroll(GdkEventScroll *event) const {
+void WindowContext::process_mouse_scroll(const GdkEventScroll *event) const {
     LOG(INPUT, log_id, "mouse_scroll: direction=%d at (%d,%d)\n",
               event->direction, (int)event->x, (int)event->y);
     jdouble dx = 0;
@@ -642,8 +632,7 @@ void WindowContext::process_mouse_cross(GdkEventCrossing *event) {
     }
 }
 
-void WindowContext::process_key(GdkEventKey *event) const
-{
+void WindowContext::process_key(GdkEventKey *event) const {
     bool press = event->type == GDK_KEY_PRESS;
     LOG(INPUT, log_id, "key: %s keyval=0x%x state=0x%x\n",
               press ? "PRESS" : "RELEASE", event->keyval, event->state);
@@ -694,13 +683,12 @@ void WindowContext::process_key(GdkEventKey *event) const
     }
 }
 
-void WindowContext::paint(void* data, jint width, jint height) const
-{
+void WindowContext::paint(void* data, jint width, jint height) const {
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
+    gdk_window_begin_paint_region(gdk_window, region);
 
-    GdkDrawingContext *drawing_context = gdk_window_begin_draw_frame(gdk_window, region);
-    cairo_t* context = gdk_drawing_context_get_cairo_context(drawing_context);
+    cairo_t* context = gdk_cairo_create(gdk_window);
 
     cairo_surface_t* cairo_surface =
         cairo_image_surface_create_for_data(
@@ -712,9 +700,11 @@ void WindowContext::paint(void* data, jint width, jint height) const
     cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
     cairo_paint(context);
 
-    cairo_surface_destroy(cairo_surface);
-    gdk_window_end_draw_frame(gdk_window, drawing_context);
+    gdk_window_end_paint(gdk_window);
     cairo_region_destroy(region);
+
+    cairo_destroy(context);
+    cairo_surface_destroy(cairo_surface);
 }
 
 void WindowContext::add_child(WindowContext* child) {
@@ -732,7 +722,7 @@ bool WindowContext::is_visible() const
     return gtk_widget_get_visible(gtk_widget);
 }
 
-bool WindowContext::set_view(jobject view) {
+bool WindowContext::set_view(const jobject view) {
     LOG(LIFECYCLE, log_id, "set_view: %s\n", view ? "attach" : "detach");
     if (jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyMouse,
@@ -870,8 +860,7 @@ void WindowContext::request_frame_extents() const
     static Atom rfeAtom = XInternAtom(display, "_NET_REQUEST_FRAME_EXTENTS", False);
 
     if (rfeAtom != None) {
-        XClientMessageEvent clientMessage;
-        memset(&clientMessage, 0, sizeof(clientMessage));
+        XClientMessageEvent clientMessage = {};
 
         clientMessage.type = ClientMessage;
         clientMessage.window = GDK_WINDOW_XID(gdk_window);
@@ -880,7 +869,7 @@ void WindowContext::request_frame_extents() const
 
         XSendEvent(display, XDefaultRootWindow(display), False,
                    SubstructureRedirectMask | SubstructureNotifyMask,
-                   (XEvent *) &clientMessage);
+                   reinterpret_cast<XEvent*>(&clientMessage));
         XFlush(display);
     }
 }
@@ -1028,13 +1017,13 @@ void WindowContext::load_cached_extents() {
     }
 }
 
-void WindowContext::process_property_notify(GdkEventProperty *event) {
+void WindowContext::process_property_notify(const GdkEventProperty *event) {
     if (event->atom == get_net_frame_extents_atom()) {
         update_frame_extents();
     }
 }
 
-void WindowContext::process_state(GdkEventWindowState *event) {
+void WindowContext::process_state(const GdkEventWindowState *event) {
     if (!(event->changed_mask & (GDK_WINDOW_STATE_ICONIFIED
                                 | GDK_WINDOW_STATE_MAXIMIZED
                                 | GDK_WINDOW_STATE_FULLSCREEN
@@ -1096,8 +1085,7 @@ void WindowContext::process_state(GdkEventWindowState *event) {
     }
 }
 
-void WindowContext::notify_fullscreen(bool enter) const
-{
+void WindowContext::notify_fullscreen(bool enter) const {
     LOG(STATE, log_id, "notify_fullscreen: %s\n", enter ? "ENTER" : "EXIT");
 
     if (jview) {
@@ -1108,8 +1096,7 @@ void WindowContext::notify_fullscreen(bool enter) const
     }
 }
 
-void WindowContext::notify_window_resize(int state) const
-{
+void WindowContext::notify_window_resize(int state) const {
     if (!jwindow) return;
 
     Size size = window_size.get();
@@ -1118,8 +1105,7 @@ void WindowContext::notify_window_resize(int state) const
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-void WindowContext::notify_window_move() const
-{
+void WindowContext::notify_window_move() const {
     if (!jwindow) return;
 
     Point point = window_location.get();
@@ -1128,8 +1114,7 @@ void WindowContext::notify_window_move() const
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-void WindowContext::notify_view_resize() const
-{
+void WindowContext::notify_view_resize() const {
     if (!jview) return;
 
     Size size = view_size.get();
@@ -1154,8 +1139,7 @@ void WindowContext::notify_window_size() {
     }
 }
 
-void WindowContext::notify_view_move() const
-{
+void WindowContext::notify_view_move() const {
     if (!jview) return;
 
     LOG(POSITION, log_id, "notify_view_move\n");
@@ -1163,7 +1147,7 @@ void WindowContext::notify_view_move() const
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-void WindowContext::process_configure(GdkEventConfigure *event) {
+void WindowContext::process_configure(const GdkEventConfigure *event) {
     LOG(SIZE, log_id, "process_configure: send_event=%d, x=%d, y=%d, w=%d, h=%d\n",
             event->send_event, event->x, event->y, event->width, event->height);
 
@@ -1270,29 +1254,25 @@ void WindowContext::set_resizable(bool res) {
     resizable.set(res);
 }
 
-bool WindowContext::is_resizable() const
-{
+bool WindowContext::is_resizable() const {
     return resizable.get();
 }
 
-bool WindowContext::is_maximized() const
-{
+bool WindowContext::is_maximized() const {
     if (GDK_IS_WINDOW(gdk_window)) {
         return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_MAXIMIZED;
     }
     return initial_state_mask & GDK_WINDOW_STATE_MAXIMIZED;
 }
 
-bool WindowContext::is_fullscreen() const
-{
+bool WindowContext::is_fullscreen() const {
     if (GDK_IS_WINDOW(gdk_window)) {
         return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_FULLSCREEN;
     }
     return initial_state_mask & GDK_WINDOW_STATE_FULLSCREEN;
 }
 
-bool WindowContext::is_iconified() const
-{
+bool WindowContext::is_iconified() const {
     if (GDK_IS_WINDOW(gdk_window)) {
         return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_ICONIFIED;
     }
@@ -1447,8 +1427,7 @@ void WindowContext::request_focus() {
     }
 }
 
-void WindowContext::set_focusable(bool focusable) const
-{
+void WindowContext::set_focusable(bool focusable) const {
     LOG(FOCUS, log_id, "set_focusable %s\n", focusable ? "true" : "false");
     gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), (focusable) ? true : false);
 }
@@ -1458,8 +1437,7 @@ void WindowContext::set_title(const char* title) {
     log_id = title;
 }
 
-void WindowContext::set_alpha(double alpha) const
-{
+void WindowContext::set_alpha(double alpha) const {
     gtk_widget_set_opacity(gtk_widget, alpha);
 }
 
@@ -1487,23 +1465,20 @@ void WindowContext::set_maximum_size(int w, int h) {
     maximum_size.set({maxw, maxh});
 }
 
-void WindowContext::set_icon(GdkPixbuf* icon) const
-{
+void WindowContext::set_icon(GdkPixbuf* icon) const {
     if (icon == nullptr || !GDK_IS_PIXBUF(icon)) return;
 
     gtk_window_set_icon(GTK_WINDOW(gtk_widget), icon);
 }
 
-void WindowContext::to_front() const
-{
+void WindowContext::to_front() const {
     LOG(STATE, log_id, "to_front\n");
     if (GDK_IS_WINDOW(gdk_window)) {
         gdk_window_raise(gdk_window);
     }
 }
 
-void WindowContext::to_back() const
-{
+void WindowContext::to_back() const {
     LOG(STATE, log_id, "to_back\n");
 
     if (GDK_IS_WINDOW(gdk_window)) {
@@ -1511,8 +1486,7 @@ void WindowContext::to_back() const
     }
 }
 
-void WindowContext::set_modal(bool modal, WindowContext* parent) const
-{
+void WindowContext::set_modal(bool modal, const WindowContext* parent) const {
     if (modal) {
         if (parent) {
             gtk_window_set_transient_for(GTK_WINDOW(gtk_widget), parent->get_gtk_window());
@@ -1529,8 +1503,7 @@ void WindowContext::update_ontop_tree(bool on_top) {
     }
 }
 
-bool WindowContext::on_top_inherited() const
-{
+bool WindowContext::on_top_inherited() const {
     WindowContext* o = owner;
     while (o) {
         WindowContext* topO = o;
@@ -1543,8 +1516,7 @@ bool WindowContext::on_top_inherited() const
     return false;
 }
 
-bool WindowContext::effective_on_top() const
-{
+bool WindowContext::effective_on_top() const {
     if (owner) {
         WindowContext* topO = owner;
         return (topO && topO->effective_on_top()) || on_top;
@@ -1733,8 +1705,8 @@ void WindowContext::show_system_menu(int x, int y) {
     gint rx = 0, ry = 0;
     gdk_window_get_root_coords(gdk_window, x, y, &rx, &ry);
 
-    GdkEvent* event = (GdkEvent*)gdk_event_new(GDK_BUTTON_PRESS);
-    GdkEventButton* buttonEvent = (GdkEventButton*)event;
+    GdkEvent* event = gdk_event_new(GDK_BUTTON_PRESS);
+    GdkEventButton* buttonEvent = reinterpret_cast<GdkEventButton*>(event);
     buttonEvent->x_root = rx;
     buttonEvent->y_root = ry;
     buttonEvent->window = g_object_ref(gdk_window);
@@ -1744,13 +1716,11 @@ void WindowContext::show_system_menu(int x, int y) {
     gdk_event_free(event);
 }
 
-Size WindowContext::get_view_size() const
-{
+Size WindowContext::get_view_size() const {
     return view_size.get();
 }
 
-Point WindowContext::get_view_position() const
-{
+Point WindowContext::get_view_position() const {
     return view_position.get();
 }
 

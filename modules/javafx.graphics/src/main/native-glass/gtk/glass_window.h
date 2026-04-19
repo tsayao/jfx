@@ -37,11 +37,9 @@
 #include <jni.h>
 #include <set>
 #include <string>
-#include <vector>
 #include <optional>
 
 #include "DeletedMemDebug.h"
-#include "glass_view.h"
 #include "glass_general.h"
 
 #include <iostream>
@@ -204,20 +202,22 @@ struct EdgeCursors {
     }
 };
 
-static const guint MOUSE_BUTTONS_MASK = (guint) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK);
+static const guint MOUSE_BUTTONS_MASK = GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK;
 
 
 class WindowContext;
 class WindowContextExtended;
 
 class WindowContext: public DeletedMemDebug<0xCC> {
-private:
     static std::optional<Rectangle> normal_extents;
     static std::optional<Rectangle> utility_extents;
 
     struct _ImContext {
-        _ImContext(): ctx(nullptr), enabled(false), on_preedit(false),
-                     send_keypress(false), on_key_event(false) {}
+        _ImContext() : ctx(nullptr), enabled(false), on_preedit(false),
+                       send_keypress(false), on_key_event(false), in_preedit_window(false)
+        {
+        }
+
         GtkIMContext *ctx;
         bool enabled;
         bool on_preedit;
@@ -229,7 +229,7 @@ private:
     size_t events_processing_cnt{};
     std::set<WindowContext*> children;
 
-    struct WindowContext *owner;
+    WindowContext *owner;
     jlong screen;
 
     bool on_top{false};
@@ -337,17 +337,17 @@ public:
 
     void process_map();
     void process_realize();
-    void process_expose(GdkEventExpose*);
-    void process_focus(GdkEventFocus*);
+    void process_expose(const GdkEventExpose*);
+    void process_focus(const GdkEventFocus*);
     virtual void process_mouse_button(GdkEventButton*, bool synthesized = false);
     virtual void process_mouse_motion(GdkEventMotion*);
-    void process_mouse_scroll(GdkEventScroll*) const;
+    void process_mouse_scroll(const GdkEventScroll*) const;
     virtual void process_mouse_cross(GdkEventCrossing*);
     void process_key(GdkEventKey*) const;
-    void process_state(GdkEventWindowState*);
-    void process_property_notify(GdkEventProperty*);
-    void process_configure(GdkEventConfigure*);
-    void process_delete();
+    void process_state(const GdkEventWindowState*);
+    void process_property_notify(const GdkEventProperty*);
+    void process_configure(const GdkEventConfigure*);
+    void process_delete() const;
     void process_destroy();
 
     void increment_events_counter();
@@ -369,7 +369,7 @@ public:
     void set_icon(GdkPixbuf*) const;
     void to_front() const;
     void to_back() const;
-    void set_modal(bool, WindowContext* parent = nullptr) const;
+    void set_modal(bool, const WindowContext* parent = nullptr) const;
     void set_level(int);
     void set_owner(WindowContext*);
     void update_view_size();
@@ -395,7 +395,7 @@ private:
     void notify_view_resize() const;
     void notify_view_move() const;
     void notify_window_size();
-    void notify_repaint();
+    void notify_repaint() const;
     void notify_repaint(Rectangle) const;
     static GdkAtom get_net_frame_extents_atom();
     void request_frame_extents() const;
@@ -411,7 +411,7 @@ private:
 
     void update_initial_state();
     bool grab_mouse_drag_focus();
-    void ungrab_mouse_drag_focus();
+    static void ungrab_mouse_drag_focus();
 
     void add_child(WindowContext*);
     void remove_child(WindowContext*);
