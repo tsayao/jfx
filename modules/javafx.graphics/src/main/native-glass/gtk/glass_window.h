@@ -303,10 +303,10 @@ public:
     WindowFrameType get_frame_type() const { return frame_type; }
     WindowType get_window_type() const { return window_type; }
 
-    Size get_view_size();
-    Point get_view_position();
+    Size get_view_size() const;
+    Point get_view_position() const;
 
-    bool isEnabled();
+    bool isEnabled() const;
     bool hasIME();
     bool filterIME(GdkEvent*);
     void enableOrResetIME();
@@ -315,21 +315,21 @@ public:
     void updateCaretPos();
     void disableIME();
 
-    void paint(void*, jint, jint);
-    GdkWindow *get_gdk_window();
-    GtkWindow *get_gtk_window();
-    XID get_native_window();
+    void paint(void*, jint, jint) const;
+    GdkWindow *get_gdk_window() const;
+    GtkWindow *get_gtk_window() const;
+    XID get_native_window() const;
 
     void set_visible(bool);
-    bool is_visible();
-    bool is_iconified();
-    bool is_resizable();
-    bool is_maximized();
-    bool is_fullscreen();
-    bool is_floating();
+    bool is_visible() const;
+    bool is_iconified() const;
+    bool is_resizable() const;
+    bool is_maximized() const;
+    bool is_fullscreen() const;
+    bool is_floating() const;
     bool set_view(jobject);
     bool grab_focus();
-    void ungrab_focus();
+    void ungrab_focus() const;
     static void ungrab_if_grabbed();
     void set_cursor(GdkCursor*);
     void set_cursor_override(GdkCursor*);
@@ -341,9 +341,9 @@ public:
     void process_focus(GdkEventFocus*);
     virtual void process_mouse_button(GdkEventButton*, bool synthesized = false);
     virtual void process_mouse_motion(GdkEventMotion*);
-    void process_mouse_scroll(GdkEventScroll*);
+    void process_mouse_scroll(GdkEventScroll*) const;
     virtual void process_mouse_cross(GdkEventCrossing*);
-    void process_key(GdkEventKey*);
+    void process_key(GdkEventKey*) const;
     void process_state(GdkEventWindowState*);
     void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
@@ -352,24 +352,24 @@ public:
 
     void increment_events_counter();
     void decrement_events_counter();
-    size_t get_events_count();
-    bool is_dead();
+    size_t get_events_count() const;
+    bool is_dead() const;
 
     void set_minimized(bool);
     void set_maximized(bool);
     void set_bounds(int, int, bool, bool, int, int, int, int, float, float);
     void set_resizable(bool);
     void request_focus();
-    void set_focusable(bool);
+    void set_focusable(bool) const;
     void set_title(const char*);
-    void set_alpha(double);
+    void set_alpha(double) const;
     void set_enabled(bool);
     void set_minimum_size(int, int);
     void set_maximum_size(int, int);
-    void set_icon(GdkPixbuf*);
-    void to_front();
-    void to_back();
-    void set_modal(bool, WindowContext* parent = nullptr);
+    void set_icon(GdkPixbuf*) const;
+    void to_front() const;
+    void to_back() const;
+    void set_modal(bool, WindowContext* parent = nullptr) const;
     void set_level(int);
     void set_owner(WindowContext*);
     void update_view_size();
@@ -381,7 +381,7 @@ public:
     virtual ~WindowContext();
 
 private:
-    GdkVisual* find_best_visual();
+    GdkVisual* find_best_visual() const;
     void maximize(bool);
     void iconify(bool);
     void update_window_size();
@@ -389,24 +389,24 @@ private:
     void add_wmf(GdkWMFunction);
     void remove_wmf(GdkWMFunction);
     void notify_on_top(bool);
-    void notify_fullscreen(bool);
-    void notify_window_resize(int);
-    void notify_window_move();
-    void notify_view_resize();
-    void notify_view_move();
+    void notify_fullscreen(bool) const;
+    void notify_window_resize(int) const;
+    void notify_window_move() const;
+    void notify_view_resize() const;
+    void notify_view_move() const;
     void notify_window_size();
     void notify_repaint();
-    void notify_repaint(Rectangle);
-    GdkAtom get_net_frame_extents_atom();
-    void request_frame_extents();
+    void notify_repaint(Rectangle) const;
+    static GdkAtom get_net_frame_extents_atom();
+    void request_frame_extents() const;
     void update_frame_extents();
-    void set_cached_extents(Rectangle);
+    void set_cached_extents(Rectangle) const;
     void load_cached_extents();
-    bool get_frame_extents_property(int *, int *, int *, int *);
+    bool get_frame_extents_property(int *, int *, int *, int *) const;
     void update_window_constraints();
     void update_ontop_tree(bool);
-    bool on_top_inherited();
-    bool effective_on_top();
+    bool on_top_inherited() const;
+    bool effective_on_top() const;
     void ensure_window_geometry();
 
     void update_initial_state();
@@ -415,8 +415,8 @@ private:
 
     void add_child(WindowContext*);
     void remove_child(WindowContext*);
-    void notify_focus(int);
-    void notify_focus_disabled();
+    void notify_focus(int) const;
+    void notify_focus_disabled() const;
 };
 
 class WindowContextExtended : public WindowContext {
