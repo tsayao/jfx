@@ -40,7 +40,6 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 
-#include <string.h>
 #include <algorithm>
 #include <optional>
 
@@ -978,6 +977,7 @@ void WindowContext::update_frame_extents() {
     gravity_x = 0;
     gravity_y = 0;
 
+    window_extents.set(new_extents);
     move_resize(x, y, true, true, newW, newH);
 }
 
