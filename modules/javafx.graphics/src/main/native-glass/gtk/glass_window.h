@@ -259,6 +259,10 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     Observable<Size> window_size = Size{-1, -1};
     Observable<Point> window_location = Point{-1, -1};
     Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
+
+    Observable<Size> gtk_window_size = Size{-1, -1};
+    Observable<Point> gtk_window_position = Point{-1, -1};
+
     bool needs_to_update_frame_extents{false};
     float gravity_x{0};
     float gravity_y{0};

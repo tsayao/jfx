@@ -164,7 +164,22 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
 
-    update_window_constraints();
+    // Call gtk_window_move only if changed
+    gtk_window_position.setOnChange([this](const Point& point) {
+       LOG(POSITION, log_id, "gtk_window_move: %d, %d\n", point.x, point.y);
+       gtk_window_move(GTK_WINDOW(gtk_widget), point.x, point.y);
+    });
+
+    // Call gtk_window_resize only if changed
+    gtk_window_size.setOnChange([this](const Size& size){
+        if (is_visible()) {
+            LOG(SIZE, log_id, "gtk_window_resize: %d, %d\n", size.width, size.height);
+            gtk_window_resize(GTK_WINDOW(gtk_widget), size.width, size.height);
+        } else {
+            LOG(SIZE, log_id, "gtk_window_set_default_size: %d, %d\n", size.width, size.height);
+            gtk_window_set_default_size(GTK_WINDOW(gtk_widget), size.width, size.height);
+        }
+    });
 
     window_location.setOnChange([this](const Point& point) {
         LOG(POSITION, log_id, "onChange: window_location x=%d, y=%d\n", point.x, point.y);
@@ -184,14 +199,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     view_size.setOnChange([this](const Size& size) {
         LOG(SIZE, log_id, "onChange: view_size w=%d, h=%d\n", size.width, size.height);
         notify_view_resize();
-        update_window_constraints();
-    });
-
-    window_extents.setOnChange([this](const Rectangle& rect) {
-        LOG(SIZE, log_id, "onChange: window_extents x=%d, y=%d, w=%d, h=%d\n",
-                rect.x, rect.y, rect.width, rect.height);
-        update_window_constraints();
-        update_window_size();
     });
 
     resizable.setOnChange([this](const bool& resizable) {
@@ -959,9 +966,9 @@ void WindowContext::update_frame_extents() {
     gravity_x = 0;
     gravity_y = 0;
 
-    window_extents.set(new_extents);
-    view_size.set({newW, newH});
-    window_location.set({x, y});
+    // window_extents.set(new_extents);
+    // view_size.set({newW, newH});
+    // window_location.set({x, y});
     move_resize(x, y, true, true, newW, newH);
 }
 
@@ -1541,6 +1548,7 @@ void WindowContext::update_window_size() {
 
 void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height) {
     LOG(SIZE, log_id, "move_resize: x=%d, y=%d, w=%d, h=%d\n", x, y, width, height);
+
     Size size = view_size.get();
     int newW = (width > 0) ? width : size.width;
     int newH = (height > 0) ? height : size.height;
@@ -1600,22 +1608,15 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         update_window_constraints();
     }
 
-    LOG(POSITION, log_id, "move_resize -> window_move: %d, %d\n", newX, newY);
-    gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
-
-    LOG(SIZE, log_id, "move_resize -> window_resize: %d, %d\n", boundsW, boundsH);
-    if (is_visible()) {
-        gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-    } else {
-        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-    }
+    gtk_window_position.set(Point{newX, newY});
+    gtk_window_size.set({boundsW, boundsH});
 }
 
 void WindowContext::ensure_window_geometry() {
     Point loc = window_location.get();
     auto [w, h] = view_size.get();
 
-    bool log_assigned = window_location.was_assigned();
+    bool loc_assigned = window_location.was_assigned();
 
     if (w <= 0) {
         w = DEFAULT_WIDTH;
@@ -1625,7 +1626,7 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    move_resize(loc.x, loc.y, log_assigned, log_assigned, w, h);
+    move_resize(loc.x, loc.y, loc_assigned, loc_assigned, w, h);
 }
 
 void WindowContext::add_wmf(GdkWMFunction wmf) {
