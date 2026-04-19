@@ -863,7 +863,7 @@ void WindowContext::request_frame_extents() {
 
         XSendEvent(display, XDefaultRootWindow(display), False,
                    SubstructureRedirectMask | SubstructureNotifyMask,
-                   reinterpret_cast<XEvent*>(&clientMessage));
+                   (XEvent *) &clientMessage);
         XFlush(display);
     }
 }
@@ -1539,8 +1539,7 @@ void WindowContext::update_window_size() {
     }
 }
 
-void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height)
-{
+void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height) {
     LOG(SIZE, log_id, "move_resize: x=%d, y=%d, w=%d, h=%d\n", x, y, width, height);
     Size size = view_size.get();
     int newW = (width > 0) ? width : size.width;
