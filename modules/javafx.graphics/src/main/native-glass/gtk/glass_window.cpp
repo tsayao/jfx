@@ -181,6 +181,18 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
         }
     });
 
+    // Call gtk_window_set_geometry_hints only if changed
+    gtk_window_geometry.setOnChange([this](const WindowGeometry& geometry) {
+        LOG(SIZE, log_id, "gtk_window_geometry changed: min(%d, %d), max(%d, %d)\n",
+                geometry.minimum.width, geometry.minimum.height,
+                geometry.maximum.width, geometry.maximum.height);
+
+        GdkGeometry g = geometry.to_gdk();
+
+        gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &g,
+                                      geometry.hints());
+    });
+
     window_location.setOnChange([this](const Point& point) {
         LOG(POSITION, log_id, "onChange: window_location x=%d, y=%d\n", point.x, point.y);
         notify_window_move();
@@ -966,9 +978,6 @@ void WindowContext::update_frame_extents() {
     gravity_x = 0;
     gravity_y = 0;
 
-    // window_extents.set(new_extents);
-    // view_size.set({newW, newH});
-    // window_location.set({x, y});
     move_resize(x, y, true, true, newW, newH);
 }
 
@@ -1251,8 +1260,9 @@ void WindowContext::update_window_constraints() {
     LOG(SIZE, log_id, "update_window_constraints: min_w=%d, min_h=%d, max_w=%d, max_h=%d\n",
             hints.min_width, hints.min_height, hints.max_width, hints.max_height);
 
-    gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints,
-            static_cast<GdkWindowHints>(GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+    gtk_window_geometry.set(WindowGeometry {
+        Size {hints.min_width, hints.min_height},
+        Size {hints.max_width, hints.max_height}});
 }
 
 void WindowContext::set_resizable(bool res) {
@@ -1586,6 +1596,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // has wrong sizes
     if ((newW != boundsW && current_size.width == boundsW)
             || (newH != boundsH && current_size.height == boundsH)) {
+        LOG(SIZE, log_id, "move_resize: invalidate\n");
         view_size.invalidate();
         window_size.invalidate();
     }
