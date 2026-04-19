@@ -1257,9 +1257,6 @@ void WindowContext::update_window_constraints() {
         hints.max_height = h;
     }
 
-    LOG(SIZE, log_id, "update_window_constraints: min_w=%d, min_h=%d, max_w=%d, max_h=%d\n",
-            hints.min_width, hints.min_height, hints.max_width, hints.max_height);
-
     gtk_window_geometry.set(WindowGeometry {
         Size {hints.min_width, hints.min_height},
         Size {hints.max_width, hints.max_height}});
@@ -1444,7 +1441,7 @@ void WindowContext::request_focus() {
 
 void WindowContext::set_focusable(bool focusable) {
     LOG(FOCUS, log_id, "set_focusable %s\n", focusable ? "true" : "false");
-    gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), (focusable) ? true : false);
+    gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), focusable);
 }
 
 void WindowContext::set_title(const char* title) {
@@ -1459,6 +1456,23 @@ void WindowContext::set_alpha(double alpha) {
 void WindowContext::set_enabled(bool enabled) {
     LOG(FOCUS, log_id, "set_enabled: %s\n", enabled ? "true" : "false");
     is_enabled = enabled;
+
+    gtk_window_set_accept_focus(GTK_WINDOW(gtk_widget), enabled);
+
+    if (frame_type == TITLED && (initial_wmf & GDK_FUNC_MINIMIZE)) {
+        if (!enabled) {
+            current_wmf = static_cast<GdkWMFunction>(
+                static_cast<int>(current_wmf) & ~static_cast<int>(GDK_FUNC_MINIMIZE));
+        } else {
+            current_wmf = static_cast<GdkWMFunction>(
+                static_cast<int>(current_wmf) | static_cast<int>(GDK_FUNC_MINIMIZE));
+        }
+
+        if (GDK_IS_WINDOW(gdk_window)) {
+            gdk_window_set_functions(gdk_window, current_wmf);
+        }
+    }
+
     update_window_constraints();
 }
 
