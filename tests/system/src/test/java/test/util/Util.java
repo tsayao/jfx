@@ -73,7 +73,7 @@ public class Util {
      * Configurable via system property {@code test.geometry.delay}.
      */
     public static final long GEOMETRY_DELAY =
-            Long.getLong("test.geometry.delay", 300);
+            Long.getLong("test.geometry.delay", 500);
 
     /**
      * Time in milliseconds to wait for window state changes
@@ -94,7 +94,7 @@ public class Util {
      * Configurable via system property {@code test.focus.delay}.
      */
     public static final long FOCUS_DELAY =
-            Long.getLong("test.focus.delay", 250);
+            Long.getLong("test.focus.delay", 500);
 
     /**
      * Default timeout in milliseconds for waiting on an observable property
