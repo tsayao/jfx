@@ -51,6 +51,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static javax.swing.text.StyleConstants.Background;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -177,8 +178,8 @@ class StageOwnershipTest extends VisualTestBase {
     }
 
     private void assertColorEquals(Color expected, Stage stage) {
-        int x = (int) stage.getX() + getStage().getScene().getX() + X_DELTA;
-        int y = (int) stage.getY() + getStage().getScene().getY() + Y_DELTA;
+        int x = (int) (stage.getX() + getStage().getScene().getX() + X_DELTA);
+        int y = (int) (stage.getY() + getStage().getScene().getY() + Y_DELTA);
 
         Color color = getColor(x, y);
         assertColorEquals(expected, color, TOLERANCE);
