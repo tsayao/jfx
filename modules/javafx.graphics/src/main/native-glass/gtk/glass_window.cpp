@@ -1605,9 +1605,10 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         return;
     }
 
-    // The Compositor/WM may not honor the requested size or location, for example,
-    // if asked to put the window at 0,0 it will correct considering desktop panels,
-    // so we can't call only if changed.
+    // The compositor/window manager may adjust the requested size or position.
+    // For example, a request to place the window at (0,0) can be offset to account
+    // for desktop panels or reserved areas. Because of this, we cannot rely on
+    // simple change checks before calling move/resize.
 
     LOG(POSITION, log_id, "gtk_window_move: %d, %d\n", newX, newY);
     gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
@@ -1621,6 +1622,12 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 }
 
+/* Ensures geometry synchronization with Java.
+ * Some compositors/window managers may ignore or change earlier
+ * size or position requests. Calling move_resize triggers
+ * a configure event, aligning the actual window geometry
+ * with the expected state on the Java side.
+ */
 void WindowContext::ensure_window_geometry() {
     Point loc = window_location.get();
     auto [w, h] = view_size.get();
