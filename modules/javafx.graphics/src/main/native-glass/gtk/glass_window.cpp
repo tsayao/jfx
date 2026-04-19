@@ -1616,7 +1616,7 @@ void WindowContext::ensure_window_geometry() {
     Point loc = window_location.get();
     auto [w, h] = view_size.get();
 
-    bool loc_changed = window_location.was_assigned();
+    bool log_assigned = window_location.was_assigned();
 
     if (w <= 0) {
         w = DEFAULT_WIDTH;
@@ -1626,7 +1626,7 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    move_resize(loc.x, loc.y, loc_changed, loc_changed, w, h);
+    move_resize(loc.x, loc.y, log_assigned, log_assigned, w, h);
 }
 
 void WindowContext::add_wmf(GdkWMFunction wmf) {
@@ -1704,12 +1704,12 @@ void WindowContext::show_system_menu(int x, int y) {
     gint rx = 0, ry = 0;
     gdk_window_get_root_coords(gdk_window, x, y, &rx, &ry);
 
-    GdkEvent* event = gdk_event_new(GDK_BUTTON_PRESS);
-    GdkEventButton* buttonEvent = reinterpret_cast<GdkEventButton*>(event);
+    GdkEvent* event = (GdkEvent*)gdk_event_new(GDK_BUTTON_PRESS);
+    GdkEventButton* buttonEvent = (GdkEventButton*)event;
     buttonEvent->x_root = rx;
     buttonEvent->y_root = ry;
-    buttonEvent->window = g_object_ref(gdk_window);
-    buttonEvent->device = g_object_ref(device);
+    buttonEvent->window = (GdkWindow*)g_object_ref(gdk_window);
+    buttonEvent->device = (GdkDevice*)g_object_ref(device);
 
     gdk_window_show_window_menu(gdk_window, event);
     gdk_event_free(event);
