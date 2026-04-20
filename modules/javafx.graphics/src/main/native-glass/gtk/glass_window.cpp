@@ -164,50 +164,40 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
 
     window_location.setOnChange([this](const Point& point) {
-        LOG(POSITION, log_id, "onChange: window_location x=%d, y=%d\n", point.x, point.y);
         notify_window_move();
     });
 
     view_position.setOnChange([this](const Point& point) {
-        LOG(POSITION, log_id, "onChange: view_position x=%d, y=%d\n", point.x, point.y);
         notify_view_move();
     });
 
     window_size.setOnChange([this](const Size& size) {
-        LOG(SIZE, log_id, "onChange: window_size w=%d, h=%d\n", size.width, size.height);
         notify_window_size();
     });
 
     view_size.setOnChange([this](const Size& size) {
-        LOG(SIZE, log_id, "onChange: view_size w=%d, h=%d\n", size.width, size.height);
         notify_view_resize();
         update_window_constraints();
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
-        LOG(SIZE, log_id, "onChange: window_extents x=%d, y=%d, w=%d, h=%d\n",
-                rect.x, rect.y, rect.width, rect.height);
         update_window_constraints();
         update_window_size();
     });
 
     resizable.setOnChange([this](const bool& resizable) {
-        LOG(SIZE, log_id, "onChange: resizable=%s\n", resizable ? "true" : "false");
         update_window_constraints();
     });
 
     minimum_size.setOnChange([this](const Size& size) {
-        LOG(SIZE, log_id, "onChange: minimum_size w=%d, h=%d\n", size.width, size.height);
         update_window_constraints();
     });
 
     sys_min_size.setOnChange([this](const Size& size) {
-        LOG(SIZE, log_id, "onChange: sys_min_size w=%d, h=%d\n", size.width, size.height);
         update_window_constraints();
     });
 
     maximum_size.setOnChange([this](const Size& size) {
-        LOG(SIZE, log_id, "onChange: maximum_size w=%d, h=%d\n", size.width, size.height);
         update_window_constraints();
     });
 
@@ -1181,11 +1171,11 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
         wh += extents.height;
     }
 
-    if (mapped) {
+    // if (mapped) {
         window_location.set({x, y});
         view_size.set({event->width, event->height});
         window_size.set({ww, wh});
-    }
+    // }
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);
     if (to_screen != -1) {
@@ -1304,9 +1294,9 @@ void WindowContext::set_visible(bool visible) {
 
 void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch,
                                float gravity_x, float gravity_y) {
-    LOG(POSITION, log_id, "set_bounds position: x=%d, y=%d, xSet=%d, ySet=%d, gx=%.2f, gy=%.2f\n",
+    LOG(POSITION, log_id, "====> set_bounds position: x=%d, y=%d, xSet=%d, ySet=%d, gx=%.2f, gy=%.2f\n",
             x, y, xSet, ySet, gravity_x, gravity_y);
-    LOG(SIZE, log_id, "set_bounds size: w=%d, h=%d, cw=%d, ch=%d\n",
+    LOG(SIZE, log_id, "====> set_bounds size: w=%d, h=%d, cw=%d, ch=%d\n",
             w, h, cw, ch);
     // newW / newH are view/content sizes
     int newW = -1;
@@ -1551,12 +1541,15 @@ void WindowContext::update_window_size() {
 
 // -1 on width or height means not set
 void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height) {
-    LOG(SIZE, log_id, "move_resize (size):  w=%d, h=%d\n", width, height);
-    LOG(POSITION, log_id, "move_resize: x=%d, y=%d\n", x, y);
+    LOG(SIZE, log_id, "-> move_resize (size):  w=%d, h=%d\n", width, height);
+    LOG(POSITION, log_id, "-> move_resize: xSet=%d, ySet=%d x=%d, y=%d\n", xSet, ySet, x, y);
+
+    bool wSet = width > 0;
+    bool hSet = height > 0;
 
     Size size = view_size.get();
-    int newW = (width > 0) ? width : size.width;
-    int newH = (height > 0) ? height : size.height;
+    int newW = wSet ? width : size.width;
+    int newH = hSet ? height : size.height;
 
     Rectangle extents = window_extents.get();
     int boundsW = newW, boundsH = newH;
@@ -1591,6 +1584,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // has wrong sizes
     if ((newW != boundsW && current_size.width == boundsW)
             || (newH != boundsH && current_size.height == boundsH)) {
+        LOG(SIZE, log_id, "--> move_resize: invalidate sizes\n");
         view_size.invalidate();
         window_size.invalidate();
     }
@@ -1599,16 +1593,19 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     int newX = (xSet) ? x : loc.x;
     int newY = (ySet) ? y : loc.y;
 
-    if (!mapped) {
-        // When not mapped, set properties directly instead of waiting for process_configure.
-        LOG(LIFECYCLE, log_id, "move_resize: not mapped\n");
-        view_size.set({boundsW, boundsH});
-        update_window_size();
-        window_location.set({newX, newY});
-    }
+    // if (!mapped) {
+        if (wSet || hSet) {
+            view_size.set({boundsW, boundsH});
+            update_window_size();
+        }
+        if (xSet || ySet) {
+            window_location.set({newX, newY});
+        }
+    // }
 
     // Not resizable, report same size back to java
     if (!is_resizable()) {
+        LOG(SIZE, log_id, "--> move_resize: not resizable, report current size back to java\n");
         view_size.set({boundsW, boundsH});
         update_window_constraints();
     }
@@ -1617,22 +1614,23 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // For example, a request to place the window at (0,0) can be offset to account
     // for desktop panels or reserved areas. Because of this, we cannot rely on
     // simple change checks before calling move/resize.
-
     if (xSet || ySet) {
-        LOG(POSITION, log_id, "gtk_window_move: %d, %d\n", newX, newY);
+        LOG(POSITION, log_id, "--> move_resize -> gtk_window_move: %d, %d\n", newX, newY);
         gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
     }
 
-    if (is_visible()) {
-        LOG(SIZE, log_id, "gtk_window_resize: %d, %d\n", boundsW, boundsH);
-        gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-    } else {
-        LOG(SIZE, log_id, "gtk_window_set_default_size: %d, %d\n", boundsW, boundsH);
-        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+    if (wSet || hSet) {
+        if (is_visible()) {
+            LOG(SIZE, log_id, "--> move_resize ->  gtk_window_resize: %d, %d\n", boundsW, boundsH);
+            gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+        } else {
+            LOG(SIZE, log_id, "--> move_resize ->  gtk_window_set_default_size: %d, %d\n", boundsW, boundsH);
+            gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+        }
     }
 }
 
-/* Ensures geometry synchronization with Java.
+`/* Ensures geometry synchronization with Java.
  * Some compositors/window managers may ignore or change earlier
  * size or position requests. Calling move_resize triggers
  * a configure event, aligning the actual window geometry
