@@ -177,8 +177,8 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     view_size.setOnChange([this](const Size& size) {
         notify_view_resize();
-        update_window_size();
         update_window_constraints();
+        update_window_size();
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
@@ -1651,8 +1651,6 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         view_size.set({boundsW, boundsH});
         update_window_constraints();
     }
-
-
 
     if (loc_set) {
         LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
