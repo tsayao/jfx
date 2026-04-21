@@ -145,6 +145,28 @@ struct Point {
     }
 };
 
+struct OptionalAxisPoint {
+    std::optional<int> x;
+    std::optional<int> y;
+
+    OptionalAxisPoint() = default;
+
+    OptionalAxisPoint(int xValue, int yValue) : x(xValue), y(yValue) {
+    }
+
+    bool operator!=(const OptionalAxisPoint& other) const {
+        if (x.has_value() != other.x.has_value() || y.has_value() != other.y.has_value()) {
+            return true;
+        }
+        return (x.has_value() && x.value() != other.x.value())
+                || (y.has_value() && y.value() != other.y.value());
+    }
+
+    bool operator==(const OptionalAxisPoint& other) const {
+        return !(*this != other);
+    }
+};
+
 enum WindowFrameType {
     TITLED,
     UNTITLED,
@@ -256,7 +278,7 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     Observable<Point> view_position = Point{0, 0}; //Default for non-titled windows
     Observable<Size> view_size = Size{-1, -1};
     Observable<Size> window_size = Size{-1, -1};
-    Observable<Point> window_location = Point{-1, -1};
+    Observable<OptionalAxisPoint> window_location;
     Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
 
     bool needs_to_update_frame_extents{false};
@@ -336,6 +358,7 @@ public:
     void set_background(float, float, float);
 
     void process_map();
+    void process_realize();
     void process_expose(GdkEventExpose*);
     void process_focus(GdkEventFocus*);
     virtual void process_mouse_button(GdkEventButton*, bool synthesized = false);
@@ -416,9 +439,6 @@ private:
     void remove_child(WindowContext*);
     void notify_focus(int);
     void notify_focus_disabled();
-    void realize();
-    void flush();
-    void sync();
 };
 
 class WindowContextExtended : public WindowContext {
@@ -440,7 +460,6 @@ private:
 void destroy_and_delete_ctx(WindowContext* ctx);
 
 class EventsCounterHelper {
-private:
     WindowContext* ctx;
 public:
     explicit EventsCounterHelper(WindowContext* context) {
