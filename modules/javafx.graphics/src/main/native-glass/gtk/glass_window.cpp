@@ -207,8 +207,8 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
 GdkVisual* WindowContext::find_best_visual() {
     // This comes from prism-es2
-    static glong xvisualID = mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
-    static GdkVisual *prismVisual = (xvisualID != 0)
+    const static glong xvisualID = mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
+    const static GdkVisual *prismVisual = (xvisualID != 0)
                 ? gdk_x11_screen_lookup_visual(gdk_screen_get_default(), xvisualID)
                 : nullptr;
 
@@ -664,7 +664,7 @@ void WindowContext::process_key(GdkEventKey *event) {
 
     // TYPED events should only be sent for printable characters.
     // jview is checked again because previous call might be an exit key
-    if (press && key > 0 && jview) { // TYPED events should only be sent for printable characters.
+    if (press && key > 0 && jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyKey,
                 com_sun_glass_events_KeyEvent_TYPED,
                 com_sun_glass_events_KeyEvent_VK_UNDEFINED,
@@ -1652,6 +1652,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         update_window_constraints();
     }
 
+
+
     if (loc_set) {
         LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
         gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
@@ -1673,7 +1675,7 @@ void WindowContext::ensure_window_geometry() {
     bool xSet = loc.x.has_value();
     bool ySet = loc.y.has_value();
 
-    // If neve assigned, use defaults
+    // If never assigned, use defaults
     if (w <= 0) {
         w = DEFAULT_WIDTH;
     }
