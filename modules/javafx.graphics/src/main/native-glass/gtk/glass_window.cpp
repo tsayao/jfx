@@ -111,11 +111,6 @@ WindowContext * WindowContext::sm_mouse_drag_window = nullptr;
 std::optional<Rectangle> WindowContext::normal_extents;
 std::optional<Rectangle> WindowContext::utility_extents;
 
-static void event_realize(GtkWidget* self, gpointer user_data) {
-    WindowContext *ctx = static_cast<WindowContext*>(user_data);
-    ctx->process_realize();
-}
-
 WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _screen,
         WindowFrameType _frame_type, WindowType type, GdkWMFunction wmf) :
             owner(_owner),
@@ -134,7 +129,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     }
 
     gtk_widget = gtk_window_new(type == POPUP ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
-    g_signal_connect(G_OBJECT(gtk_widget), "realize", G_CALLBACK(event_realize), this);
 
     if (gchar* app_name = get_application_name()) {
         gtk_window_set_wmclass(GTK_WINDOW(gtk_widget), app_name, app_name);
@@ -148,7 +142,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     if (owner) {
         owner->add_child(this);
         if (on_top_inherited()) {
-            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), TRUE);
+            gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), true);
         }
     }
 
@@ -202,6 +196,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     });
 
     load_cached_extents();
+    realize();
 }
 
 GdkVisual* WindowContext::find_best_visual() {
@@ -229,19 +224,30 @@ GdkVisual* WindowContext::find_best_visual() {
 }
 
 GdkWindow* WindowContext::get_gdk_window() {
-    if (GDK_IS_WINDOW(gdk_window)) {
-        return gdk_window;
-    }
-
-    return nullptr;
+    return gdk_window;
 }
 
 GtkWindow* WindowContext::get_gtk_window() {
     return GTK_WINDOW(gtk_widget);
 }
 
-void WindowContext::process_realize() {
+void WindowContext::flush() {
+    gdk_display_flush(gtk_widget_get_display(gtk_widget));
+}
+
+void WindowContext::sync() {
+    gdk_display_sync(gtk_widget_get_display(gtk_widget));
+}
+
+void WindowContext::realize() {
+    gtk_widget_realize(gtk_widget);
     gdk_window = gtk_widget_get_window(gtk_widget);
+
+    if (frame_type == TITLED) {
+        request_frame_extents();
+    }
+
+    sync();
 
     if (frame_type != TRANSPARENT) {
         gdk_window_set_background_rgba(gdk_window, &background_color);
@@ -249,12 +255,6 @@ void WindowContext::process_realize() {
 
     if (log_id.empty()) {
         log_id = std::to_string(GDK_WINDOW_XID(gdk_window));
-    }
-
-    LOG(LIFECYCLE, log_id, "process_realize\n");
-
-    if (frame_type == TITLED) {
-        request_frame_extents();
     }
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, nullptr);
@@ -267,8 +267,6 @@ void WindowContext::process_realize() {
 
 // Returns de XWindow ID to be used in prism es2
 XID WindowContext::get_native_window()  {
-    if (!gtk_widget_get_realized(gtk_widget)) return 0;
-
     return GDK_WINDOW_XID(gdk_window);
 }
 
@@ -1085,7 +1083,7 @@ void WindowContext::notify_window_resize(int state) {
 }
 
 void WindowContext::notify_window_move() {
-    if (!jwindow) return;
+    if (!jwindow || !window_location.was_assigned()) return;
 
     Point point = window_location.get();
     LOG(POSITION, log_id, "notify_window_move: x=%d, y=%d\n", point.x, point.y);
@@ -1094,14 +1092,9 @@ void WindowContext::notify_window_move() {
 }
 
 void WindowContext::notify_view_resize() {
-    if (!jview) return;
+    if (!jview || !view_size.was_assigned()) return;
 
     Size size = view_size.get();
-
-    if (!size.is_valid()) {
-        LOG(SIZE, log_id, "notify_view_resize: invalid size: %d, %d\n", size.width, size.height);
-        return;
-    }
 
     LOG(SIZE, log_id, "notify_view_resize: w=%d, h=%d\n", size.width, size.height);
     mainEnv->CallVoidMethod(jview, jViewNotifyResize, size.width, size.height);
@@ -1109,6 +1102,8 @@ void WindowContext::notify_view_resize() {
 }
 
 void WindowContext::notify_window_size() {
+    if (!view_size.was_assigned()) return;
+
     if (is_iconified()) {
         notify_window_resize(com_sun_glass_events_WindowEvent_MINIMIZE);
     } else if (is_maximized()) {
@@ -1119,7 +1114,7 @@ void WindowContext::notify_window_size() {
 }
 
 void WindowContext::notify_view_move() {
-    if (!jview) return;
+    if (!jview || !view_position.was_assigned()) return;
 
     LOG(POSITION, log_id, "notify_view_move\n");
     mainEnv->CallVoidMethod(jview, jViewNotifyView, com_sun_glass_events_ViewEvent_MOVE);
@@ -1127,11 +1122,19 @@ void WindowContext::notify_view_move() {
 }
 
 void WindowContext::process_configure(GdkEventConfigure *event) {
-    LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d\n",
-            event->send_event, event->width, event->height);
+    guint32 gdk_time = gdk_event_get_time(reinterpret_cast<GdkEvent*>(event));
+    gint64 recv_us = g_get_monotonic_time();
+
+    LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d, gdk_time=%u, recv_us=%" G_GINT64_FORMAT "\n",
+            event->send_event, event->width, event->height, gdk_time, recv_us);
 
     LOG(POSITION, log_id, "process_configure (position): send_event=%d, x=%d, y=%d\n",
         event->send_event, event->x, event->y);
+
+    if (mapped && !event->send_event) {
+        // This is used to let the compositor detect the resize
+        gdk_window_invalidate_rect(gdk_window, nullptr, false);
+    }
 
     int x, y;
     int view_x = 0, view_y = 0;
@@ -1181,7 +1184,6 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     if (to_screen != -1) {
         if (to_screen != screen) {
             if (jwindow) {
-                //notify screen changed
                 jobject jScreen = createJavaScreen(mainEnv, to_screen);
                 mainEnv->CallVoidMethod(jwindow, jWindowNotifyMoveToAnotherScreen, jScreen);
                 CHECK_JNI_EXCEPTION(mainEnv)
@@ -1241,29 +1243,31 @@ bool WindowContext::is_resizable() {
 }
 
 bool WindowContext::is_maximized() {
-    if (GDK_IS_WINDOW(gdk_window)) {
-        return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_MAXIMIZED;
+    if (!mapped) {
+        return initial_state_mask & GDK_WINDOW_STATE_MAXIMIZED;
     }
-    return initial_state_mask & GDK_WINDOW_STATE_MAXIMIZED;
+
+    return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_MAXIMIZED;
 }
 
 bool WindowContext::is_fullscreen() {
-    if (GDK_IS_WINDOW(gdk_window)) {
-        return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_FULLSCREEN;
+    if (!mapped) {
+        return initial_state_mask & GDK_WINDOW_STATE_FULLSCREEN;
     }
-    return initial_state_mask & GDK_WINDOW_STATE_FULLSCREEN;
+
+    return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_FULLSCREEN;
 }
 
 bool WindowContext::is_iconified() {
-    if (GDK_IS_WINDOW(gdk_window)) {
-        return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_ICONIFIED;
+    if (!mapped) {
+        return initial_state_mask & GDK_WINDOW_STATE_ICONIFIED;
     }
-    return initial_state_mask & GDK_WINDOW_STATE_ICONIFIED;
+
+    return gdk_window_get_state(gdk_window) & GDK_WINDOW_STATE_ICONIFIED;
 }
 
 bool WindowContext::is_floating() {
-    return GDK_IS_WINDOW(gdk_window)
-        && !(is_maximized() || is_fullscreen());
+    return is_state_floating(gdk_window_get_state(gdk_window));
 }
 
 void WindowContext::set_visible(bool visible) {
@@ -1293,11 +1297,17 @@ void WindowContext::set_visible(bool visible) {
 }
 
 void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h, int cw, int ch,
-                               float gravity_x, float gravity_y) {
-    LOG(POSITION, log_id, "====> set_bounds position: x=%d, y=%d, xSet=%d, ySet=%d, gx=%.2f, gy=%.2f\n",
-            x, y, xSet, ySet, gravity_x, gravity_y);
-    LOG(SIZE, log_id, "====> set_bounds size: w=%d, h=%d, cw=%d, ch=%d\n",
-            w, h, cw, ch);
+                               float gravity_x, float gravity_y)
+{
+    if (xSet || ySet || gravity_x > 0 || gravity_y > 0) {
+        LOG(POSITION, log_id, "====> set_bounds position: x=%d, y=%d, xSet=%d, ySet=%d, gx=%.2f, gy=%.2f\n",
+                x, y, xSet, ySet, gravity_x, gravity_y);
+    }
+
+    if (w > 0 || h > 0 || cw > 0 || ch > 0) {
+        LOG(SIZE, log_id, "====> set_bounds size: w=%d, h=%d, cw=%d, ch=%d\n", w, h, cw, ch);
+    }
+
     // newW / newH are view/content sizes
     int newW = -1;
     int newH = -1;
@@ -1307,7 +1317,7 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
 
     if (w > 0) {
         width_type = BOUNDSTYPE_WINDOW;
-        newW = std::clamp(w - window_extents.get().width, 1, MAX_WINDOW_SIZE);
+        newW = (w - window_extents.get().width);
     } else if (cw > 0) {
         // once set to window, stick with it
         if (width_type == BOUNDSTYPE_UNKNOWN) {
@@ -1318,7 +1328,7 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
 
     if (h > 0) {
         height_type = BOUNDSTYPE_WINDOW;
-        newH = std::clamp(h - window_extents.get().height, 1, MAX_WINDOW_SIZE);
+        newH = (h - window_extents.get().height);
     } else if (ch > 0) {
         // once set to window, stick with it
         if (height_type == BOUNDSTYPE_UNKNOWN) {
@@ -1342,18 +1352,19 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
 void WindowContext::iconify(bool state) {
     if (state) {
         add_wmf(GDK_FUNC_MINIMIZE);
-        gtk_window_iconify(GTK_WINDOW(gtk_widget));
+        gdk_window_iconify(gdk_window);
     } else {
-        gtk_window_present(GTK_WINDOW(gtk_widget));
+        gdk_window_deiconify(gdk_window);
+        gdk_window_focus(gdk_window, GDK_CURRENT_TIME);
     }
 }
 
 void WindowContext::maximize(bool state) {
     if (state) {
         add_wmf(GDK_FUNC_MAXIMIZE);
-        gtk_window_maximize(GTK_WINDOW(gtk_widget));
+        gdk_window_maximize(gdk_window);
     } else {
-        gtk_window_unmaximize(GTK_WINDOW(gtk_widget));
+        gdk_window_unmaximize(gdk_window);
     }
 }
 
@@ -1382,7 +1393,7 @@ void WindowContext::set_maximized(bool state) {
 void WindowContext::enter_fullscreen() {
     LOG(STATE, log_id, "enter_fullscreen\n");
     if (mapped) {
-        gtk_window_fullscreen(GTK_WINDOW(gtk_widget));
+        gdk_window_fullscreen(gdk_window);
     } else {
         initial_state_mask |= GDK_WINDOW_STATE_FULLSCREEN;
     }
@@ -1391,7 +1402,7 @@ void WindowContext::enter_fullscreen() {
 void WindowContext::exit_fullscreen() {
     LOG(STATE, log_id, "exit_fullscreen\n");
     if (mapped) {
-        gtk_window_unfullscreen(GTK_WINDOW(gtk_widget));
+        gdk_window_unfullscreen(gdk_window);
     } else {
         initial_state_mask &= ~GDK_WINDOW_STATE_FULLSCREEN;
     }
@@ -1399,14 +1410,8 @@ void WindowContext::exit_fullscreen() {
 
 void WindowContext::request_focus() {
     LOG(FOCUS, log_id, "request_focus\n");
-
-    if (gtk_window_is_active(GTK_WINDOW(gtk_widget))) {
-        LOG(FOCUS, log_id, "request_focus: already focused\n");
-        return;
-    }
-
     if (is_visible()) {
-        gtk_window_present(GTK_WINDOW(gtk_widget));
+        gdk_window_focus(gdk_window, GDK_CURRENT_TIME);
     }
 }
 
@@ -1437,9 +1442,7 @@ void WindowContext::set_enabled(bool enabled) {
                 static_cast<int>(current_wmf) | static_cast<int>(GDK_FUNC_MINIMIZE));
         }
 
-        if (GDK_IS_WINDOW(gdk_window)) {
-            gdk_window_set_functions(gdk_window, current_wmf);
-        }
+        gdk_window_set_functions(gdk_window, current_wmf);
     }
 
     update_window_constraints();
@@ -1471,17 +1474,12 @@ void WindowContext::set_icon(GdkPixbuf* icon) {
 
 void WindowContext::to_front() {
     LOG(STATE, log_id, "to_front\n");
-    if (GDK_IS_WINDOW(gdk_window)) {
-        gdk_window_raise(gdk_window);
-    }
+    gdk_window_raise(gdk_window);
 }
 
 void WindowContext::to_back() {
     LOG(STATE, log_id, "to_back\n");
-
-    if (GDK_IS_WINDOW(gdk_window)) {
-        gdk_window_lower(gdk_window);
-    }
+    gdk_window_lower(gdk_window);
 }
 
 void WindowContext::set_modal(bool modal, WindowContext* parent) {
@@ -1495,7 +1493,7 @@ void WindowContext::set_modal(bool modal, WindowContext* parent) {
 
 void WindowContext::update_ontop_tree(bool on_top) {
     bool effective_on_top = on_top || this->on_top;
-    gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), effective_on_top ? TRUE : FALSE);
+    gtk_window_set_keep_above(GTK_WINDOW(gtk_widget), effective_on_top);
     for (std::set<WindowContext*>::iterator it = children.begin(); it != children.end(); ++it) {
         (*it)->update_ontop_tree(effective_on_top);
     }
@@ -1525,8 +1523,6 @@ bool WindowContext::effective_on_top() {
 void WindowContext::update_window_size() {
     Size size = view_size.get();
 
-    LOG(SIZE, log_id, "update_window_size -> is_valid %d\n", size.is_valid());;
-
     if (!size.is_valid()) {
         return;
     }
@@ -1547,7 +1543,16 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     bool wSet = width > 0;
     bool hSet = height > 0;
 
+    if (!wSet && !hSet && !xSet && !ySet) {
+        return;
+    }
+
     Size size = view_size.get();
+
+    if (!wSet && !hSet && !size.is_valid()) {
+        return;
+    }
+
     int newW = wSet ? width : size.width;
     int newH = hSet ? height : size.height;
 
@@ -1593,16 +1598,6 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     int newX = (xSet) ? x : loc.x;
     int newY = (ySet) ? y : loc.y;
 
-    // if (!mapped) {
-        if (wSet || hSet) {
-            view_size.set({boundsW, boundsH});
-            update_window_size();
-        }
-        if (xSet || ySet) {
-            window_location.set({newX, newY});
-        }
-    // }
-
     // Not resizable, report same size back to java
     if (!is_resizable()) {
         LOG(SIZE, log_id, "--> move_resize: not resizable, report current size back to java\n");
@@ -1610,27 +1605,12 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         update_window_constraints();
     }
 
-    // The compositor/window manager may adjust the requested size or position.
-    // For example, a request to place the window at (0,0) can be offset to account
-    // for desktop panels or reserved areas. Because of this, we cannot rely on
-    // simple change checks before calling move/resize.
-    if (xSet || ySet) {
-        LOG(POSITION, log_id, "--> move_resize -> gtk_window_move: %d, %d\n", newX, newY);
-        gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
-    }
-
-    if (wSet || hSet) {
-        if (is_visible()) {
-            LOG(SIZE, log_id, "--> move_resize ->  gtk_window_resize: %d, %d\n", boundsW, boundsH);
-            gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-        } else {
-            LOG(SIZE, log_id, "--> move_resize ->  gtk_window_set_default_size: %d, %d\n", boundsW, boundsH);
-            gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-        }
-    }
+    LOG(SIZE, log_id, "--> move_resize: gdk_window_move_resize: x=%d, y=%d, w=%d, h=%d\n",
+                newX, newY, boundsW, boundsH);
+    gdk_window_move_resize(gdk_window, newX, newY, boundsW, boundsH);
 }
 
-`/* Ensures geometry synchronization with Java.
+/* Ensures geometry synchronization with Java.
  * Some compositors/window managers may ignore or change earlier
  * size or position requests. Calling move_resize triggers
  * a configure event, aligning the actual window geometry

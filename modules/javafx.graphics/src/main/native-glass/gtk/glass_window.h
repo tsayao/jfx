@@ -336,7 +336,6 @@ public:
     void set_background(float, float, float);
 
     void process_map();
-    void process_realize();
     void process_expose(GdkEventExpose*);
     void process_focus(GdkEventFocus*);
     virtual void process_mouse_button(GdkEventButton*, bool synthesized = false);
@@ -417,6 +416,9 @@ private:
     void remove_child(WindowContext*);
     void notify_focus(int);
     void notify_focus_disabled();
+    void realize();
+    void flush();
+    void sync();
 };
 
 class WindowContextExtended : public WindowContext {
