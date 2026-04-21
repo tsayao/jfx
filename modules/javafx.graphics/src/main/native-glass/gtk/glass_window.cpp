@@ -1211,6 +1211,11 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 
 void WindowContext::update_window_constraints() {
     LOG(SIZE, log_id, "update_window_constraints\n");
+    // Not ready to re-apply the constraints
+    if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
+        LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
+        return;
+    }
 
     GdkGeometry hints;
 
