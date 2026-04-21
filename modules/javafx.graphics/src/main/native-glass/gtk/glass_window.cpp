@@ -1626,7 +1626,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
 
     auto loc = window_location.get();
 
-    int newX, newY;
+    int newX = 0, newY = 0;
 
     bool loc_set = false;
     if ((xSet || loc.x.has_value()) && (ySet || loc.y.has_value())) {
@@ -1657,7 +1657,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
     }
 
-    if (is_visible()) {
+    if (mapped) {
         LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     } else {
