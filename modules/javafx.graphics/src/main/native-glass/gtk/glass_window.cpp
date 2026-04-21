@@ -207,8 +207,8 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
 GdkVisual* WindowContext::find_best_visual() {
     // This comes from prism-es2
-    const static glong xvisualID = mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
-    const static GdkVisual *prismVisual = (xvisualID != 0)
+    static glong xvisualID = mainEnv->GetStaticLongField(jApplicationCls, jApplicationVisualID);
+    static GdkVisual *prismVisual = (xvisualID != 0)
                 ? gdk_x11_screen_lookup_visual(gdk_screen_get_default(), xvisualID)
                 : nullptr;
 
