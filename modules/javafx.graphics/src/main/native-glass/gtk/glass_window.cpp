@@ -243,6 +243,8 @@ GtkWindow* WindowContext::get_gtk_window() {
 }
 
 void WindowContext::process_realize() {
+        LOG(LIFECYCLE, log_id, "process_realize\n");
+
     gdk_window = gtk_widget_get_window(gtk_widget);
 
     if (frame_type == TITLED) {
@@ -1214,6 +1216,11 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 
 void WindowContext::update_window_constraints() {
     LOG(SIZE, log_id, "update_window_constraints\n");
+    // Not ready to re-apply the constraints
+    if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
+        LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
+        return;
+    }
 
     GdkGeometry hints;
 
@@ -1655,13 +1662,6 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // }
 
     if (loc_set) {
-        if (GDK_IS_WINDOW(gdk_window)) {
-            LOG(POSITION, log_id, "--> move_resize: gdk_window_move_resize: x=%d, y=%d, w=%d, h=%d\n",
-                newX, newY, boundsW, boundsH);
-            gdk_window_move_resize(gdk_window, newX, newY, boundsW, boundsH);
-            return;
-        }
-
         LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
         gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
     }
