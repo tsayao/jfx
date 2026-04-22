@@ -1073,10 +1073,7 @@ void WindowContext::process_state(GdkEventWindowState *event) {
                     && (event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN)) == 0;
 
     if (restored && needs_to_update_frame_extents) {
-        LOG(STATE, log_id, "process_state: restored, updating frame extents\n");
-        needs_to_update_frame_extents = false;
-        // Will fire the observable and update window size
-        load_cached_extents();
+        LOG(STATE, log_id, "process_state: restored, pending frame extents update\n");
     }
 }
 
@@ -1199,6 +1196,14 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
         window_location.set({x, y});
         view_size.set({event->width, event->height});
         window_size.set({ww, wh});
+
+        if (needs_to_update_frame_extents && is_floating() && frame_type == TITLED
+                && (view_x > 0 || view_y > 0)) {
+            LOG(SIZE, log_id, "process_configure: applying deferred frame extents\n");
+            needs_to_update_frame_extents = false;
+            // Will fire the observable and recalculate window_size from the current view_size.
+            load_cached_extents();
+        }
     }
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);

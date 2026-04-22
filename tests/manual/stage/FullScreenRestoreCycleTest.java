@@ -232,6 +232,9 @@ public class FullScreenRestoreCycleTest extends Application {
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
+
+        // Start automatically after the primary stage is shown
+        Platform.runLater(this::startAutoRun);
     }
 
     // ---- helpers ----
