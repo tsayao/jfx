@@ -243,7 +243,7 @@ GtkWindow* WindowContext::get_gtk_window() {
 }
 
 void WindowContext::process_realize() {
-        LOG(LIFECYCLE, log_id, "process_realize\n");
+    LOG(LIFECYCLE, log_id, "process_realize\n");
 
     gdk_window = gtk_widget_get_window(gtk_widget);
 
