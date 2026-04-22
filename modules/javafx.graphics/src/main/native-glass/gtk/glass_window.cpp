@@ -177,8 +177,9 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     view_size.setOnChange([this](const Size& size) {
         notify_view_resize();
-        update_window_constraints();
+        // Will fire window size notification on window_size change
         update_window_size();
+        update_window_constraints();
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
@@ -315,6 +316,7 @@ void WindowContext::process_map() {
     // the values currently stored on the Java side.
     ensure_window_geometry();
 
+    // For window state (fullscreen, maximized, iconified) set before showing
     if (initial_state_mask != 0) {
         update_initial_state();
     }
@@ -956,6 +958,7 @@ void WindowContext::update_frame_extents() {
     gravity_x = 0;
     gravity_y = 0;
 
+    // When window_extents changes, it will fire the observable and update window size.
     window_extents.set(new_extents);
     move_resize(x, y, xSet, ySet, newW, newH);
 }
@@ -1064,12 +1067,13 @@ void WindowContext::process_state(GdkEventWindowState *event) {
         notify_view_move();
     }
 
-    bool restored = (event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN))
-                    && ((event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN)) == 0);
+    bool restored = event->changed_mask & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN)
+                    && (event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN)) == 0;
 
     if (restored && needs_to_update_frame_extents) {
         LOG(STATE, log_id, "process_state: restored, updating frame extents\n");
         needs_to_update_frame_extents = false;
+        // Will fire the observable and update window size
         load_cached_extents();
     }
 }
@@ -1086,7 +1090,7 @@ void WindowContext::notify_fullscreen(bool enter) {
 }
 
 void WindowContext::notify_window_resize(int state) {
-    if (!jwindow) return;
+    if (!jwindow || !window_size.was_assigned()) return;
 
     Size size = window_size.get();
     LOG(SIZE, log_id, "notify_window_resize: state=%d, w=%d, h=%d\n", state, size.width, size.height);
@@ -1095,12 +1099,11 @@ void WindowContext::notify_window_resize(int state) {
 }
 
 void WindowContext::notify_window_move() {
-    if (!jwindow) return;
-    if (!window_location.was_assigned()) return;
+    if (!jwindow || !window_location.was_assigned()) return;
 
     auto loc = window_location.get();
 
-    if (!loc.x.has_value() || !loc.y.has_value()) {
+    if (!loc.has_values()) {
         LOG(POSITION, log_id, "notify_window_move: location was not set completely\n");
         return;
     }
@@ -1636,7 +1639,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 
     if (!mapped) {
-        // See the comment on process_configure about the compositor changing the values.
+        // See the comment on process_configure about the compositor changing the values until mapped.
         LOG(LIFECYCLE, log_id, "move_resize: not mapped\n");
         view_size.set({boundsW, boundsH});
 
@@ -1645,14 +1648,20 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         }
     }
 
-    // Not resizable, report same size back to java
-    if (!is_resizable()) {
-        LOG(SIZE, log_id, "--> move_resize: not resizable, report current size back to java\n");
-        view_size.set({boundsW, boundsH});
-        update_window_constraints();
-    }
+    // // Not resizable, report same size back to java
+    // if (!is_resizable()) {
+    //     LOG(SIZE, log_id, "--> move_resize: not resizable, report current size back to java\n");
+    //     view_size.set({boundsW, boundsH});
+    // }
 
     if (loc_set) {
+        if (GDK_IS_WINDOW(gdk_window)) {
+            LOG(POSITION, log_id, "--> move_resize: gdk_window_move_resize: x=%d, y=%d, w=%d, h=%d\n",
+                newX, newY, boundsW, boundsH);
+            gdk_window_move_resize(gdk_window, newX, newY, boundsW, boundsH);
+            return;
+        }
+
         LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
         gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
     }

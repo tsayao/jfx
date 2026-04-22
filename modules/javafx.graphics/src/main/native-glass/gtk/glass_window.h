@@ -154,6 +154,10 @@ struct OptionalAxisPoint {
     OptionalAxisPoint(int xValue, int yValue) : x(xValue), y(yValue) {
     }
 
+    bool has_values() const {
+        return x.has_value() && y.has_value();
+    }
+
     bool operator!=(const OptionalAxisPoint& other) const {
         if (x.has_value() != other.x.has_value() || y.has_value() != other.y.has_value()) {
             return true;
