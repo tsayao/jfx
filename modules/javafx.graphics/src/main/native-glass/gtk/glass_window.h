@@ -38,6 +38,7 @@
 #include <set>
 #include <string>
 #include <optional>
+#include <vector>
 
 #include "DeletedMemDebug.h"
 #include "glass_general.h"
@@ -45,12 +46,70 @@
 #include <iostream>
 #include <functional>
 
+class ObservableDispatchTracker {
+private:
+    inline static thread_local std::vector<const void*> stack{};
+
+public:
+    static const void* current() {
+        return stack.empty() ? nullptr : stack.back();
+    }
+
+    static void push(const void* observable) {
+        stack.push_back(observable);
+    }
+
+    static void pop() {
+        if (!stack.empty()) {
+            stack.pop_back();
+        }
+    }
+
+    static bool has_direct_edge(const void* from, const void* to) {
+        for (size_t i = 0; i + 1 < stack.size(); ++i) {
+            if (stack[i] == from && stack[i + 1] == to) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
 template<typename T>
 class Observable {
 private:
     T value;
     std::function<void(const T&)> onChange;
     bool assigned_since_init{false};
+    bool notifying{false};
+    bool pending{false};
+
+    void dispatch_change() {
+        if (!onChange) {
+            return;
+        }
+
+        const void* origin = ObservableDispatchTracker::current();
+        if (origin != nullptr && ObservableDispatchTracker::has_direct_edge(this, origin)) {
+            LOG2("Observable dispatch loop detected: %p -> %p", this, origin);
+            // If (1) triggered (2), block reverse trigger (2 -> 1) in the same dispatch chain.
+            return;
+        }
+
+        if (notifying) {
+            pending = true;
+            return;
+        }
+
+        notifying = true;
+        ObservableDispatchTracker::push(this);
+        do {
+            pending = false;
+            onChange(value);
+        } while (pending);
+        ObservableDispatchTracker::pop();
+        notifying = false;
+    }
 
 public:
     Observable(const T& initialValue = T()) : value(initialValue) {}
@@ -59,14 +118,12 @@ public:
         assigned_since_init = true;
         if (value != newValue) {
             value = newValue;
-            invalidate();
+            dispatch_change();
         }
     }
 
     void invalidate() {
-        if (onChange) {
-            onChange(value);
-        }
+        dispatch_change();
     }
 
     // This resets the value without notifying
