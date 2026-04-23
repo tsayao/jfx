@@ -920,12 +920,10 @@ void WindowContext::update_frame_extents() {
     // Here the user might change the desktop theme which
     // may change decoration sizes.
     if (width_type == BOUNDSTYPE_WINDOW) {
-        // Re-add the extents and then subtract the new
         newW = newW + old_extents.width - new_extents.width;
     }
 
     if (height_type == BOUNDSTYPE_WINDOW) {
-        // Re-add the extents and then subtract the new
         newH = newH + old_extents.height - new_extents.height;
     }
 
@@ -938,6 +936,9 @@ void WindowContext::update_frame_extents() {
 
     int x = xSet ? loc.x.value() : 0;
     int y = ySet ? loc.y.value() : 0;
+
+    int dx = new_extents.width - old_extents.width;
+    int dy = new_extents.height - old_extents.height;
 
     // Gravity x, y are used in centerOnScreen(). Here it's used to adjust the position
     // accounting decorations, so calculate the difference
