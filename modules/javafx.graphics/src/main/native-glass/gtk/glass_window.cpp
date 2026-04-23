@@ -177,9 +177,9 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     view_size.setOnChange([this](const Size& size) {
         notify_view_resize();
+        update_window_constraints();
         // Will fire window size notification on window_size change
         update_window_size();
-        update_window_constraints();
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
@@ -937,6 +937,7 @@ void WindowContext::update_frame_extents() {
     int x = xSet ? loc.x.value() : 0;
     int y = ySet ? loc.y.value() : 0;
 
+    // The difference that needs to be adjusted
     int dx = new_extents.width - old_extents.width;
     int dy = new_extents.height - old_extents.height;
 
@@ -1213,7 +1214,6 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 }
 
 void WindowContext::update_window_constraints() {
-    LOG(SIZE, log_id, "update_window_constraints\n");
     // Not ready to re-apply the constraints
     if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
         LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
@@ -1223,6 +1223,7 @@ void WindowContext::update_window_constraints() {
     GdkGeometry hints;
 
     if (is_resizable() && isEnabled()) {
+        LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
         Size min = minimum_size.get().max(sys_min_size.get());
 
         Rectangle extents = window_extents.get();
@@ -1235,6 +1236,7 @@ void WindowContext::update_window_constraints() {
         hints.max_width = std::clamp(max.width - extents.width, 1, MAX_WINDOW_SIZE);
         hints.max_height = std::clamp(max.height - extents.height, 1, MAX_WINDOW_SIZE);
     } else {
+        LOG(SIZE, log_id, "update_window_constraints: NOT resizable or disabled\n");
         Size size = view_size.get();
         int w = std::clamp(size.width, 1, MAX_WINDOW_SIZE);
         int h = std::clamp(size.height, 1, MAX_WINDOW_SIZE);
@@ -1570,14 +1572,33 @@ void WindowContext::update_window_size() {
 
 // -1 on width or height means not set
 void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, int height) {
-    LOG(SIZE, log_id, "-> move_resize (size):  w=%d, h=%d\n", width, height);
-    LOG(POSITION, log_id, "-> move_resize: xSet=%d, ySet=%d x=%d, y=%d\n", xSet, ySet, x, y);
-
     bool wSet = width > 0;
     bool hSet = height > 0;
 
     if (!wSet && !hSet && !xSet && !ySet) {
         return;
+    }
+
+    auto loc = window_location.get();
+
+    int newX = 0, newY = 0;
+
+    bool loc_set = false;
+    if ((xSet || loc.x.has_value()) && (ySet || loc.y.has_value())) {
+        newX = xSet ? x : loc.x.value();
+        newY = ySet ? y : loc.y.value();
+        loc_set = true;
+    }
+
+    if (loc_set) {
+        if (!mapped) {
+            LOG(POSITION, log_id, "move_resize: not mapped\n");
+            // See the comment on process_configure about the compositor changing the values until mapped.
+            window_location.set({newX, newY});
+        }
+
+        LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
+        gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
     }
 
     Size size = view_size.get();
@@ -1621,47 +1642,23 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         boundsH = std::clamp(boundsH, 1, MAX_WINDOW_SIZE);
     }
 
-    Size current_size = view_size.get();
-
-    // Need to force notify back to java, because it probably
-    // has wrong sizes
-    if ((newW != boundsW && current_size.width == boundsW)
-            || (newH != boundsH && current_size.height == boundsH)) {
-        LOG(SIZE, log_id, "--> move_resize: invalidate sizes\n");
+    // Need to force notify back to java, because it probably has wrong sizes.
+    // This is triggered, for example, when size is set bellow mininum.
+    if ((newW != boundsW && size.width == boundsW) || (newH != boundsH && size.height == boundsH)) {
+        LOG(SIZE, log_id, "move_resize: invalidate\n");
         view_size.invalidate();
         window_size.invalidate();
     }
 
-    auto loc = window_location.get();
-
-    int newX = 0, newY = 0;
-
-    bool loc_set = false;
-    if ((xSet || loc.x.has_value()) && (ySet || loc.y.has_value())) {
-        newX = xSet ? x : loc.x.value();
-        newY = ySet ? y : loc.y.value();
-        loc_set = true;
-    }
-
     if (!mapped) {
         // See the comment on process_configure about the compositor changing the values until mapped.
-        LOG(LIFECYCLE, log_id, "move_resize: not mapped\n");
+        LOG(SIZE, log_id, "move_resize: not mapped\n");
         view_size.set({boundsW, boundsH});
-
-        if (loc_set) {
-            window_location.set({newX, newY});
-        }
     }
 
-    // // Not resizable, report same size back to java
-    // if (!is_resizable()) {
-    //     LOG(SIZE, log_id, "--> move_resize: not resizable, report current size back to java\n");
-    //     view_size.set({boundsW, boundsH});
-    // }
-
-    if (loc_set) {
-        LOG(POSITION, log_id, "--> move_resize: gtk_window_move: x=%d, y=%d\n", newX, newY);
-        gtk_window_move(GTK_WINDOW(gtk_widget), newX, newY);
+    if (!Size{boundsW, boundsH}.is_valid()) {
+        LOG(SIZE, log_id, "move_resize: invalid size w=%d, h=%d\n", boundsW, boundsH);
+        return;
     }
 
     if (mapped) {
