@@ -178,7 +178,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     view_size.setOnChange([this](const Size& size) {
         notify_view_resize();
         // Will fire window size notification on window_size change
-        // update_window_size();
+        update_window_size();
         update_window_constraints();
     });
 
