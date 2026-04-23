@@ -178,7 +178,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     view_size.setOnChange([this](const Size& size) {
         notify_view_resize();
         // Will fire window size notification on window_size change
-        update_window_size();
+        // update_window_size();
         update_window_constraints();
     });
 
@@ -962,7 +962,7 @@ void WindowContext::update_frame_extents() {
 
     // When window_extents changes, it will fire the observable and update window size.
     window_extents.set(new_extents);
-    // move_resize(x, y, xSet, ySet, newW, newH);
+    move_resize(x, y, xSet, ySet, newW, newH);
 }
 
 bool WindowContext::get_frame_extents_property(int *top, int *left, int *bottom, int *right) {
