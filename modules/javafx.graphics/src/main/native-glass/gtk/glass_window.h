@@ -38,121 +38,11 @@
 #include <set>
 #include <string>
 #include <optional>
-#include <vector>
 
 #include "DeletedMemDebug.h"
 #include "glass_general.h"
 
 #include <iostream>
-#include <functional>
-
-class ObservableDispatchTracker {
-private:
-    inline static thread_local std::vector<const void*> stack{};
-
-public:
-    static const void* current() {
-        return stack.empty() ? nullptr : stack.back();
-    }
-
-    static void push(const void* observable) {
-        stack.push_back(observable);
-    }
-
-    static void pop() {
-        if (!stack.empty()) {
-            stack.pop_back();
-        }
-    }
-
-    static bool has_direct_edge(const void* from, const void* to) {
-        for (size_t i = 0; i + 1 < stack.size(); ++i) {
-            if (stack[i] == from && stack[i + 1] == to) {
-                return true;
-            }
-        }
-        return false;
-    }
-};
-
-template<typename T>
-class Observable {
-private:
-    T value;
-    std::function<void(const T&)> onChange;
-    bool assigned_since_init{false};
-    bool notifying{false};
-    bool pending{false};
-
-    void dispatch_change() {
-        if (!onChange) {
-            return;
-        }
-
-        const void* origin = ObservableDispatchTracker::current();
-        if (origin != nullptr && ObservableDispatchTracker::has_direct_edge(this, origin)) {
-            LOG2("Observable dispatch loop detected: %p -> %p", this, origin);
-            // If (1) triggered (2), block reverse trigger (2 -> 1) in the same dispatch chain.
-            return;
-        }
-
-        if (notifying) {
-            pending = true;
-            return;
-        }
-
-        notifying = true;
-        ObservableDispatchTracker::push(this);
-        do {
-            pending = false;
-            onChange(value);
-        } while (pending);
-        ObservableDispatchTracker::pop();
-        notifying = false;
-    }
-
-public:
-    Observable(const T& initialValue = T()) : value(initialValue) {}
-
-    void set(const T& newValue) {
-        assigned_since_init = true;
-        if (value != newValue) {
-            value = newValue;
-            dispatch_change();
-        }
-    }
-
-    void invalidate() {
-        dispatch_change();
-    }
-
-    // This resets the value without notifying
-    void reset(const T& newValue) {
-        assigned_since_init = true;
-        value = newValue;
-    }
-
-    const T& get() const {
-        return value;
-    }
-
-    bool was_assigned() const {
-        return assigned_since_init;
-    }
-
-    operator T() const {
-        return value;
-    }
-
-    Observable<T>& operator=(const T& newValue) {
-        set(newValue);
-        return *this;
-    }
-
-    void setOnChange(std::function<void(const T&)> callback) {
-        onChange = callback;
-    }
-};
 
 struct Rectangle {
     int x, y, width, height;
@@ -332,15 +222,20 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     GdkCursor* gdk_cursor{};
     GdkCursor* gdk_cursor_override{};
 
-    Observable<Size> minimum_size = Size{1, 1};
-    Observable<Size> maximum_size = Size{G_MAXINT, G_MAXINT};
-    Observable<Size> sys_min_size = Size{1, 1};
-    Observable<bool> resizable{true};
-    Observable<Point> view_position = Point{0, 0}; //Default for non-titled windows
-    Observable<Size> view_size = Size{-1, -1};
-    Observable<Size> window_size = Size{-1, -1};
-    Observable<OptionalAxisPoint> window_location;
-    Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
+    Size minimum_size = Size{1, 1};
+    Size maximum_size = Size{G_MAXINT, G_MAXINT};
+    Size sys_min_size = Size{1, 1};
+    bool resizable{true};
+    Point view_position = Point{0, 0}; //Default for non-titled windows
+    Size view_size = Size{-1, -1};
+    Size window_size = Size{-1, -1};
+    OptionalAxisPoint window_location;
+    Rectangle window_extents = Rectangle{0, 0, 0, 0};
+
+    bool view_position_assigned{false};
+    bool view_size_assigned{false};
+    bool window_size_assigned{false};
+    bool window_location_assigned{false};
 
     bool needs_to_update_frame_extents{false};
     float gravity_x{0};
@@ -465,6 +360,16 @@ public:
 
 private:
     GdkVisual* find_best_visual();
+    void set_window_location(const OptionalAxisPoint&);
+    void set_view_position(const Point&);
+    void set_window_size(const Size&);
+    void set_view_size(const Size&);
+    void set_window_extents(const Rectangle&);
+    void set_resizable_value(bool);
+    void set_minimum_size_value(const Size&);
+    void set_system_minimum_size_value(const Size&);
+    void set_maximum_size_value(const Size&);
+    void notify_view_and_window_size_changed();
     void maximize(bool);
     void iconify(bool);
     void update_window_size();
