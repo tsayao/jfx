@@ -917,19 +917,16 @@ void WindowContext::update_frame_extents() {
 
     auto [newW, newH] = view_size.get();
 
-    int dx = new_extents.width - old_extents.width;
-    int dy = new_extents.height - old_extents.height;
-
     // Here the user might change the desktop theme which
     // may change decoration sizes.
-    if (newW > 0 && width_type == BOUNDSTYPE_WINDOW) {
+    if (width_type == BOUNDSTYPE_WINDOW) {
         // Re-add the extents and then subtract the new
-        newW = newW + dx;
+        newW = newW + old_extents.width - new_extents.width;
     }
 
-    if (newH > 0 && height_type == BOUNDSTYPE_WINDOW) {
+    if (height_type == BOUNDSTYPE_WINDOW) {
         // Re-add the extents and then subtract the new
-        newH = newH + dy;
+        newH = newH + old_extents.height - new_extents.height;
     }
 
     LOG(SIZE, log_id, "update_frame_extents: new view size w=%d, h=%d\n", newW, newH);
