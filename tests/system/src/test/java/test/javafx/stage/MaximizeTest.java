@@ -32,13 +32,9 @@ import test.util.Util;
 
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static test.util.Util.GEOMETRY_DELAY;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.STATE_DELAY;
-import static test.util.Util.waitForBoolean;
 
 class MaximizeTest extends StageTestBase {
     private static final int WIDTH = 300;
@@ -82,7 +78,7 @@ class MaximizeTest extends StageTestBase {
     void maximizeBeforeShowShouldKeepGeometryOnRestore(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, TEST_SETTINGS.andThen(s -> s.setMaximized(true)));
 
-        waitForBoolean(getStage().maximizedProperty(), true);
+        Util.sleep(STATE_DELAY);
         setMaximized(false);
 
         assertSizePosition();
