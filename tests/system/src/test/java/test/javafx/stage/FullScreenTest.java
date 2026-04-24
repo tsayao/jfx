@@ -34,6 +34,7 @@ import test.util.Util;
 
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static test.util.Util.GEOMETRY_DELAY;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.STATE_DELAY;
