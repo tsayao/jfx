@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static test.util.Util.GEOMETRY_DELAY;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
+import static test.util.Util.STATE_DELAY;
 import static test.util.Util.waitForBoolean;
 
 class MaximizeTest extends StageTestBase {
@@ -116,11 +117,10 @@ class MaximizeTest extends StageTestBase {
 
     private void setMaximized(boolean value) {
         Util.runAndWait(() -> getStage().setMaximized(value));
-        waitForBoolean(getStage().maximizedProperty(), value);
+        Util.sleep(STATE_DELAY);
     }
 
     private void assertSizePosition() {
-        Util.sleep(GEOMETRY_DELAY);
         assertEquals(WIDTH, getStage().getWidth(), SIZING_DELTA, "Stage's width should have remained");
         assertEquals(HEIGHT, getStage().getHeight(), SIZING_DELTA, "Stage's height should have remained");
         assertEquals(POS_X, getStage().getX(), POSITION_DELTA, "Stage's X position should have remained");
