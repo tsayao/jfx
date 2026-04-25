@@ -970,6 +970,9 @@ void WindowContext::load_cached_extents() {
     if (window_type == UTILITY && utility_extents.has_value()) {
         window_extents = utility_extents.value();
     }
+
+    update_window_constraints();
+    update_window_size();
 }
 
 void WindowContext::process_property_notify(GdkEventProperty *event) {
@@ -1036,7 +1039,6 @@ void WindowContext::process_state(GdkEventWindowState *event) {
     if (restored && needs_to_update_frame_extents) {
         LOG(STATE, log_id, "process_state: restored, updating frame extents\n");
         needs_to_update_frame_extents = false;
-        // Will fire the observable and update window size
         load_cached_extents();
     }
 }
@@ -1603,7 +1605,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // Need to force notify back to java, because it probably has wrong sizes.
     // This is triggered, for example, when size is set bellow mininum.
     if ((newW != boundsW && view_size.width == boundsW) || (newH != boundsH && view_size.height == boundsH)) {
-        LOG(SIZE, log_id, "move_resize: invalidate\n");
+        LOG(SIZE, log_id, "move_resize: possible divergence\n");
         notify_view_resize();
         notify_window_size();
     }
