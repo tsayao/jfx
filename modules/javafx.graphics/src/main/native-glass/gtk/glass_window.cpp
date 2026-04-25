@@ -1104,6 +1104,7 @@ void WindowContext::notify_view_move() {
 }
 
 void WindowContext::process_configure(GdkEventConfigure *event) {
+    // Ignore synthetic (programmatically generated) events
     if (event->send_event == 1) return;
 
     LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d\n",
