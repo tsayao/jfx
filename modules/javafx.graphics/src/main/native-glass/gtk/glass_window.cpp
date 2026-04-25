@@ -1086,7 +1086,6 @@ void WindowContext::notify_view_resize() {
 void WindowContext::notify_window_size() {
     if (!window_size.is_valid()) return;
 
-    LOG(SIZE, log_id, "notify_window_size (value set previously)\n");
     if (is_iconified()) {
         notify_window_resize(com_sun_glass_events_WindowEvent_MINIMIZE);
     } else if (is_maximized()) {
@@ -1105,6 +1104,8 @@ void WindowContext::notify_view_move() {
 }
 
 void WindowContext::process_configure(GdkEventConfigure *event) {
+    if (event->send_event == 1) return;
+
     LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d\n",
             event->send_event, event->width, event->height);
 
@@ -1177,6 +1178,8 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 }
 
 void WindowContext::update_window_constraints() {
+    if (window_type == POPUP) return;
+
     // Not ready to re-apply the constraints
     if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
         LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
@@ -1186,7 +1189,6 @@ void WindowContext::update_window_constraints() {
     GdkGeometry hints;
 
     if (is_resizable() && isEnabled()) {
-        LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
         Size min = minimum_size.max(sys_min_size);
 
         hints.min_width = std::clamp(min.width - window_extents.width, 1, MAX_WINDOW_SIZE);
@@ -1195,7 +1197,6 @@ void WindowContext::update_window_constraints() {
         hints.max_width = std::clamp(maximum_size.width - window_extents.width, 1, MAX_WINDOW_SIZE);
         hints.max_height = std::clamp(maximum_size.height - window_extents.height, 1, MAX_WINDOW_SIZE);
     } else {
-        LOG(SIZE, log_id, "update_window_constraints: NOT resizable or disabled\n");
         int w = std::clamp(view_size.width, 1, MAX_WINDOW_SIZE);
         int h = std::clamp(view_size.height, 1, MAX_WINDOW_SIZE);
 
@@ -1205,11 +1206,25 @@ void WindowContext::update_window_constraints() {
         hints.max_height = h;
     }
 
+    if (geometry_hints.has_value()) {
+        GdkGeometry last_geometry = geometry_hints.value();
+
+        if (hints.min_width == last_geometry.min_width
+            && hints.min_height == last_geometry.min_height
+            && hints.max_width == last_geometry.max_width
+            && hints.max_height == last_geometry.max_height) {
+            return;
+        }
+    }
+
+
     LOG(SIZE, log_id, "update_window_constraints: min_w=%d, min_h=%d, max_w=%d, max_h=%d\n",
             hints.min_width, hints.min_height, hints.max_width, hints.max_height);
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints,
                             (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+
+    geometry_hints = hints;
 }
 
 void WindowContext::set_resizable(bool res) {
@@ -1523,8 +1538,8 @@ void WindowContext::update_window_size() {
     }
 
     if (frame_type == TITLED) {
-        window_size = Size({view_size.width + window_extents.width,
-                                view_size.height + window_extents.height});
+        window_size = Size{view_size.width + window_extents.width,
+                                view_size.height + window_extents.height};
     } else {
         // If no title/decoration the size will be the same
         window_size = view_size;
@@ -1621,6 +1636,13 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     if (!Size{boundsW, boundsH}.is_valid()) {
         LOG(SIZE, log_id, "move_resize: invalid size w=%d, h=%d\n", boundsW, boundsH);
         return;
+    }
+
+    // When the window is not resizable, allow programmatic resizing
+    if (!is_resizable()) {
+        LOG(SIZE, log_id, "move_resize: not resizable: %d, %d\n", boundsW, boundsH);
+        view_size = Size{boundsW, boundsH};
+        update_window_constraints();
     }
 
     if (mapped) {
