@@ -44,7 +44,7 @@ import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.runAndWait;
 import static test.util.Util.sleep;
 
-class SizingTest extends StageTestBase {
+class StageSizingTest extends StageTestBase {
     private static final int WIDTH = 300;
     private static final int HEIGHT = 300;
     private static final int MAX_WIDTH = 350;
@@ -506,10 +506,9 @@ class SizingTest extends StageTestBase {
         });
 
         assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
-                "Programatically resizing unresizable window before show should be allowed");
+                "Programatically resizing unresizable window should be allowed");
         assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
-                "Programatically resizing unresizable window before show should be allowed");
-
+                "Programatically resizing unresizable window should be allowed");
     }
 
 }
