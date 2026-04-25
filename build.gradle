@@ -2194,6 +2194,7 @@ allprojects {
         enableAssertions = true;
         testLogging.exceptionFormat = "full";
         scanForTestClasses = true;
+        showStandardStreams = true;
         include("**/*.*");
         if (BUILD_CLOSED && DO_JCOV) {
             addJCov(project, test)
