@@ -45,60 +45,6 @@
 #include <iostream>
 #include <functional>
 
-template<typename T>
-class Observable {
-private:
-    T value;
-    std::function<void(const T&)> onChange;
-    bool assigned_since_init{false};
-    bool notifying{false};
-
-public:
-    Observable(const T& initialValue = T()) : value(initialValue) {}
-
-    void set(const T& newValue) {
-        assigned_since_init = true;
-        if (value != newValue) {
-            value = newValue;
-            invalidate();
-        }
-    }
-
-    void invalidate() {
-        if (!onChange) return;
-        if (notifying) return;
-
-        notifying = true;
-
-        onChange(value);
-
-        notifying = false;
-    }
-
-    // This resets the value without notifying
-    void reset(const T& newValue) {
-        assigned_since_init = true;
-        value = newValue;
-    }
-
-    const T& get() const {
-        return value;
-    }
-
-    bool was_assigned() const {
-        return assigned_since_init;
-    }
-
-    Observable<T>& operator=(const T& newValue) {
-        set(newValue);
-        return *this;
-    }
-
-    void setOnChange(std::function<void(const T&)> callback) {
-        onChange = callback;
-    }
-};
-
 struct Rectangle {
     int x, y, width, height;
 
@@ -277,15 +223,15 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     GdkCursor* gdk_cursor{};
     GdkCursor* gdk_cursor_override{};
 
-    Observable<Size> minimum_size = Size{1, 1};
-    Observable<Size> maximum_size = Size{G_MAXINT, G_MAXINT};
-    Observable<Size> sys_min_size = Size{1, 1};
-    Observable<bool> resizable{true};
-    Observable<Point> view_position = Point{0, 0}; //Default for non-titled windows
-    Observable<Size> view_size = Size{-1, -1};
-    Observable<Size> window_size = Size{-1, -1};
-    Observable<OptionalAxisPoint> window_location;
-    Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
+    Size minimum_size = Size{1, 1};
+    Size maximum_size = Size{G_MAXINT, G_MAXINT};
+    Size sys_min_size = Size{1, 1};
+    bool resizable{true};
+    Point view_position = Point{0, 0}; //Default for non-titled windows
+    Size view_size = Size{-1, -1};
+    Size window_size = Size{-1, -1};
+    OptionalAxisPoint window_location;
+    Rectangle window_extents = Rectangle{0, 0, 0, 0};
 
     bool needs_to_update_frame_extents{false};
     float gravity_x{0};
