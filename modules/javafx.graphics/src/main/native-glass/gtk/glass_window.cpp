@@ -1212,17 +1212,15 @@ void WindowContext::update_window_constraints() {
 
     if (is_resizable() && isEnabled()) {
         LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
-        Size min = minimum_size.get().max(sys_min_size.get());
+        Size min = minimum_size.max(sys_min_size);
 
         Rectangle extents = window_extents.get();
 
         hints.min_width = std::clamp(min.width - extents.width, 1, MAX_WINDOW_SIZE);
         hints.min_height = std::clamp(min.height - extents.height, 1, MAX_WINDOW_SIZE);
 
-        Size max = maximum_size.get();
-
-        hints.max_width = std::clamp(max.width - extents.width, 1, MAX_WINDOW_SIZE);
-        hints.max_height = std::clamp(max.height - extents.height, 1, MAX_WINDOW_SIZE);
+        hints.max_width = std::clamp(maximum_size.width - extents.width, 1, MAX_WINDOW_SIZE);
+        hints.max_height = std::clamp(maximum_size.height - extents.height, 1, MAX_WINDOW_SIZE);
     } else {
         LOG(SIZE, log_id, "update_window_constraints: NOT resizable or disabled\n");
         Size size = view_size.get();
@@ -1618,8 +1616,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     // Holds view/content size
     int boundsW = newW, boundsH = newH;
 
-    Size max_size = maximum_size.get();
-    Size min_size = minimum_size.get().max(sys_min_size.get());
+    Size max_size = maximum_size;
+    Size min_size = minimum_size.max(sys_min_size);
 
     // Windows that are undecorated or transparent will not respect
     // minimum or maximum size constraints
