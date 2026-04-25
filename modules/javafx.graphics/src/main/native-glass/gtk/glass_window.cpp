@@ -172,7 +172,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     });
 
     window_size.setOnChange([this](const Size& size) {
-        notify_window_size();
+        notify_window_resize();
     });
 
     view_size.setOnChange([this](const Size& size) {
@@ -185,22 +185,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     window_extents.setOnChange([this](const Rectangle& rect) {
         update_window_constraints();
         update_window_size();
-    });
-
-    resizable.setOnChange([this](const bool& resizable) {
-        update_window_constraints();
-    });
-
-    minimum_size.setOnChange([this](const Size& size) {
-        update_window_constraints();
-    });
-
-    sys_min_size.setOnChange([this](const Size& size) {
-        update_window_constraints();
-    });
-
-    maximum_size.setOnChange([this](const Size& size) {
-        update_window_constraints();
     });
 
     load_cached_extents();
@@ -283,21 +267,21 @@ bool WindowContext::isEnabled() {
 }
 
 void WindowContext::notify_focus(int focus_type) {
-    if (jwindow) {
-        LOG(FOCUS, log_id, "notify_focus: %s\n",
-                focus_type == com_sun_glass_events_WindowEvent_FOCUS_GAINED ? "FOCUS_GAINED" : "FOCUS_LOST");
+    if (!jwindow) return;
 
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocus, focus_type);
-        CHECK_JNI_EXCEPTION(mainEnv);
-    }
+    LOG(FOCUS, log_id, "notify_focus: %s\n",
+            focus_type == com_sun_glass_events_WindowEvent_FOCUS_GAINED ? "FOCUS_GAINED" : "FOCUS_LOST");
+
+    mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocus, focus_type);
+    CHECK_JNI_EXCEPTION(mainEnv);
 }
 
 void WindowContext::notify_focus_disabled() {
-    if (jwindow) {
-        LOG(FOCUS, log_id, "notify_focus_disabled\n");
-        mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusDisabled);
-        CHECK_JNI_EXCEPTION(mainEnv)
-    }
+    if (!jwindow) return;
+
+    LOG(FOCUS, log_id, "notify_focus_disabled\n");
+    mainEnv->CallVoidMethod(jwindow, jWindowNotifyFocusDisabled);
+    CHECK_JNI_EXCEPTION(mainEnv)
 }
 
 void WindowContext::process_expose(GdkEventExpose* event) {
@@ -1094,6 +1078,9 @@ void WindowContext::notify_window_resize(int state) {
     if (!jwindow || !window_size.was_assigned()) return;
 
     Size size = window_size.get();
+
+    if (!size.is_valid()) return;
+
     LOG(SIZE, log_id, "notify_window_resize: state=%d, w=%d, h=%d\n", state, size.width, size.height);
     mainEnv->CallVoidMethod(jwindow, jWindowNotifyResize, state, size.width, size.height);
     CHECK_JNI_EXCEPTION(mainEnv)
@@ -1119,15 +1106,14 @@ void WindowContext::notify_view_resize() {
 
     Size size = view_size.get();
 
+    if (!size.is_valid()) return;
+
     LOG(SIZE, log_id, "notify_view_resize: w=%d, h=%d\n", size.width, size.height);
     mainEnv->CallVoidMethod(jview, jViewNotifyResize, size.width, size.height);
     CHECK_JNI_EXCEPTION(mainEnv)
 }
 
-void WindowContext::notify_window_size() {
-    if (!window_size.was_assigned()) return;
-
-    LOG(SIZE, log_id, "notify_window_size (value set previously)\n");
+void WindowContext::notify_window_resize() {
     if (is_iconified()) {
         notify_window_resize(com_sun_glass_events_WindowEvent_MINIMIZE);
     } else if (is_maximized()) {
@@ -1214,6 +1200,8 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 }
 
 void WindowContext::update_window_constraints() {
+    if (window_type == POPUP) return;
+
     // Not ready to re-apply the constraints
     if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
         LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
@@ -1247,20 +1235,35 @@ void WindowContext::update_window_constraints() {
         hints.max_height = h;
     }
 
+    if (geometry_hints.has_value()) {
+        GdkGeometry last_geometry = geometry_hints.value();
+
+        if (hints.min_width == last_geometry.min_width
+            && hints.min_height == last_geometry.min_height
+            && hints.max_width == last_geometry.max_width
+            && hints.max_height == last_geometry.max_height) {
+            return;
+        }
+    }
+
+
     LOG(SIZE, log_id, "update_window_constraints: min_w=%d, min_h=%d, max_w=%d, max_h=%d\n",
             hints.min_width, hints.min_height, hints.max_width, hints.max_height);
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints,
                             (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+
+    geometry_hints = hints;
 }
 
 void WindowContext::set_resizable(bool res) {
     LOG(SIZE, log_id, "set_resizable: %s\n", res ? "true" : "false");
-    resizable.set(res);
+    resizable = res;
+    update_window_constraints();
 }
 
 bool WindowContext::is_resizable() {
-    return resizable.get();
+    return resizable;
 }
 
 bool WindowContext::is_maximized() {
@@ -1366,7 +1369,7 @@ void WindowContext::set_bounds(int x, int y, bool xSet, bool ySet, int w, int h,
     // Ignore when maximized / fullscreen (not floating)
     // Report back to java to correct the values
     if (mapped && !is_floating()) {
-        notify_window_size();
+        notify_window_resize();
         notify_view_resize();
         notify_window_move();
         return;
@@ -1479,12 +1482,14 @@ void WindowContext::set_enabled(bool enabled) {
 
 void WindowContext::set_minimum_size(int w, int h) {
     LOG(SIZE, log_id, "set_minimum_size: w=%d, h=%d\n", w, h);
-    minimum_size.set({w, h});
+    minimum_size = Size{w, h};
+    update_window_constraints();
 }
 
 void WindowContext::set_system_minimum_size(int w, int h) {
     LOG(SIZE, log_id, "set_system_minimum_size: w=%d, h=%d\n", w, h);
-    sys_min_size.set({w, h});
+    sys_min_size = Size{w, h};
+    update_window_constraints();
 }
 
 void WindowContext::set_maximum_size(int w, int h) {
@@ -1492,7 +1497,8 @@ void WindowContext::set_maximum_size(int w, int h) {
     int maxw = (w == -1) ? G_MAXINT : w;
     int maxh = (h == -1) ? G_MAXINT : h;
 
-    maximum_size.set({maxw, maxh});
+    maximum_size = Size{maxw, maxh};
+    update_window_constraints();
 }
 
 void WindowContext::set_icon(GdkPixbuf* icon) {
@@ -1659,6 +1665,12 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     if (!Size{boundsW, boundsH}.is_valid()) {
         LOG(SIZE, log_id, "move_resize: invalid size w=%d, h=%d\n", boundsW, boundsH);
         return;
+    }
+
+    // When the window is not resizable, allow programmatic resizing
+    if (!is_resizable()) {
+        LOG(SIZE, log_id, "move_resize: not resizable: %d, %d\n", boundsW, boundsH);
+        view_size.set({boundsW, boundsH});
     }
 
     if (mapped) {

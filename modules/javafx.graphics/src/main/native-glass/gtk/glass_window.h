@@ -275,15 +275,16 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     GdkCursor* gdk_cursor{};
     GdkCursor* gdk_cursor_override{};
 
-    Observable<Size> minimum_size = Size{1, 1};
-    Observable<Size> maximum_size = Size{G_MAXINT, G_MAXINT};
-    Observable<Size> sys_min_size = Size{1, 1};
-    Observable<bool> resizable{true};
+    Size minimum_size = Size{1, 1};
+    Size maximum_size = Size{G_MAXINT, G_MAXINT};
+    Size sys_min_size = Size{1, 1};
+    bool resizable{true};
     Observable<Point> view_position = Point{0, 0}; //Default for non-titled windows
     Observable<Size> view_size = Size{-1, -1};
     Observable<Size> window_size = Size{-1, -1};
     Observable<OptionalAxisPoint> window_location;
     Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
+    std::optional<GdkGeometry> geometry_hints;
 
     bool needs_to_update_frame_extents{false};
     float gravity_x{0};
@@ -311,8 +312,6 @@ class WindowContext: public DeletedMemDebug<0xCC> {
      * should be reported during this drag.
      */
     static WindowContext* sm_mouse_drag_window;
-
-    static unsigned long sm_next_window_id;
 
 protected:
     bool is_mouse_entered{false};
@@ -420,7 +419,7 @@ private:
     void notify_window_move();
     void notify_view_resize();
     void notify_view_move();
-    void notify_window_size();
+    void notify_window_resize();
     void notify_repaint();
     void notify_repaint(Rectangle);
     GdkAtom get_net_frame_extents_atom();

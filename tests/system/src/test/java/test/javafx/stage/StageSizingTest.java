@@ -44,7 +44,7 @@ import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.runAndWait;
 import static test.util.Util.sleep;
 
-class SizingTest extends StageTestBase {
+class StageSizingTest extends StageTestBase {
     private static final int WIDTH = 300;
     private static final int HEIGHT = 300;
     private static final int MAX_WIDTH = 350;
@@ -470,4 +470,45 @@ class SizingTest extends StageTestBase {
         assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
                 "Scene height should remain unchanged after setting a new scene");
     }
+
+    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED", "TRANSPARENT", "UTILITY"})
+    void programaticallyResizeUnresizableBeforeShow(StageStyle stageStyle) {
+        setupStageWithStyle(stageStyle, s -> {
+            s.setWidth(WIDTH);
+            s.setHeight(HEIGHT);
+            s.setResizable(false);
+            s.setWidth(NEW_WIDTH);
+            s.setHeight(NEW_HEIGHT);
+        });
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Programatically resizing unresizable window before show should be allowed");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Programatically resizing unresizable window before show should be allowed");
+
+    }
+
+    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
+    @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED", "TRANSPARENT", "UTILITY"})
+    void programaticallyResizeUnresizableAfterShow(StageStyle stageStyle) {
+        setupStageWithStyle(stageStyle, s -> {
+            s.setWidth(WIDTH);
+            s.setHeight(HEIGHT);
+            s.setResizable(false);
+        });
+
+        sleep(GEOMETRY_DELAY);
+
+        runAndWait(() -> {
+            getStage().setWidth(NEW_WIDTH);
+            getStage().setHeight(NEW_HEIGHT);
+        });
+
+        assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
+                "Programatically resizing unresizable window should be allowed");
+        assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
+                "Programatically resizing unresizable window should be allowed");
+    }
+
 }
