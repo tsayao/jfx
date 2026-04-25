@@ -1619,7 +1619,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     Size max_size = maximum_size;
     Size min_size = minimum_size.max(sys_min_size);
 
-    // Windows that are undecorated or transparent will not respect
+    // Windows that are undecorated or transparent may not respect
     // minimum or maximum size constraints
 
     if (wSet) {
