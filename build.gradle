@@ -2194,7 +2194,6 @@ allprojects {
         enableAssertions = true;
         testLogging.exceptionFormat = "full";
         scanForTestClasses = true;
-        showStandardStreams = true;
         include("**/*.*");
         if (BUILD_CLOSED && DO_JCOV) {
             addJCov(project, test)
@@ -2216,6 +2215,10 @@ allprojects {
         systemProperty 'javafx.suppressPreviewWarning', 'true'
 
         systemProperty "glass.gtk.verbose", "all"
+
+        testLogging {
+            showStandardStreams = true
+        }
     }
 
     compileTestJava {
