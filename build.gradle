@@ -2213,6 +2213,12 @@ allprojects {
         systemProperty 'junit.jupiter.execution.timeout.lifecycle.method.default', JUNIT_LIFECYCLE_TIMEOUT
         systemProperty 'javafx.enablePreview', 'true'
         systemProperty 'javafx.suppressPreviewWarning', 'true'
+
+        systemProperty "glass.gtk.verbose", "all"
+
+        testLogging {
+            showStandardStreams = true
+        }
     }
 
     compileTestJava {
