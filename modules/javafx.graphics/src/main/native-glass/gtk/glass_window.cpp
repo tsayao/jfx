@@ -1158,6 +1158,7 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
         notify_view_resize();
         notify_window_size();
         notify_window_move();
+        notify_view_move();
     }
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);
@@ -1515,6 +1516,7 @@ bool WindowContext::effective_on_top() {
 
 void WindowContext::update_window_size() {
     if (!view_size.is_valid()) {
+        LOG(SIZE, log_id, "update_window_size: invalid view_size\n");
         return;
     }
 
