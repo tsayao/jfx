@@ -483,9 +483,9 @@ class StageSizingTest extends StageTestBase {
         });
 
         assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
-                "Programatically resizing unresizable window before show should be allowed");
+                "Programatically resizing an unresizable window before show should be allowed");
         assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
-                "Programatically resizing unresizable window before show should be allowed");
+                "Programatically resizing an unresizable window before show should be allowed");
 
     }
 
@@ -508,8 +508,8 @@ class StageSizingTest extends StageTestBase {
         sleep(GEOMETRY_DELAY);
 
         assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
-                "Programatically resizing (width) unresizable window should be allowed");
+                "Programatically resizing an unresizable window should be allowed");
         assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
-                "Programatically resizing (height) unresizable window should be allowed");
+                "Programatically resizing an unresizable window should be allowed");
     }
 }

@@ -163,6 +163,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
 
+    // Those will fire only if the value changes
     window_location.setOnChange([this](const OptionalAxisPoint& point) {
         notify_window_move();
     });
