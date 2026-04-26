@@ -49,8 +49,8 @@ class StageViewPositionTest extends StageTestBase {
         Util.runAndWait(() -> getStage().setFullScreen(false));
         Util.sleep(STATE_DELAY);
 
-        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should have view X offset");
-        assertNotEquals(0, getScene().getY(), "UnFullScreened stage should view have Y offset");
+        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should not have view X offset");
+        assertNotEquals(0, getScene().getY(), "UnFullScreened stage should not have view Y offset");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)

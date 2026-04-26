@@ -2214,10 +2214,6 @@ allprojects {
         systemProperty 'javafx.enablePreview', 'true'
         systemProperty 'javafx.suppressPreviewWarning', 'true'
 
-        systemProperty 'test.geometry.delay', '300'
-        systemProperty 'test.state.delay', '1000'
-        systemProperty 'test.focus.delay', '300'
-
         systemProperty "glass.gtk.verbose", "all"
 
         testLogging {
