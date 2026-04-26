@@ -1146,11 +1146,6 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     LOG(POSITION, log_id, "process_configure (position): send_event=%d, x=%d, y=%d\n",
         event->send_event, event->x, event->y);
 
-    // // Synthetized events will mess the flow with unwanted values
-    // if (event->send_event) {
-    //     LOG(SIZE, log_id, "process_configure: ignored (send_event=true)\n");
-    //     return;
-    // }
 
     int x, y;
     int view_x = 0, view_y = 0;
@@ -1672,8 +1667,13 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         view_size.set({boundsW, boundsH});
     }
 
-    LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
-    gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+    if (is_visible()) {
+        LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
+        gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+    } else {
+        LOG(SIZE, log_id, "--> move_resize: gtk_window_set_default_size(GTK_WINDOW: w=%d, h=%d\n", boundsW, boundsH);
+        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
+    }
 }
 
 void WindowContext::ensure_window_geometry() {
