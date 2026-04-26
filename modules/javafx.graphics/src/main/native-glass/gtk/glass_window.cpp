@@ -1702,6 +1702,8 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
+    // set_resizable may be called before
+    update_window_constraints();
     move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
 }
 
