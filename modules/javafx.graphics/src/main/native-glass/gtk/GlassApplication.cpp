@@ -496,8 +496,9 @@ static void process_events(GdkEvent* event, gpointer data)
                     gtk_main_do_event(event);
                     break;
                 case GDK_CONFIGURE:
-                    ctx->process_configure(&event->configure);
+                    // Let gtk handle it first, so state values are updated
                     gtk_main_do_event(event);
+                    ctx->process_configure(&event->configure);
                     break;
                 case GDK_FOCUS_CHANGE:
                     ctx->process_focus(&event->focus_change);
@@ -515,8 +516,9 @@ static void process_events(GdkEvent* event, gpointer data)
                     ctx->process_expose(&event->expose);
                     break;
                 case GDK_WINDOW_STATE:
-                    ctx->process_state(&event->window_state);
+                    // Let gtk handle it first, so state values are updated
                     gtk_main_do_event(event);
+                    ctx->process_state(&event->window_state);
                     break;
                 case GDK_BUTTON_PRESS:
                 case GDK_2BUTTON_PRESS:
