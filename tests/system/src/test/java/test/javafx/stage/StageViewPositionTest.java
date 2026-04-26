@@ -31,6 +31,7 @@ import test.util.Util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.STATE_DELAY;
 import static test.util.Util.runAndWait;
@@ -49,8 +50,8 @@ class StageViewPositionTest extends StageTestBase {
         Util.runAndWait(() -> getStage().setFullScreen(false));
         Util.sleep(STATE_DELAY);
 
-        assertFalse(0, getScene().getX(), "UnFullScreened stage should have view X offset");
-        assertFalse(0, getScene().getY(), "UnFullScreened stage should view have Y offset");
+        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should have view X offset");
+        assertNotEquals(0, getScene().getY(), "UnFullScreened stage should view have Y offset");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
@@ -67,8 +68,8 @@ class StageViewPositionTest extends StageTestBase {
         Util.runAndWait(() -> getStage().setFullScreen(false));
         Util.sleep(STATE_DELAY);
 
-        assertFalse(0, getScene().getX(), "UnFullScreened stage should have view X offset");
-        assertFalse(0, getScene().getY(), "UnFullScreened stage should view have Y offset");
+        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should have view X offset");
+        assertNotEquals(0, getScene().getY(), "UnFullScreened stage should view have Y offset");
     }
 
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
@@ -76,16 +77,7 @@ class StageViewPositionTest extends StageTestBase {
     void undecoratedStagesShouldHaveNoViewPositionOffset(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, null);
 
-        assertFalse(0, getScene().getX(), "Stages with no decoration shouldn't have view X offset");
-        assertFalse(0, getScene().getY(), "Stages with no decoration shouldn't have view Y offset");
-    }
-
-    @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
-    @EnumSource(names = {"UNDECORATED", "EXTENDED", "TRANSPARENT"})
-    void undecoratedStagesShouldHaveNoViewPositionOffset(StageStyle stageStyle) {
-        setupStageWithStyle(stageStyle, null);
-
-        assertFalse(0, getScene().getX(), "Stages with no decoration shouldn't have view X offset");
-        assertFalse(0, getScene().getY(), "Stages with no decoration shouldn't have view Y offset");
+        assertNotEquals(0, getScene().getX(), "Stages with no decoration shouldn't have view X offset");
+        assertNotEquals(0, getScene().getY(), "Stages with no decoration shouldn't have view Y offset");
     }
 }

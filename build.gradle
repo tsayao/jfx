@@ -2214,6 +2214,10 @@ allprojects {
         systemProperty 'javafx.enablePreview', 'true'
         systemProperty 'javafx.suppressPreviewWarning', 'true'
 
+        systemProperty 'test.geometry.delay', '300'
+        systemProperty 'test.state.delay', '500'
+        systemProperty 'test.focus.delay', '500'
+
         systemProperty "glass.gtk.verbose", "all"
 
         testLogging {
@@ -4204,6 +4208,8 @@ project(":web") {
 // when FULL_TEST is specified, and each test runs in its own JVM
 project(":systemTests") {
 
+    apply plugin: 'idea'
+
     sourceSets {
         test
 
@@ -4226,6 +4232,34 @@ project(":systemTests") {
         testapp7
         testscriptapp1
         testscriptapp2
+    }
+
+    // Keep all system test source sets in the same dependency buckets as test.
+    def ideTestLikeSourceSets = [
+        "manualTest",
+        "testapp1",
+        "testapp2",
+        "testapp3",
+        "testapp4",
+        "testapp5",
+        "testapp6",
+        "testapp7",
+        "testscriptapp1",
+        "testscriptapp2"
+    ]
+    ideTestLikeSourceSets.each { sourceSetName ->
+        configurations.getByName("${sourceSetName}Implementation").extendsFrom(configurations.testImplementation)
+        configurations.getByName("${sourceSetName}CompileOnly").extendsFrom(configurations.testCompileOnly)
+        configurations.getByName("${sourceSetName}RuntimeOnly").extendsFrom(configurations.testRuntimeOnly)
+        configurations.getByName("${sourceSetName}AnnotationProcessor").extendsFrom(configurations.testAnnotationProcessor)
+    }
+
+    // Ensure IntelliJ marks tests/manual as test sources when importing this Gradle module.
+    idea {
+        module {
+            testSources.from(sourceSets.manualTest.java.srcDirs)
+            testResources.from(sourceSets.manualTest.resources.srcDirs)
+        }
     }
 
     def nonModSrcSets = [
@@ -4254,13 +4288,6 @@ project(":systemTests") {
     project.ext.moduleRuntime = false
     project.ext.moduleName = "systemTests"
 
-    dependencies {
-        testImplementation project(":graphics").sourceSets.test.output
-        testImplementation project(":base").sourceSets.test.output
-        testImplementation project(":controls").sourceSets.test.output
-        testImplementation project(":swing").sourceSets.test.output
-    }
-
     def dependentProjects = [
         'base',
         'graphics',
@@ -4278,6 +4305,19 @@ project(":systemTests") {
         'swing',
         'fxml'
     ]
+
+    dependencies {
+        // Keep existing access to test utilities from selected projects.
+        testImplementation project(":graphics").sourceSets.test.output
+        testImplementation project(":base").sourceSets.test.output
+        testImplementation project(":controls").sourceSets.test.output
+        testImplementation project(":swing").sourceSets.test.output
+
+        // Also declare module projects as normal Gradle deps for IDE import classpaths.
+        dependentProjects.each { name ->
+            testImplementation project(":${name}")
+        }
+    }
     commonModuleSetup(project, dependentProjects)
 
     File testRunArgsFile = new File(rootProject.buildDir,TESTRUNARGSFILE);
