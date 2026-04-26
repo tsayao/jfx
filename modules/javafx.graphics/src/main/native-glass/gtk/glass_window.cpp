@@ -1238,7 +1238,7 @@ void WindowContext::update_window_constraints() {
         hints.max_height = h;
     }
 
-    if (geometry_hints.has_value()) {
+    if (mapped && geometry_hints.has_value()) {
         GdkGeometry last_geometry = geometry_hints.value();
 
         if (hints.min_width == last_geometry.min_width
@@ -1702,7 +1702,7 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    // set_resizable may be called before
+    // set_resizable may be called before, and will be appplyed here
     update_window_constraints();
     move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
 }
