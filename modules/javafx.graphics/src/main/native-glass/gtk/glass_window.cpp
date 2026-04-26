@@ -1243,8 +1243,6 @@ void WindowContext::update_window_constraints() {
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints,
                             (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
-
-    geometry_hints = hints;
 }
 
 void WindowContext::set_resizable(bool res) {
