@@ -45,9 +45,11 @@
 #include <iostream>
 #include <functional>
 
+
+// Used for notification triggering and to only notify when
+// the value actually changed
 template<typename T>
 class Observable {
-private:
     T value;
     std::function<void(const T&)> onChange;
     bool assigned_since_init{false};
@@ -66,7 +68,10 @@ public:
 
     void invalidate() {
         if (!onChange) return;
-        if (notifying) return;
+        if (notifying) {
+            fprintf(stderr,"WARNING: Re-entrant call to Observable::invalidate() (possible cyclic dependency)\n");
+            return;
+        }
 
         notifying = true;
 

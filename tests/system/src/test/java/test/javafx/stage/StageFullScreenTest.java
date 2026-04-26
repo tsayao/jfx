@@ -39,6 +39,7 @@ import static test.util.Util.GEOMETRY_DELAY;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
 import static test.util.Util.STATE_DELAY;
 
+
 class StageFullScreenTest extends StageTestBase {
     private static final int POS_X = 100;
     private static final int POS_Y = 150;

@@ -1107,7 +1107,11 @@ void WindowContext::notify_view_resize() {
 
     Size size = view_size.get();
 
-    if (!size.is_valid()) return;
+    if (!size.is_valid()) {
+        LOG(SIZE, log_id, "notify_view_resize: view size was not set completely: %d, %d\n",
+            size.width, size.height);
+        return;
+    }
 
     LOG(SIZE, log_id, "notify_view_resize: w=%d, h=%d\n", size.width, size.height);
     mainEnv->CallVoidMethod(jview, jViewNotifyResize, size.width, size.height);
@@ -1401,8 +1405,8 @@ void WindowContext::set_minimized(bool state) {
         iconify(state);
     } else {
         initial_state_mask = state
-            ? (initial_state_mask | GDK_WINDOW_STATE_ICONIFIED)
-            : (initial_state_mask & ~GDK_WINDOW_STATE_ICONIFIED);
+            ? initial_state_mask | GDK_WINDOW_STATE_ICONIFIED
+            : initial_state_mask & ~GDK_WINDOW_STATE_ICONIFIED;
     }
 }
 
@@ -1412,8 +1416,8 @@ void WindowContext::set_maximized(bool state) {
         maximize(state);
     } else {
         initial_state_mask = state
-            ? (initial_state_mask | GDK_WINDOW_STATE_MAXIMIZED)
-            : (initial_state_mask & ~GDK_WINDOW_STATE_MAXIMIZED);
+            ? initial_state_mask | GDK_WINDOW_STATE_MAXIMIZED
+            : initial_state_mask & ~GDK_WINDOW_STATE_MAXIMIZED;
     }
 }
 
@@ -1563,6 +1567,7 @@ void WindowContext::update_window_size() {
     Size size = view_size.get();
 
     if (!size.is_valid()) {
+        LOG(SIZE, log_id, "update_window_size: invalid size %d, %d\n", size.width, size.height);
         return;
     }
 

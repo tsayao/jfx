@@ -482,6 +482,8 @@ class StageSizingTest extends StageTestBase {
             s.setHeight(NEW_HEIGHT);
         });
 
+        sleep(GEOMETRY_DELAY);
+
         assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
                 "Programatically resizing an unresizable window before show should be allowed");
         assertEquals(NEW_HEIGHT, getStage().getHeight(), SIZING_DELTA,
