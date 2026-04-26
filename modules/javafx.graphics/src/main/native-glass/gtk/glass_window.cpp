@@ -1697,6 +1697,9 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
+    LOG(POSITION, log_id, "ensure_window_geometry: x=%d, y=%d\n", loc.x.value_or(0), loc.y.value_or(0));
+    LOG(SIZE, log_id, "ensure_window_geometry: w=%d, h=%d\n", w, h);
+
     move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
 }
 
