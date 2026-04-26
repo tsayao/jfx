@@ -1672,13 +1672,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         view_size.set({boundsW, boundsH});
     }
 
-    if (is_visible()) {
-        LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
-        gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-    } else {
-        LOG(SIZE, log_id, "--> move_resize: gtk_window_set_default_size(GTK_WINDOW: w=%d, h=%d\n", boundsW, boundsH);
-        gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-    }
+    LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
+    gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
 }
 
 void WindowContext::ensure_window_geometry() {
