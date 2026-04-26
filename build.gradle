@@ -4207,6 +4207,13 @@ project(":systemTests") {
     sourceSets {
         test
 
+        // Keep tests/manual visible to IDE Gradle import as a test-like source set.
+        manualTest {
+            java.srcDir("../manual")
+            compileClasspath += sourceSets.test.output + sourceSets.test.compileClasspath
+            runtimeClasspath += output + compileClasspath + sourceSets.test.runtimeClasspath
+        }
+
         // Source sets for standalone test apps (used for launcher tests)
         testapp1
 
