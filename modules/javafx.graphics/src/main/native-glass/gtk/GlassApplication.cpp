@@ -545,6 +545,7 @@ static void process_events(GdkEvent* event, gpointer data)
                     process_dnd_target(ctx, &event->dnd);
                     break;
                 case GDK_MAP:
+                    gtk_main_do_event(event);
                     ctx->process_map();
                     break;
                 case GDK_UNMAP:
