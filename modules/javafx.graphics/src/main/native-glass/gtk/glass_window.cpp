@@ -186,7 +186,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     window_extents.setOnChange([this](const Rectangle& rect) {
         update_window_constraints();
         update_window_size();
-        notify_view_move();
     });
 
     load_cached_extents();
