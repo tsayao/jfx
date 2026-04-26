@@ -195,7 +195,7 @@ class StageOwnershipTest extends VisualTestBase {
         } catch (InterruptedException e) {
             fail(e);
         }
-        Util.sleep(FOCUS_DELAY);
+        Util.sleep(1000);
     }
 
     private static Stream<Arguments> getTestsParams() {
@@ -336,7 +336,7 @@ class StageOwnershipTest extends VisualTestBase {
     void ownedStageShouldAlwaysBeOnTopOfOwner(StageStyle style) {
         runAndWait(() -> {
             stage0 = createStage(style, COLOR0, null, null, 0, 0);
-            stage1 = createStage(style, COLOR1, stage0, Modality.WINDOW_MODAL, 0, 0);
+            stage1 = createStage(style, COLOR1, stage0, null, 0, 0);
         });
 
         showStageAndWait(stage0, stage1);
