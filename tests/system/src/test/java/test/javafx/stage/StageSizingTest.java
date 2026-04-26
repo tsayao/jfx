@@ -38,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static test.util.Util.GEOMETRY_DELAY;
 import static test.util.Util.PARAMETERIZED_TEST_DISPLAY;
@@ -483,6 +484,7 @@ class StageSizingTest extends StageTestBase {
         });
 
         sleep(GEOMETRY_DELAY);
+        assertFalse(getStage().isResizable(), "Stage should be unresizable");
 
         assertEquals(NEW_WIDTH, getStage().getWidth(), SIZING_DELTA,
                 "Programatically resizing an unresizable window before show should be allowed");
@@ -501,6 +503,8 @@ class StageSizingTest extends StageTestBase {
         });
 
         sleep(GEOMETRY_DELAY);
+
+        assertFalse(getStage().isResizable(), "Stage should be unresizable");
 
         runAndWait(() -> {
             getStage().setWidth(NEW_WIDTH);
