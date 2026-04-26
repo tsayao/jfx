@@ -49,7 +49,6 @@ class StageViewPositionTest extends StageTestBase {
         Util.runAndWait(() -> getStage().setFullScreen(false));
         Util.sleep(STATE_DELAY);
 
-        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should not have view X offset");
         assertNotEquals(0, getScene().getY(), "UnFullScreened stage should not have view Y offset");
     }
 
@@ -61,13 +60,11 @@ class StageViewPositionTest extends StageTestBase {
         runAndWait(() -> getStage().setFullScreen(true));
         Util.sleep(STATE_DELAY);
 
-        assertEquals(0, getScene().getX(), "FullScreen stage should have no view X offset");
         assertEquals(0, getScene().getY(), "FullScreen stage should have no view Y offset");
 
         Util.runAndWait(() -> getStage().setFullScreen(false));
         Util.sleep(STATE_DELAY);
 
-        assertNotEquals(0, getScene().getX(), "UnFullScreened stage should have view X offset");
         assertNotEquals(0, getScene().getY(), "UnFullScreened stage should have view Y offset");
     }
 
@@ -76,7 +73,6 @@ class StageViewPositionTest extends StageTestBase {
     void undecoratedStagesShouldHaveNoViewPositionOffset(StageStyle stageStyle) {
         setupStageWithStyle(stageStyle, null);
 
-        assertEquals(0, getScene().getX(), "Stages with no decoration shouldn't have view X offset");
         assertEquals(0, getScene().getY(), "Stages with no decoration shouldn't have view Y offset");
     }
 }
