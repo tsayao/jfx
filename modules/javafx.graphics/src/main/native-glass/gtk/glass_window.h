@@ -291,7 +291,6 @@ class WindowContext: public DeletedMemDebug<0xCC> {
     Observable<Size> window_size = Size{-1, -1};
     Observable<OptionalAxisPoint> window_location;
     Observable<Rectangle> window_extents = Rectangle{0, 0, 0, 0};
-    std::optional<GdkGeometry> geometry_hints;
 
     bool needs_to_update_frame_extents{false};
     float gravity_x{0};

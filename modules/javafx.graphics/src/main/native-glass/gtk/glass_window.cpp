@@ -1238,18 +1238,6 @@ void WindowContext::update_window_constraints() {
         hints.max_height = h;
     }
 
-    if (mapped && geometry_hints.has_value()) {
-        GdkGeometry last_geometry = geometry_hints.value();
-
-        if (hints.min_width == last_geometry.min_width
-            && hints.min_height == last_geometry.min_height
-            && hints.max_width == last_geometry.max_width
-            && hints.max_height == last_geometry.max_height) {
-            return;
-        }
-    }
-
-
     LOG(SIZE, log_id, "update_window_constraints: min_w=%d, min_h=%d, max_w=%d, max_h=%d\n",
             hints.min_width, hints.min_height, hints.max_width, hints.max_height);
 
