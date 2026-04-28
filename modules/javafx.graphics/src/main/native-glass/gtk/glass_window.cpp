@@ -43,6 +43,8 @@
 #include <algorithm>
 #include <optional>
 
+#include "../../../../../../../../../../usr/include/gtk-3.0/gdk/gdkwindow.h"
+
 #define MOUSE_BACK_BTN 8
 #define MOUSE_FORWARD_BTN 9
 
@@ -297,9 +299,6 @@ void WindowContext::process_map() {
 
     LOG(LIFECYCLE, log_id, "process_map -------------------------------------------\n");
     mapped = true;
-
-    // set_resizable may be called before, and will be applied here
-    update_window_constraints();
 
     // The compositor may adjust the window size and position during the process,
     // so checking again increases the chances that the final geometry matches
@@ -1140,12 +1139,16 @@ void WindowContext::notify_view_move() {
 }
 
 void WindowContext::process_configure(GdkEventConfigure *event) {
+    if (event->send_event) {
+        LOG(SIZE, log_id, "process_configure: ignoring synthetic event\n");
+        return;
+    }
+
     LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d\n",
             event->send_event, event->width, event->height);
 
     LOG(POSITION, log_id, "process_configure (position): send_event=%d, x=%d, y=%d\n",
         event->send_event, event->x, event->y);
-
 
     int x, y;
     int view_x = 0, view_y = 0;
@@ -1210,6 +1213,8 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
 
 void WindowContext::update_window_constraints() {
     if (window_type == POPUP) return;
+    if (!mapped) return;
+
 
     // Not ready to re-apply the constraints
     if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
@@ -1579,6 +1584,9 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         return;
     }
 
+    LOG(POSITION, log_id, "move_resize: x=%d, y=%d, xSet=%d, ySet=%d\n", x, y, xSet, ySet);
+    LOG(SIZE, log_id, "move_resize: width=%d, height=%d, wSet=%d, hSet=%d\n", width, height, wSet, hSet);
+
     auto loc = window_location.get();
 
     int newX = 0, newY = 0;
@@ -1647,6 +1655,12 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         return;
     }
 
+    // When the window is not resizable, allow programmatic resizing.
+    if (!is_resizable()) {
+        LOG(SIZE, log_id, "move_resize: not resizable: %d, %d\n", boundsW, boundsH);
+        view_size.set({boundsW, boundsH});
+    }
+
     // Need to force notify back to java, because it probably has wrong sizes.
     // This is triggered, for example, when size is set bellow mininum.
     if ((newW != boundsW && size.width == boundsW) || (newH != boundsH && size.height == boundsH)) {
@@ -1661,13 +1675,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         view_size.set({boundsW, boundsH});
     }
 
-    // When the window is not resizable, allow programmatic resizing.
-    if (mapped && !is_resizable()) {
-        LOG(SIZE, log_id, "move_resize: not resizable: %d, %d\n", boundsW, boundsH);
-        view_size.set({boundsW, boundsH});
-    }
-
-    if (is_visible()) {
+    if (mapped) {
         LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     } else {
@@ -1677,11 +1685,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
 }
 
 void WindowContext::ensure_window_geometry() {
-    auto loc = window_location.get();
     auto [w, h] = view_size.get();
-
-    bool xSet = loc.x.has_value();
-    bool ySet = loc.y.has_value();
 
     // If never assigned, use defaults
     if (w <= 0) {
@@ -1692,10 +1696,15 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    LOG(POSITION, log_id, "ensure_window_geometry: x=%d, y=%d\n", loc.x.value_or(0), loc.y.value_or(0));
+    // The window manager can move the window, for example, when set to (0, 0)
+    // and there are desktop panels
+    int x, y;
+    gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
+
+    LOG(POSITION, log_id, "ensure_window_geometry: x=%d, y=%d\n", x, y);
     LOG(SIZE, log_id, "ensure_window_geometry: w=%d, h=%d\n", w, h);
 
-    move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
+    move_resize(x, y, true, true, w, h);
 }
 
 void WindowContext::add_wmf(GdkWMFunction wmf) {
