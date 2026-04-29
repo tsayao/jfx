@@ -43,8 +43,6 @@
 #include <algorithm>
 #include <optional>
 
-#include "../../../../../../../../../../usr/include/gtk-3.0/gdk/gdkwindow.h"
-
 #define MOUSE_BACK_BTN 8
 #define MOUSE_FORWARD_BTN 9
 
@@ -245,6 +243,8 @@ void WindowContext::process_realize() {
     if (log_id.empty()) {
         log_id = std::to_string(GDK_WINDOW_XID(gdk_window));
     }
+
+    gdk_window_get_frame_extents()
 
     g_object_set_data_full(G_OBJECT(gdk_window), GDK_WINDOW_DATA_CONTEXT, this, nullptr);
     gdk_window_register_dnd(gdk_window);
@@ -1139,11 +1139,6 @@ void WindowContext::notify_view_move() {
 }
 
 void WindowContext::process_configure(GdkEventConfigure *event) {
-    if (event->send_event) {
-        LOG(SIZE, log_id, "process_configure: ignoring synthetic event\n");
-        return;
-    }
-
     LOG(SIZE, log_id, "process_configure (size): send_event=%d, w=%d, h=%d\n",
             event->send_event, event->width, event->height);
 
@@ -1194,8 +1189,14 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     // the requested size and position.
     if (mapped) {
         window_location.set({x, y});
-        view_size.set({event->width, event->height});
-        window_size.set({ww, wh});
+
+        // When the window is not resizable and its size is set programmatically,
+        // a configure event may still be emitted with the previous (non-resizable)
+        // dimensions, marked as a synthetic event (send_event = true).
+        if (!is_resizable() && event->send_event) {
+            view_size.set({event->width, event->height});
+            window_size.set({ww, wh});
+        }
     }
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);
@@ -1679,13 +1680,17 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     } else {
-        LOG(SIZE, log_id, "--> move_resize: gtk_window_set_default_size(GTK_WINDOW: w=%d, h=%d\n", boundsW, boundsH);
+        LOG(SIZE, log_id, "--> move_resize: gtk_window_set_default_size: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     }
 }
 
 void WindowContext::ensure_window_geometry() {
+    auto loc = window_location.get();
     auto [w, h] = view_size.get();
+
+    bool xSet = loc.x.has_value();
+    bool ySet = loc.y.has_value();
 
     // If never assigned, use defaults
     if (w <= 0) {
@@ -1696,15 +1701,8 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    // The window manager can move the window, for example, when set to (0, 0)
-    // and there are desktop panels
-    int x, y;
-    gtk_window_get_position(GTK_WINDOW(gtk_widget), &x, &y);
-
-    LOG(POSITION, log_id, "ensure_window_geometry: x=%d, y=%d\n", x, y);
-    LOG(SIZE, log_id, "ensure_window_geometry: w=%d, h=%d\n", w, h);
-
-    move_resize(x, y, true, true, w, h);
+    move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
+    update_window_constraints();
 }
 
 void WindowContext::add_wmf(GdkWMFunction wmf) {
