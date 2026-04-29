@@ -378,6 +378,7 @@ public:
     void process_state(GdkEventWindowState*);
     void process_property_notify(GdkEventProperty*);
     void process_configure(GdkEventConfigure*);
+    void remove_window_constraints();
     void process_delete();
     void process_destroy();
 
