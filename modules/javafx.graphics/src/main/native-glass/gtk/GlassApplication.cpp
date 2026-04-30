@@ -516,7 +516,11 @@ static void process_events(GdkEvent* event, gpointer data)
                     break;
                 case GDK_WINDOW_STATE:
                     ctx->process_state(&event->window_state);
+                //FIXME:
                     gtk_main_do_event(event);
+                    // Note: gtk_main_do_event(event) is intentionally not called here,
+                    // as it would generate synthetic configure events when resizing
+                    // a non-resizable window programmatically.
                     break;
                 case GDK_BUTTON_PRESS:
                 case GDK_2BUTTON_PRESS:
