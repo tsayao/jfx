@@ -1253,16 +1253,8 @@ void WindowContext::update_window_constraints() {
 
     if (!mapped) return;
 
-    if (!should_be_resizable) {
-        LOG(SIZE, log_id, "update_window_constraints: not resizable, clearing geometry hints\n");
-        gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr,
-            (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
-        return;
-    }
-
-
     // Not ready to re-apply the constraints
-    if (!is_floating() || !is_state_floating((GdkWindowState) initial_state_mask)) {
+    if (!is_floating()) {
         LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
         return;
     }
@@ -1688,6 +1680,13 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         return;
     }
 
+    bool not_resizable = mapped && !is_resizable();
+
+    // When the window is not resizable, allow programmatic resizing.
+    if (not_resizable) {
+        remove_window_constraints();
+    }
+
     // Need to force notify back to java, because it probably has wrong sizes.
     // This is triggered, for example, when size is set bellow mininum.
     if ((newW != boundsW && size.width == boundsW) || (newH != boundsH && size.height == boundsH)) {
@@ -1702,31 +1701,17 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         view_size.set({boundsW, boundsH});
     }
 
-    // bool not_resizable = mapped && !is_resizable();
-    //
-    // // When the window is not resizable, allow programmatic resizing.
-    // if (not_resizable) {
-    //     view_size.set({boundsW, boundsH});
-    //     remove_window_constraints();
-    // }
-
-    //send_configure_event(boundsW, boundsH);
-
     if (mapped) {
         LOG(SIZE, log_id, "--> move_resize: gtk_window_resize: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_resize(GTK_WINDOW(gtk_widget), boundsW, boundsH);
-        // if (!is_resizable()) {
-        //     LOG(SIZE, log_id, "--> move_resize: send_configure_event\n");
-            send_configure_event(boundsW, boundsH);
-        // }
     } else {
         LOG(SIZE, log_id, "--> move_resize: gtk_window_set_default_size: w=%d, h=%d\n", boundsW, boundsH);
         gtk_window_set_default_size(GTK_WINDOW(gtk_widget), boundsW, boundsH);
     }
 
-    // if (not_resizable) {
-    //     update_window_constraints();
-    // }
+    if (not_resizable) {
+        update_window_constraints();
+    }
 }
 
 void WindowContext::ensure_window_geometry() {
