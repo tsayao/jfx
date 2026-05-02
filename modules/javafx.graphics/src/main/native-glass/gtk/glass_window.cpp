@@ -1759,6 +1759,12 @@ void WindowContext::set_owner(WindowContext * owner_ctx) {
 
 void WindowContext::update_view_size() {
     LOG(SIZE, log_id, "update_view_size\n");
+    if (GDK_IS_WINDOW(gdk_window)) {
+        int width = 0, height = 0;
+        gdk_window_get_geometry(gdk_window, nullptr, nullptr, &width, &height);
+        view_size.set({width, height});
+    }
+
     notify_view_resize();
 }
 
