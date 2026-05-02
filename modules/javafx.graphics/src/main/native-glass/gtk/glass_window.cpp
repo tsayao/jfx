@@ -1624,23 +1624,23 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     Bounds min_size = minimum_size.max(sys_min_size).without_extents(extents);
     Bounds max_size = maximum_size.without_extents(extents);
 
-    if (wSet) {
-        int minW = min_size.width > 0 ? min_size.width : 1;
-        int maxW = max_size.width > 0 ? max_size.width : MAX_WINDOW_SIZE;
-
-        boundsW = std::clamp(boundsW, minW, maxW);
-
-        LOG(SIZE, log_id, "move_resize: width after bounds check w=%d\n", boundsW);
-    }
-
-    if (hSet) {
-        int minH = min_size.height > 0 ? min_size.height : 1;
-        int maxH = max_size.height > 0 ? max_size.height : MAX_WINDOW_SIZE;
-
-        boundsH = std::clamp(boundsH, minH, maxH);
-
-        LOG(SIZE, log_id, "move_resize: height after bounds check h=%d\n", boundsH);
-    }
+    // if (wSet) {
+    //     int minW = min_size.width > 0 ? min_size.width : 1;
+    //     int maxW = max_size.width > 0 ? max_size.width : MAX_WINDOW_SIZE;
+    //
+    //     boundsW = std::clamp(boundsW, minW, maxW);
+    //
+    //     LOG(SIZE, log_id, "move_resize: width after bounds check w=%d\n", boundsW);
+    // }
+    //
+    // if (hSet) {
+    //     int minH = min_size.height > 0 ? min_size.height : 1;
+    //     int maxH = max_size.height > 0 ? max_size.height : MAX_WINDOW_SIZE;
+    //
+    //     boundsH = std::clamp(boundsH, minH, maxH);
+    //
+    //     LOG(SIZE, log_id, "move_resize: height after bounds check h=%d\n", boundsH);
+    // }
 
     if (!Size {boundsW, boundsH}.is_valid()) {
         LOG(SIZE, log_id, "move_resize: invalid size w=%d, h=%d\n", boundsW, boundsH);
