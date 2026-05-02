@@ -898,7 +898,7 @@ void WindowContext::update_frame_extents() {
     set_cached_extents(new_extents);
 
     if (!is_floating()) {
-        // Delay for then window is restored from fullscreen or maximized
+        // Delay for when window is restored from fullscreen or maximized
         needs_to_update_frame_extents = true;
         LOG(SIZE, log_id, "update_frame_extents: deferred (not floating)\n");
         return;
@@ -1148,7 +1148,7 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     LOG(POSITION, log_id, "process_configure (position): send_event=%d, x=%d, y=%d\n",
         event->send_event, event->x, event->y);
 
-    // Gtk send those synthetic events to limit size
+    // Gtk sent events.
     if (event->send_event) {
         LOG(SIZE, log_id, "process_configure: synthetic event, ignoring\n");
         return;
@@ -1179,25 +1179,12 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
         y = event->y;
     }
 
-    int ww = event->width;
-    int wh = event->height;
-
-    Rectangle extents = window_extents.get();
-
-    if (view_x > 0) {
-        ww += extents.width;
-    }
-
-    if (view_y > 0) {
-        wh += extents.height;
-    }
-
      // See the comment on move_resize about only trusting it when mapped
      if (mapped) {
-        window_location.set({x, y});
         view_size.set({event->width, event->height});
-        window_size.set({ww, wh});
     }
+
+    window_location.set({x, y});
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);
     if (to_screen != -1) {
@@ -1228,6 +1215,7 @@ void WindowContext::remove_window_constraints() {
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
 
+    // Must wait it to apply
     process_pending_events();
 }
 
@@ -1250,8 +1238,8 @@ void WindowContext::update_window_constraints() {
     LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
     Rectangle extents = window_extents.get();
 
-    Bounds min = minimum_size.max(sys_min_size).without_exents(extents);
-    Bounds max = maximum_size.without_exents(extents);
+    Bounds min = minimum_size.max(sys_min_size).without_extents(extents);
+    Bounds max = maximum_size.without_extents(extents);
 
     if (min.is_set()) {
         flags |= GDK_HINT_MIN_SIZE;
@@ -1577,7 +1565,8 @@ void WindowContext::update_window_size() {
         return;
     }
 
-    if (frame_type == TITLED) {
+    // It may be a TITLED fullscreen window
+    if (view_position.get().y > 0) {
         window_size.set({size.width + window_extents.get().width,
                                 size.height + window_extents.get().height});
     } else {
@@ -1631,8 +1620,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
 
     Rectangle extents = window_extents.get();
 
-    Bounds min_size = minimum_size.max(sys_min_size).without_exents(extents);
-    Bounds max_size = maximum_size.without_exents(extents);
+    Bounds min_size = minimum_size.max(sys_min_size).without_extents(extents);
+    Bounds max_size = maximum_size.without_extents(extents);
 
     if (wSet) {
         int minW = min_size.width > 0 ? min_size.width : 1;
@@ -1665,7 +1654,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 
     // Need to force notify back to java, because it probably has wrong sizes.
-    // This is triggered, for example, when size is set bellow mininum.
+    // This is triggered, for example, when size is set below mininum.
     if ((newW != boundsW && size.width == boundsW) || (newH != boundsH && size.height == boundsH)) {
         LOG(SIZE, log_id, "move_resize: invalidate\n");
         view_size.invalidate();
@@ -1676,7 +1665,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         // If the window is not yet mapped, report the values back to Java so it can
         // reapply/correct them after mapping. We cannot rely on them staying the same,
         // as the window manager or GTK may modify them during configure event processing.
-        LOG(SIZE, log_id, "move_resize: view_size: %d,%d\n", boundsW, boundsW);
+        LOG(SIZE, log_id, "move_resize: view_size: %d,%d\n", boundsW, boundsH);
         view_size.set({boundsW, boundsH});
     }
 
@@ -1896,7 +1885,7 @@ void WindowContextExtended::process_mouse_cross(GdkEventCrossing* event) {
     // We only send MouseEvent.EXIT if we didn't already send it when the cursor was moved
     // from the client area to the resize border. This is indicated by is_mouse_entered
     // being false at this point.
-    if (is_mouse_entered && event->type != GDK_ENTER_NOTIFY) {
+    if (jview && is_mouse_entered && event->type != GDK_ENTER_NOTIFY) {
         is_mouse_entered = false;
         mainEnv->CallVoidMethod(jview, jViewNotifyMouse,
             com_sun_glass_events_MouseEvent_EXIT,

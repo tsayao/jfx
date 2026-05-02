@@ -147,7 +147,7 @@ struct Bounds : Size {
         return width > 0 || height > 0;
     }
 
-    Bounds without_exents(const Rectangle& extents) const {
+    Bounds without_extents(const Rectangle& extents) const {
         int w = width  > 0 ? std::clamp(width  - extents.width,  1, MAX_WINDOW_SIZE) : 0;
         int h = height > 0 ? std::clamp(height - extents.height, 1, MAX_WINDOW_SIZE) : 0;
         return {w, h};

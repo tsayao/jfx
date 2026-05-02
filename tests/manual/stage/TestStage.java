@@ -285,17 +285,6 @@ public class TestStage extends Application {
         btnSelectNext.setTooltip(new Tooltip("Select next stage"));
         btnSelectNone.setTooltip(new Tooltip("Deselect current stage"));
 
-        double buttonMinWidth = 90;
-        btnCreate.setMinWidth(buttonMinWidth);
-        btnCreateShow.setMinWidth(buttonMinWidth + 20);
-        btnShow.setMinWidth(buttonMinWidth);
-        btnHide.setMinWidth(buttonMinWidth);
-        btnToFront.setMinWidth(buttonMinWidth);
-        btnToBack.setMinWidth(buttonMinWidth);
-        btnFocus.setMinWidth(buttonMinWidth);
-        btnSizeToScene.setMinWidth(buttonMinWidth + 30);
-        btnCenterOnScreen.setMinWidth(buttonMinWidth + 50);
-
         Label initLabel = createSectionLabel("Stage Initialization");
         GridPane initGrid = new GridPane();
         initGrid.setHgap(10);
@@ -317,7 +306,7 @@ public class TestStage extends Application {
         initGrid.add(cbOwner, 1, 1);
 
         Label actionsLabel = createSectionLabel("Stage Actions");
-        FlowPane createActions = new FlowPane(btnCreate, btnCreateShow, btnShow, btnHide);
+        FlowPane createActions = new FlowPane(btnCreate, btnShow, btnCreateShow, btnHide);
         createActions.setHgap(8);
         createActions.setVgap(8);
         createActions.setPadding(new Insets(5, 10, 5, 10));
