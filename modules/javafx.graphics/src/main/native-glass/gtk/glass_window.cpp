@@ -1031,7 +1031,6 @@ void WindowContext::process_state(GdkEventWindowState *event) {
         notify_window_resize(com_sun_glass_events_WindowEvent_MINIMIZE);
     } else if (event->new_window_state & (GDK_WINDOW_STATE_MAXIMIZED)) {
         LOG(STATE, log_id, "process_state: MAXIMIZE\n");
-
         notify_window_resize(com_sun_glass_events_WindowEvent_MAXIMIZE);
     }
 
@@ -1148,7 +1147,7 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     LOG(POSITION, log_id, "process_configure (position): send_event=%d, x=%d, y=%d\n",
         event->send_event, event->x, event->y);
 
-    // Gtk sent events.
+    // Synthetized events will mess the flow with unwanted values
     if (event->send_event) {
         LOG(SIZE, log_id, "process_configure: synthetic event, ignoring\n");
         return;
@@ -1183,7 +1182,7 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
      // See the comment on move_resize about only trusting it when mapped
      if (mapped) {
         view_size.set({event->width, event->height});
-    }
+     }
 
     window_location.set({x, y});
 
@@ -1567,13 +1566,15 @@ void WindowContext::update_window_size() {
     }
 
     // It may be a TITLED fullscreen window
-    if (view_position.get().y > 0) {
+    if (frame_type == TITLED && view_position.get().y > 0) {
         window_size.set({size.width + window_extents.get().width,
                                 size.height + window_extents.get().height});
     } else {
         // If no title/decoration the size will be the same
         window_size.set(size);
     }
+
+    LOG(SIZE, log_id, "update_window_size: %d, %d\n", window_size.get().width, window_size.get().height);
 }
 
 // -1 on width or height means not set
@@ -1624,23 +1625,23 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     Bounds min_size = minimum_size.max(sys_min_size).without_extents(extents);
     Bounds max_size = maximum_size.without_extents(extents);
 
-    // if (wSet) {
-    //     int minW = min_size.width > 0 ? min_size.width : 1;
-    //     int maxW = max_size.width > 0 ? max_size.width : MAX_WINDOW_SIZE;
-    //
-    //     boundsW = std::clamp(boundsW, minW, maxW);
-    //
-    //     LOG(SIZE, log_id, "move_resize: width after bounds check w=%d\n", boundsW);
-    // }
-    //
-    // if (hSet) {
-    //     int minH = min_size.height > 0 ? min_size.height : 1;
-    //     int maxH = max_size.height > 0 ? max_size.height : MAX_WINDOW_SIZE;
-    //
-    //     boundsH = std::clamp(boundsH, minH, maxH);
-    //
-    //     LOG(SIZE, log_id, "move_resize: height after bounds check h=%d\n", boundsH);
-    // }
+    if (wSet) {
+        int minW = min_size.width > 0 ? min_size.width : 1;
+        int maxW = max_size.width > 0 ? max_size.width : MAX_WINDOW_SIZE;
+
+        boundsW = std::clamp(boundsW, minW, maxW);
+
+        LOG(SIZE, log_id, "move_resize: width after bounds check w=%d\n", boundsW);
+    }
+
+    if (hSet) {
+        int minH = min_size.height > 0 ? min_size.height : 1;
+        int maxH = max_size.height > 0 ? max_size.height : MAX_WINDOW_SIZE;
+
+        boundsH = std::clamp(boundsH, minH, maxH);
+
+        LOG(SIZE, log_id, "move_resize: height after bounds check h=%d\n", boundsH);
+    }
 
     if (!Size {boundsW, boundsH}.is_valid()) {
         LOG(SIZE, log_id, "move_resize: invalid size w=%d, h=%d\n", boundsW, boundsH);
