@@ -1171,13 +1171,14 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
         x = root_x;
         y = root_y;
 
-        LOG(POSITION, log_id, "process_configure: view_position x=%d, y=%d\n", view_x, view_y);
         view_position.set({view_x, view_y});
     } else {
         view_position.set({0, 0});
         x = event->x;
         y = event->y;
     }
+
+    LOG(POSITION, log_id, "process_configure: view_position x=%d, y=%d\n", view_x, view_y);
 
      // See the comment on move_resize about only trusting it when mapped
      if (mapped) {
