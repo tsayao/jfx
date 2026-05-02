@@ -727,8 +727,8 @@ public class TestStage extends Application {
             stagePane.addBooleanProperty("Maximized", stage.maximizedProperty(), stage::setMaximized);
             stagePane.addBooleanProperty("Iconified", stage.iconifiedProperty(), stage::setIconified);
             stagePane.addBooleanProperty("Resizable", stage.resizableProperty(), stage::setResizable);
-            stagePane.addDoublePropery("X", stage.xProperty(), stage::setX, 0, MAX_WIDTH * 2, 1.0);
-            stagePane.addDoublePropery("Y", stage.yProperty(), stage::setY, 0, MAX_HEIGHT * 2, 1.0);
+            stagePane.addDoublePropery("X", stage.xProperty(), stage::setX, -1, MAX_WIDTH * 2, 1.0);
+            stagePane.addDoublePropery("Y", stage.yProperty(), stage::setY, -1, MAX_HEIGHT * 2, 1.0);
             stagePane.addDoublePropery("Width", stage.widthProperty(), stage::setWidth, 1, MAX_WIDTH, 1.0);
             stagePane.addDoublePropery("Height", stage.heightProperty(), stage::setHeight, 1, MAX_HEIGHT, 1.0);
             stagePane.addDoublePropery("Min Width", stage.minWidthProperty(), stage::setMinWidth, 1, MAX_WIDTH, 1.0);
