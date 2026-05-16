@@ -268,6 +268,7 @@ XID WindowContext::get_native_window()  {
 
 bool WindowContext::isEnabled() {
     if (!jwindow) return false;
+    if (!mapped) return true;
 
     return is_enabled;
 }
@@ -1691,6 +1692,8 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
 }
 
 void WindowContext::ensure_window_geometry() {
+    LOG(SIZE, log_id, "ensure_window_geometry\n");
+
     auto loc = window_location.get();
     auto [w, h] = view_size.get();
 
