@@ -164,18 +164,23 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
 
     // Those will fire only if the value changes
     window_location.setOnChange([this](const OptionalAxisPoint& point) {
+        LOG(POSITION, log_id, "ONCHANGE -> window_location\n");
         notify_window_move();
     });
 
     view_position.setOnChange([this](const Point& point) {
         notify_view_move();
+        // FullScreen will hide the decoration
+        update_window_size();
     });
 
     window_size.setOnChange([this](const Size& size) {
+        LOG(SIZE, log_id, "ONCHANGE -> window_size\n");
         notify_window_resize();
     });
 
     view_size.setOnChange([this](const Size& size) {
+        LOG(SIZE, log_id, "ONCHANGE -> view_size\n");
         notify_view_resize();
         update_window_constraints();
         // Will fire window size notification on window_size change
@@ -183,6 +188,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     });
 
     window_extents.setOnChange([this](const Rectangle& rect) {
+        LOG(SIZE, log_id, "ONCHANGE -> window_extents\n");
         update_window_constraints();
         update_window_size();
     });
