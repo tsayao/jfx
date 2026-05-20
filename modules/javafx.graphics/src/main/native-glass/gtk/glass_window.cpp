@@ -159,8 +159,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_app_paintable(gtk_widget, true);
 
 
-    gtk_widget_set_redraw_on_allocate(GTK_WIDGET(gtk_widget), false);
-
     // Suppress GTK's CSS theme engine for this window. Even with app_paintable,
     // the style context is still computed (background, border, padding, margin,
     // transitions) and can trigger redundant invalidations on theme/state
