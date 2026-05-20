@@ -158,19 +158,8 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, true);
 
-    // Since app_paintable is enabled: GTK must NOT automatically queue a redraw
-    // when the widget is resized or its allocation changes. All repaints are
-    // driven exclusively by our own pipeline (Prism -> paint()). Without this,
-    // every configure/resize would produce a spurious GDK_EXPOSE that wastes
-    // CPU and can cause visual glitches.
-    gtk_widget_set_redraw_on_allocate(GTK_WIDGET(gtk_widget), FALSE);
 
-#if !GTK_CHECK_VERSION(3, 14, 0)
-    // Before GTK 3.14, disable the widget-level double buffer (an intermediate
-    // off-screen pixmap). We provide our own pixel buffer via Prism, so this
-    // extra allocation/copy serves no purpose.
-    gtk_widget_set_double_buffered(gtk_widget, false);
-#endif
+    gtk_widget_set_redraw_on_allocate(GTK_WIDGET(gtk_widget), false);
 
     // Suppress GTK's CSS theme engine for this window. Even with app_paintable,
     // the style context is still computed (background, border, padding, margin,
