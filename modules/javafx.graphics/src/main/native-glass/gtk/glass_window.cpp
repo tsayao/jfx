@@ -158,6 +158,41 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, true);
 
+    // Since app_paintable is enabled: GTK must NOT automatically queue a redraw
+    // when the widget is resized or its allocation changes. All repaints are
+    // driven exclusively by our own pipeline (Prism -> paint()). Without this,
+    // every configure/resize would produce a spurious GDK_EXPOSE that wastes
+    // CPU and can cause visual glitches.
+    gtk_widget_set_redraw_on_allocate(GTK_WIDGET(gtk_widget), FALSE);
+
+#if !GTK_CHECK_VERSION(3, 14, 0)
+    // Before GTK 3.14, disable the widget-level double buffer (an intermediate
+    // off-screen pixmap). We provide our own pixel buffer via Prism, so this
+    // extra allocation/copy serves no purpose.
+    gtk_widget_set_double_buffered(gtk_widget, FALSE);
+#endif
+
+    // Suppress GTK's CSS theme engine for this window. Even with app_paintable,
+    // the style context is still computed (background, border, padding, margin,
+    // transitions) and can trigger redundant invalidations on theme/state
+    // changes. Overriding everything to zero/none avoids all of that overhead.
+    {
+        GtkCssProvider *no_theme = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(no_theme,
+            "window {"
+            "  background: none;"
+            "  border: none;"
+            "  padding: 0;"
+            "  margin: 0;"
+            "  outline: none;"
+            "}", -1, nullptr);
+        gtk_style_context_add_provider(
+            gtk_widget_get_style_context(gtk_widget),
+            GTK_STYLE_PROVIDER(no_theme),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        g_object_unref(no_theme);
+    }
+
     glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
 
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
@@ -237,10 +272,17 @@ void WindowContext::process_realize() {
 
     gdk_window = gtk_widget_get_window(gtk_widget);
 
+    gdk_window_set_event_compression(gdk_window, false);
+
     if (frame_type == TITLED) {
         request_frame_extents();
     }
 
+    // For non-TRANSPARENT frames, apply the stored background_color so that
+    // areas newly exposed during a resize (before Prism renders a full frame)
+    // show the correct scene background instead of an uninitialized/black region.
+    // TRANSPARENT windows rely on glass_configure_window_transparency to set up
+    // the RGBA visual; no explicit background is needed there.
     if (frame_type != TRANSPARENT) {
         gdk_window_set_background_rgba(gdk_window, &background_color);
     }
@@ -257,7 +299,7 @@ void WindowContext::process_realize() {
     }
 }
 
-// Returns de XWindow ID to be used in prism es2
+// Returns the XWindow ID to be used in prism es2
 XID WindowContext::get_native_window()  {
     if (!GDK_IS_WINDOW(gdk_window)) {
         return 0;
@@ -675,10 +717,6 @@ void WindowContext::process_key(GdkEventKey *event) {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
-    cairo_rectangle_int_t rect = {0, 0, width, height};
-    cairo_region_t *region = cairo_region_create_rectangle(&rect);
-    gdk_window_begin_paint_region(gdk_window, region);
-
     cairo_t* context = gdk_cairo_create(gdk_window);
 
     cairo_surface_t* cairo_surface =
@@ -691,8 +729,6 @@ void WindowContext::paint(void* data, jint width, jint height) {
     cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
     cairo_paint(context);
 
-    gdk_window_end_paint(gdk_window);
-    cairo_region_destroy(region);
 
     cairo_destroy(context);
     cairo_surface_destroy(cairo_surface);
