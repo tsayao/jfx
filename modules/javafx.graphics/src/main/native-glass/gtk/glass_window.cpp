@@ -169,7 +169,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     // Before GTK 3.14, disable the widget-level double buffer (an intermediate
     // off-screen pixmap). We provide our own pixel buffer via Prism, so this
     // extra allocation/copy serves no purpose.
-    gtk_widget_set_double_buffered(gtk_widget, FALSE);
+    gtk_widget_set_double_buffered(gtk_widget, false);
 #endif
 
     // Suppress GTK's CSS theme engine for this window. Even with app_paintable,
@@ -717,6 +717,10 @@ void WindowContext::process_key(GdkEventKey *event) {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
+    cairo_rectangle_int_t rect = {0, 0, width, height};
+    cairo_region_t *region = cairo_region_create_rectangle(&rect);
+    gdk_window_begin_paint_region(gdk_window, region);
+
     cairo_t* context = gdk_cairo_create(gdk_window);
 
     cairo_surface_t* cairo_surface =
@@ -729,6 +733,8 @@ void WindowContext::paint(void* data, jint width, jint height) {
     cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
     cairo_paint(context);
 
+    gdk_window_end_paint(gdk_window);
+    cairo_region_destroy(region);
 
     cairo_destroy(context);
     cairo_surface_destroy(cairo_surface);
