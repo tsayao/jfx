@@ -1246,33 +1246,44 @@ void WindowContext::update_window_constraints() {
     }
 
     bool should_be_resizable = is_resizable() && isEnabled();
-    gtk_window_set_resizable(GTK_WINDOW(gtk_widget), should_be_resizable);
+    // gtk_window_set_resizable(GTK_WINDOW(gtk_widget), should_be_resizable);
 
     GdkGeometry hints;
     int flags = 0;
 
-    LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
-    Rectangle extents = window_extents.get();
+    if (is_resizable() && isEnabled()) {
+        LOG(SIZE, log_id, "update_window_constraints: resizable and enabled\n");
+        Rectangle extents = window_extents.get();
 
-    Bounds min = minimum_size.max(sys_min_size).without_extents(extents);
-    Bounds max = maximum_size.without_extents(extents);
+        Bounds min = minimum_size.max(sys_min_size).without_extents(extents);
+        Bounds max = maximum_size.without_extents(extents);
 
-    if (min.is_set()) {
-        flags |= GDK_HINT_MIN_SIZE;
+        if (min.is_set()) {
+            flags |= GDK_HINT_MIN_SIZE;
 
-        hints.min_width = min.width > 0 ? min.width : 1;
-        hints.min_height = min.height > 0 ? min.height : 1;
+            hints.min_width = min.width > 0 ? min.width : 1;
+            hints.min_height = min.height > 0 ? min.height : 1;
 
-        LOG(SIZE, log_id, "update_window_constraints: min_width=%d, min_height=%d\n", hints.min_width, hints.min_height);
-    }
+            LOG(SIZE, log_id, "update_window_constraints: min_width=%d, min_height=%d\n", hints.min_width, hints.min_height);
+        }
 
-    if (max.is_set()) {
-        flags |= GDK_HINT_MAX_SIZE;
+        if (max.is_set()) {
+            flags |= GDK_HINT_MAX_SIZE;
 
-        hints.max_width = max.width > 0 ? max.width : MAX_WINDOW_SIZE;
-        hints.max_height = max.height > 0 ? max.height : MAX_WINDOW_SIZE;
+            hints.max_width = max.width > 0 ? max.width : MAX_WINDOW_SIZE;
+            hints.max_height = max.height > 0 ? max.height : MAX_WINDOW_SIZE;
 
-        LOG(SIZE, log_id, "update_window_constraints: max_width=%d, max_height=%d\n", hints.max_width, hints.max_height);
+            LOG(SIZE, log_id, "update_window_constraints: max_width=%d, max_height=%d\n", hints.max_width, hints.max_height);
+        }
+    } else {
+        flags |= GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE;
+
+        auto [w, h] = view_size.get();
+
+        hints.min_width = w;
+        hints.min_height = h;
+        hints.max_width = w;
+        hints.max_height = h;
     }
 
      gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints, (GdkWindowHints) flags);
@@ -1664,7 +1675,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
         return;
     }
 
-    bool not_resizable = mapped && !gtk_window_get_resizable(GTK_WINDOW(gtk_widget));
+    bool not_resizable = mapped && !is_resizable();
 
     // When the window is not resizable, allow programmatic resizing.
     if (not_resizable) {
