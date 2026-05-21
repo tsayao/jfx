@@ -1226,7 +1226,6 @@ void WindowContext::remove_window_constraints() {
     if (!mapped) return;
 
     LOG(SIZE, log_id, "remove_window_constraints\n");
-    gtk_window_set_resizable(GTK_WINDOW(gtk_widget), true);
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
@@ -1244,9 +1243,6 @@ void WindowContext::update_window_constraints() {
         LOG(SIZE, log_id, "update_window_constraints: skipped (not floating)\n");
         return;
     }
-
-    bool should_be_resizable = is_resizable() && isEnabled();
-    // gtk_window_set_resizable(GTK_WINDOW(gtk_widget), should_be_resizable);
 
     GdkGeometry hints;
     int flags = 0;
@@ -1284,6 +1280,8 @@ void WindowContext::update_window_constraints() {
         hints.min_height = h;
         hints.max_width = w;
         hints.max_height = h;
+
+        LOG(SIZE, log_id, "update_window_constraints: unresizable: %d,%d", w, h);
     }
 
      gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints, (GdkWindowHints) flags);
