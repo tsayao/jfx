@@ -158,8 +158,6 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, true);
 
-    gtk_style_context_add_class(gtk_widget_get_style_context(gtk_widget), "javafx-window");
-
     glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
 
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
@@ -245,11 +243,6 @@ void WindowContext::process_realize() {
         request_frame_extents();
     }
 
-    // For non-TRANSPARENT frames, apply the stored background_color so that
-    // areas newly exposed during a resize (before Prism renders a full frame)
-    // show the correct scene background instead of an uninitialized/black region.
-    // TRANSPARENT windows rely on glass_configure_window_transparency to set up
-    // the RGBA visual; no explicit background is needed there.
     if (frame_type != TRANSPARENT) {
         gdk_window_set_background_rgba(gdk_window, &background_color);
     }
@@ -1215,12 +1208,6 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
     }
 }
 
-void WindowContext::process_pending_events() {
-    while (gtk_events_pending()) {
-        gtk_main_iteration_do(false);
-    }
-}
-
 void WindowContext::remove_window_constraints() {
     if (window_type == POPUP) return;
     if (!mapped) return;
@@ -1229,9 +1216,6 @@ void WindowContext::remove_window_constraints() {
 
     gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr,
         (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
-
-    // Must wait it to apply
-    process_pending_events();
 }
 
 void WindowContext::update_window_constraints() {
@@ -1260,7 +1244,8 @@ void WindowContext::update_window_constraints() {
             hints.min_width = min.width > 0 ? min.width : 1;
             hints.min_height = min.height > 0 ? min.height : 1;
 
-            LOG(SIZE, log_id, "update_window_constraints: min_width=%d, min_height=%d\n", hints.min_width, hints.min_height);
+            LOG(SIZE, log_id, "update_window_constraints: min_width=%d, min_height=%d\n",
+                        hints.min_width, hints.min_height);
         }
 
         if (max.is_set()) {
@@ -1269,7 +1254,8 @@ void WindowContext::update_window_constraints() {
             hints.max_width = max.width > 0 ? max.width : MAX_WINDOW_SIZE;
             hints.max_height = max.height > 0 ? max.height : MAX_WINDOW_SIZE;
 
-            LOG(SIZE, log_id, "update_window_constraints: max_width=%d, max_height=%d\n", hints.max_width, hints.max_height);
+            LOG(SIZE, log_id, "update_window_constraints: max_width=%d, max_height=%d\n",
+                        hints.max_width, hints.max_height);
         }
     } else {
         flags |= GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE;

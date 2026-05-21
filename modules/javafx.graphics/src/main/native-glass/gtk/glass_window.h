@@ -454,7 +454,6 @@ private:
     bool on_top_inherited();
     bool effective_on_top();
     void ensure_window_geometry();
-    void process_pending_events();
 
     void update_initial_state();
     bool grab_mouse_drag_focus();

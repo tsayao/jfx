@@ -201,24 +201,6 @@ JNIEXPORT void JNICALL Java_com_sun_glass_ui_gtk_GtkApplication__1init
 
     platformSupport = new PlatformSupport(env, obj);
 
-    // Global CSS to suppress GTK's CSS for windows as we draw directly over it.
-    {
-        GtkCssProvider *no_theme = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(no_theme,
-            "window.javafx-window {"
-            "  background: none;"
-            "  border: none;"
-            "  padding: 0;"
-            "  margin: 0;"
-            "  outline: none;"
-            "}", -1, nullptr);
-        gtk_style_context_add_provider_for_screen(
-            gdk_screen_get_default(),
-            GTK_STYLE_PROVIDER(no_theme),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-        g_object_unref(no_theme);
-    }
-
     // Set ibus to sync mode
     setenv("IBUS_ENABLE_SYNC_MODE", "1", 1);
 }
