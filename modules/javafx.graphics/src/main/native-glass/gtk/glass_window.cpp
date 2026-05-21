@@ -158,27 +158,7 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, true);
 
-
-    // Suppress GTK's CSS theme engine for this window. Even with app_paintable,
-    // the style context is still computed (background, border, padding, margin,
-    // transitions) and can trigger redundant invalidations on theme/state
-    // changes. Overriding everything to zero/none avoids all of that overhead.
-    {
-        GtkCssProvider *no_theme = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(no_theme,
-            "window {"
-            "  background: none;"
-            "  border: none;"
-            "  padding: 0;"
-            "  margin: 0;"
-            "  outline: none;"
-            "}", -1, nullptr);
-        gtk_style_context_add_provider(
-            gtk_widget_get_style_context(gtk_widget),
-            GTK_STYLE_PROVIDER(no_theme),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-        g_object_unref(no_theme);
-    }
+    gtk_style_context_add_class(gtk_widget_get_style_context(gtk_widget), "javafx-window");
 
     glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
 
