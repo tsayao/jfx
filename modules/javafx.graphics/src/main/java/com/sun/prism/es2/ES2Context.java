@@ -142,10 +142,6 @@ class ES2Context extends BaseShaderContext {
         return ES2PhongShader.getShader(meshView, this);
     }
 
-    void invalidateCurrentDrawable() {
-        currentDrawable = null;
-    }
-
     void makeCurrent(GLDrawable drawable) {
         if (drawable == null) {
             drawable = dummyGLDrawable;
