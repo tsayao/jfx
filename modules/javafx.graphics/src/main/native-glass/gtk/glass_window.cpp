@@ -1449,7 +1449,7 @@ void WindowContext::exit_fullscreen() {
     }
 }
 
-void WindowContext::krequest_focus() {
+void WindowContext::request_focus() {
     LOG(FOCUS, log_id, "request_focus\n");
     if (GDK_IS_WINDOW(gdk_window) && is_visible()) {
         gtk_window_present(GTK_WINDOW(gtk_widget));
