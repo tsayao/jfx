@@ -471,20 +471,20 @@ class StageOwnershipTest extends VisualTestBase {
         waitForBoolean(stage3.focusedProperty(), true);
         Util.sleep(FOCUS_DELAY);
         runAndWait(() -> assertColorEquals(COLOR3, stage3));
-
         escape();
+
         waitForBoolean(stage3.showingProperty(), false);
         waitForBoolean(stage2.focusedProperty(), true);
         Util.sleep(FOCUS_DELAY);
         runAndWait(() -> assertColorEquals(COLOR2, stage2));
-
         escape();
+
         waitForBoolean(stage2.showingProperty(), false);
         waitForBoolean(stage1.focusedProperty(), true);
         Util.sleep(FOCUS_DELAY);
         runAndWait(() -> assertColorEquals(COLOR1, stage1));
-
         escape();
+
         waitForBoolean(stage1.showingProperty(), false);
         waitForBoolean(stage0.focusedProperty(), true);
         Util.sleep(FOCUS_DELAY);
