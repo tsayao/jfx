@@ -493,8 +493,8 @@ class StageOwnershipTest extends VisualTestBase {
 
     private void escape() {
         runAndWait(() -> {
-            robot.keyPress(KeyCode.ESCAPE);
-            robot.keyRelease(KeyCode.ESCAPE);
+            getRobot().keyPress(KeyCode.ESCAPE);
+            getRobot().keyRelease(KeyCode.ESCAPE);
         });
     }
 }
