@@ -1708,7 +1708,7 @@ void WindowContext::ensure_window_geometry() {
         h = DEFAULT_HEIGHT;
     }
 
-    move_resize(loc.x.value_or(0), loc.y.value_or(0), xSet, ySet, w, h);
+    move_resize(loc.x.value_or(-1), loc.y.value_or(-1), xSet, ySet, w, h);
 }
 
 void WindowContext::add_wmf(GdkWMFunction wmf) {
