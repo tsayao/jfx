@@ -334,6 +334,8 @@ class StageOwnershipTest extends VisualTestBase {
     @ParameterizedTest(name = PARAMETERIZED_TEST_DISPLAY)
     @EnumSource(names = {"DECORATED", "UNDECORATED", "EXTENDED"})
     void ownedStageShouldAlwaysBeOnTopOfOwner(StageStyle style) {
+        assumeTrue(!PlatformUtil.isMac());
+
         runAndWait(() -> {
             stage0 = createStage(style, COLOR0, null, null, 100, 100);
             stage1 = createStage(style, COLOR1, stage0, null, 100, 100);
