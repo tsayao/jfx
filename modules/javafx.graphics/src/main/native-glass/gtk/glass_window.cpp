@@ -1187,9 +1187,8 @@ void WindowContext::process_configure(GdkEventConfigure *event) {
      // See the comment on move_resize about only trusting it when mapped
      if (mapped) {
         view_size.set({event->width, event->height});
+        window_location.set({x, y});
      }
-
-    window_location.set({x, y});
 
     glong to_screen = getScreenPtrForLocation(event->x, event->y);
     if (to_screen != -1) {
