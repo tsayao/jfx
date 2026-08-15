@@ -290,6 +290,7 @@ void WindowContext::notify_focus_disabled() {
 }
 
 void WindowContext::process_expose(GdkEventExpose* event) {
+    g_print("expose\n");
     GdkRectangle r = event->area;
     notify_repaint({ r.x, r.y, r.width, r.height });
 }
