@@ -305,7 +305,9 @@ void WindowContext::process_map() {
 
     if (window_type == POPUP) {
 //         gtk_widget_queue_draw(gtk_widget);
+
         gdk_window_invalidate_rect(gdk_window, NULL, TRUE);
+        gtk_widget_queue_draw(gtk_widget);
         return;
     }
 
