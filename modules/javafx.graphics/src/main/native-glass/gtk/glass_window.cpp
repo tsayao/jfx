@@ -233,7 +233,7 @@ void WindowContext::process_realize() {
 
     gdk_window = gtk_widget_get_window(gtk_widget);
 
-    if (type == POPUP) {
+    if (window_type == POPUP) {
         gdk_x11_window_set_frame_sync_enabled(gdk_window, false);
     }
 
