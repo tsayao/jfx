@@ -305,6 +305,7 @@ void WindowContext::process_map() {
 
    if (window_type == POPUP) {
         g_idle_add([](gpointer data) -> gboolean {
+            g_print("BANGGGG\n");
             GtkWidget* popup = GTK_WIDGET(data);
             GdkWindow* window = gtk_widget_get_window(popup);
 
@@ -314,6 +315,8 @@ void WindowContext::process_map() {
 
             return G_SOURCE_REMOVE;
         }, gtk_widget);
+
+        return;
     }
 
     // The compositor may adjust the window size and position during the process,
