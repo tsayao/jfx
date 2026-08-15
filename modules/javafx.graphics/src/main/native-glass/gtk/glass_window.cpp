@@ -717,7 +717,7 @@ bool WindowContext::is_visible() {
 
 bool WindowContext::set_view(jobject view) {
     LOG(LIFECYCLE, log_id, "set_view: %s\n", view ? "attach" : "detach");
-/*
+
     if (jview) {
         mainEnv->CallVoidMethod(jview, jViewNotifyMouse,
                 com_sun_glass_events_MouseEvent_EXIT,
@@ -730,7 +730,6 @@ bool WindowContext::set_view(jobject view) {
         CHECK_JNI_EXCEPTION_RET(mainEnv, false)
         mainEnv->DeleteGlobalRef(jview);
     }
-*/
 
     if (view) {
         jview = mainEnv->NewGlobalRef(view);
