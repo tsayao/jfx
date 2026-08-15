@@ -491,6 +491,9 @@ static void process_events(GdkEvent* event, gpointer data)
     if (ctx != nullptr) {
         try {
             switch (event->type) {
+                case GDK_GRAB_BROKEN:
+                    g_print("GRAB BROKEN ==========================");
+                    break;
                 case GDK_PROPERTY_NOTIFY:
                     ctx->process_property_notify(&event->property);
                     gtk_main_do_event(event);
