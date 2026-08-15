@@ -304,10 +304,16 @@ void WindowContext::process_map() {
     mapped = true;
 
    if (window_type == POPUP) {
-        gdk_window_invalidate_rect(gdk_window, NULL, TRUE);
-        gtk_widget_queue_draw(gtk_widget);
-        gdk_window_process_all_updates();
-        return;
+        g_idle_add([](gpointer data) -> gboolean {
+            GtkWidget* popup = GTK_WIDGET(data);
+            GdkWindow* window = gtk_widget_get_window(popup);
+
+            gdk_window_invalidate_rect(window, nullptr, TRUE);
+            gtk_widget_queue_draw(popup);
+            gdk_window_process_all_updates();
+
+            return G_SOURCE_REMOVE;
+        }, popup);
     }
 
     // The compositor may adjust the window size and position during the process,
