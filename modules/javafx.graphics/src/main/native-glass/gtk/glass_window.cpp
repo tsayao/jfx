@@ -303,6 +303,13 @@ void WindowContext::process_map() {
     LOG(LIFECYCLE, log_id, "process_map -------------------------------------------\n");
     mapped = true;
 
+   if (window_type == POPUP) {
+        gdk_window_invalidate_rect(gdk_window, NULL, TRUE);
+        gtk_widget_queue_draw(gtk_widget);
+        gdk_window_process_all_updates();
+        return;
+    }
+
     // The compositor may adjust the window size and position during the process,
     // so checking again increases the chances that the final geometry matches
     // the values currently stored on the Java side.
