@@ -1007,7 +1007,7 @@ void WindowContext::load_cached_extents() {
 }
 
 void WindowContext::process_property_notify(GdkEventProperty *event) {
-    g_print("ATOM: %s\n", gdk_atom_name(event->atom));
+//     g_print("ATOM: %s\n", gdk_atom_name(event->atom));
 
     if (event->atom == get_net_frame_extents_atom()) {
         update_frame_extents();
