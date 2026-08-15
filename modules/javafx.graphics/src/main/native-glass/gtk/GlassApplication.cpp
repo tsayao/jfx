@@ -469,6 +469,44 @@ bool is_window_enabled_for_event(GdkWindow * window, WindowContext *ctx, gint ev
     return TRUE;
 }
 
+const char *event_type_name(GdkEventType type)
+{
+    switch (type) {
+        case GDK_DELETE:             return "GDK_DELETE";
+        case GDK_MOTION_NOTIFY:      return "GDK_MOTION_NOTIFY";
+        case GDK_BUTTON_PRESS:       return "GDK_BUTTON_PRESS";
+        case GDK_BUTTON_RELEASE:     return "GDK_BUTTON_RELEASE";
+        case GDK_KEY_PRESS:          return "GDK_KEY_PRESS";
+        case GDK_KEY_RELEASE:        return "GDK_KEY_RELEASE";
+        case GDK_ENTER_NOTIFY:       return "GDK_ENTER_NOTIFY";
+        case GDK_LEAVE_NOTIFY:       return "GDK_LEAVE_NOTIFY";
+        case GDK_FOCUS_CHANGE:       return "GDK_FOCUS_CHANGE";
+        case GDK_CONFIGURE:          return "GDK_CONFIGURE";
+        case GDK_MAP:                return "GDK_MAP";
+        case GDK_UNMAP:              return "GDK_UNMAP";
+        case GDK_PROPERTY_NOTIFY:    return "GDK_PROPERTY_NOTIFY";
+        case GDK_SELECTION_CLEAR:    return "GDK_SELECTION_CLEAR";
+        case GDK_SELECTION_REQUEST:  return "GDK_SELECTION_REQUEST";
+        case GDK_SELECTION_NOTIFY:   return "GDK_SELECTION_NOTIFY";
+        case GDK_PROXIMITY_IN:       return "GDK_PROXIMITY_IN";
+        case GDK_PROXIMITY_OUT:      return "GDK_PROXIMITY_OUT";
+        case GDK_DRAG_ENTER:         return "GDK_DRAG_ENTER";
+        case GDK_DRAG_LEAVE:         return "GDK_DRAG_LEAVE";
+        case GDK_DRAG_MOTION:        return "GDK_DRAG_MOTION";
+        case GDK_DRAG_STATUS:        return "GDK_DRAG_STATUS";
+        case GDK_DROP_START:         return "GDK_DROP_START";
+        case GDK_DROP_FINISHED:      return "GDK_DROP_FINISHED";
+        case GDK_CLIENT_EVENT:       return "GDK_CLIENT_EVENT";
+        case GDK_VISIBILITY_NOTIFY:  return "GDK_VISIBILITY_NOTIFY";
+        case GDK_SCROLL:             return "GDK_SCROLL";
+        case GDK_WINDOW_STATE:       return "GDK_WINDOW_STATE";
+        case GDK_SETTING:            return "GDK_SETTING";
+        case GDK_OWNER_CHANGE:       return "GDK_OWNER_CHANGE";
+        case GDK_GRAB_BROKEN:        return "GDK_GRAB_BROKEN";
+        default:                     return "UNKNOWN";
+    }
+}
+
 static void process_events(GdkEvent* event, gpointer data)
 {
     GdkWindow* window = event->any.window;
@@ -482,7 +520,7 @@ static void process_events(GdkEvent* event, gpointer data)
 
     EventsCounterHelper helper(ctx);
 
-    g_print("Event: %s\n", gdk_event_type_name(event->type));
+    g_print("Event: %s\n", event_type_name(event->type));
 
     if ((event->type == GDK_KEY_PRESS || event->type == GDK_KEY_RELEASE) && ctx != NULL && ctx->filterIME(event)) {
         return;
