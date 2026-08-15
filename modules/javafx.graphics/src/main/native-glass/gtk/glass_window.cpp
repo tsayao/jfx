@@ -303,7 +303,7 @@ void WindowContext::process_map() {
     mapped = true;
 
     if (window_type == POPUP) {
-        notify_repaint();
+        gtk_widget_queue_draw(gtk_widget);
         return;
     }
 
