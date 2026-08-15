@@ -313,7 +313,7 @@ void WindowContext::process_map() {
             gdk_window_process_all_updates();
 
             return G_SOURCE_REMOVE;
-        }, popup);
+        }, gtk_widget);
     }
 
     // The compositor may adjust the window size and position during the process,
