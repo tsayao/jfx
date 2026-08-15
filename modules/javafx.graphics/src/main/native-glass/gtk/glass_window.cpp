@@ -680,6 +680,8 @@ void WindowContext::process_key(GdkEventKey *event) {
 }
 
 void WindowContext::paint(void* data, jint width, jint height) {
+    g_print("paint %d %d\n", width, height);
+
     cairo_rectangle_int_t rect = {0, 0, width, height};
     cairo_region_t *region = cairo_region_create_rectangle(&rect);
     gdk_window_begin_paint_region(gdk_window, region);
