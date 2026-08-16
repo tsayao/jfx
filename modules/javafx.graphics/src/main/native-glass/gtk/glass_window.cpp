@@ -158,7 +158,10 @@ WindowContext::WindowContext(jobject _jwindow, WindowContext* _owner, long _scre
     gtk_widget_set_events(gtk_widget, GDK_FILTERED_EVENTS_MASK);
     gtk_widget_set_app_paintable(gtk_widget, true);
 
-    glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
+    if (frame_type == TRANSPARENT) {
+        g_print("TRANSPARENT!!!!!!!!!!!!!!!!\n");
+    }
+//     glass_configure_window_transparency(gtk_widget, frame_type == TRANSPARENT);
 
     gtk_window_set_decorated(GTK_WINDOW(gtk_widget), frame_type == TITLED);
 
