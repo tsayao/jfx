@@ -307,7 +307,7 @@ void WindowContext::process_map() {
     mapped = true;
 
    if (window_type == POPUP) {
-       gdk_window_show(gdk_window);
+//        gdk_window_show(gdk_window);
 //         g_idle_add([](gpointer data) -> gboolean {
 //             g_print("BANGGGG\n");
 //             GtkWidget* popup = GTK_WIDGET(data);
