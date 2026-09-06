@@ -1680,7 +1680,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 
     if (not_resizable) {
-        update_window_constraints(boundsW, boundsH);
+        update_window_constraints(Size { boundsW, boundsH });
     }
 }
 
