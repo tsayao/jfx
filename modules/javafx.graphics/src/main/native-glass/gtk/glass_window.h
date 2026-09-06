@@ -432,8 +432,8 @@ private:
     void iconify(bool);
     void update_window_size();
     void move_resize(int, int, bool, bool, int, int);
-    void add_wmf(GdkWMFunction);
-    void remove_wmf(GdkWMFunction);
+    void add_wmf(GdkWMFunction, bool force = false);
+    void remove_wmf(GdkWMFunction, bool force = false);
     void notify_on_top(bool);
     void notify_fullscreen(bool);
     void notify_window_resize(int);

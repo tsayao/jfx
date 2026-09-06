@@ -937,13 +937,11 @@ void WindowContext::update_frame_extents() {
     // accounting decorations, so calculate the difference
     if (xSet && gravity_x > 0 && dx != 0) {
         x -= gravity_x * static_cast<float>(dx);
-        if (x < 0) x = 0;
         LOG(POSITION, log_id, "update_frame_extents: gravity_x=%.2f, dx=%d, adjusted x=%d\n", gravity_x, dx, x);
     }
 
     if (ySet && gravity_y > 0 && dy != 0) {
         y -= gravity_y * static_cast<float>(dy);
-        if (y < 0) y = 0;
         LOG(POSITION, log_id, "update_frame_extents: gravity_y=%.2f, dy=%d, adjusted y=%d\n", gravity_y, dy, y);
     }
 
@@ -1469,9 +1467,9 @@ void WindowContext::set_enabled(bool enabled) {
     // When not enabled, disable minimize
     if (frame_type == TITLED && (initial_wmf & GDK_FUNC_MINIMIZE)) {
         if (!enabled) {
-            remove_wmf(GDK_FUNC_MINIMIZE);
+            remove_wmf(GDK_FUNC_MINIMIZE, /*force*/ true);
         } else {
-            add_wmf(GDK_FUNC_MINIMIZE);
+            add_wmf(GDK_FUNC_MINIMIZE, /*force*/ true);
         }
     }
 
@@ -1704,8 +1702,8 @@ void WindowContext::ensure_window_geometry() {
     move_resize(loc.x.value_or(-1), loc.y.value_or(-1), xSet, ySet, w, h);
 }
 
-void WindowContext::add_wmf(GdkWMFunction wmf) {
-    if (initial_wmf & wmf) return;
+void WindowContext::add_wmf(GdkWMFunction wmf, bool force) {
+    if (!force && (initial_wmf & wmf)) return;
 
     current_wmf = static_cast<GdkWMFunction>(static_cast<int>(current_wmf) | static_cast<int>(wmf));
 
@@ -1714,8 +1712,8 @@ void WindowContext::add_wmf(GdkWMFunction wmf) {
     }
 }
 
-void WindowContext::remove_wmf(GdkWMFunction wmf) {
-    if (initial_wmf & wmf) return;
+void WindowContext::remove_wmf(GdkWMFunction wmf, bool force) {
+    if (!force && (initial_wmf & wmf)) return;
 
      current_wmf = static_cast<GdkWMFunction>(static_cast<int>(current_wmf) & ~static_cast<int>(wmf));
 
