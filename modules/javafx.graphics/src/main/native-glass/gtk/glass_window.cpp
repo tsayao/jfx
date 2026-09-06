@@ -1204,6 +1204,10 @@ void WindowContext::remove_window_constraints() {
 }
 
 void WindowContext::update_window_constraints() {
+    update_window_constraints(view_size);
+}
+
+void WindowContext::update_window_constraints(Size unresizable_size) {
     if (window_type == POPUP) return;
     if (!mapped) return;
 
@@ -1245,9 +1249,7 @@ void WindowContext::update_window_constraints() {
     } else {
         flags |= GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE;
 
-        int w, h;
-
-        gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
+        auto [w, h] = unresizable_size.get();
 
         hints.min_width = w;
         hints.min_height = h;
@@ -1678,7 +1680,7 @@ void WindowContext::move_resize(int x, int y, bool xSet, bool ySet, int width, i
     }
 
     if (not_resizable) {
-        update_window_constraints();
+        update_window_constraints(boundsW, boundsH);
     }
 }
 
