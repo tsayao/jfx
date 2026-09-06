@@ -1204,7 +1204,7 @@ void WindowContext::remove_window_constraints() {
 }
 
 void WindowContext::update_window_constraints() {
-    update_window_constraints(view_size);
+    update_window_constraints(view_size.get());
 }
 
 void WindowContext::update_window_constraints(Size unresizable_size) {
