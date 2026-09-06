@@ -1245,14 +1245,16 @@ void WindowContext::update_window_constraints() {
     } else {
         flags |= GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE;
 
-        auto [w, h] = view_size.get();
+        int w, h;
+
+        gtk_window_get_size(GTK_WINDOW(gtk_widget), &w, &h);
 
         hints.min_width = w;
         hints.min_height = h;
         hints.max_width = w;
         hints.max_height = h;
 
-        LOG(SIZE, log_id, "update_window_constraints: unresizable: %d,%d", w, h);
+        LOG(SIZE, log_id, "update_window_constraints: unresizable: %d,%d\n", w, h);
     }
 
      gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, &hints, (GdkWindowHints) flags);
