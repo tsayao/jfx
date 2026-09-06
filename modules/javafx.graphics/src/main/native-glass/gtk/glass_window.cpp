@@ -1249,7 +1249,7 @@ void WindowContext::update_window_constraints(Size unresizable_size) {
     } else {
         flags |= GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE;
 
-        auto [w, h] = unresizable_size.get();
+        auto [w, h] = unresizable_size;
 
         hints.min_width = w;
         hints.min_height = h;
