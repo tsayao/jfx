@@ -66,9 +66,9 @@ static GdkWMFunction glass_mask_to_wm_function(jint mask) {
     if (mask & com_sun_glass_ui_gtk_GtkWindow_MAXIMIZABLE) {
         func |= GDK_FUNC_MAXIMIZE;
     }
-    // if (mask & com_sun_glass_ui_gtk_GtkWindow_MINIMIZABLE) {
-    //     func |= GDK_FUNC_MINIMIZE;
-    // }
+    if (mask & com_sun_glass_ui_gtk_GtkWindow_MINIMIZABLE) {
+        func |= GDK_FUNC_MINIMIZE;
+    }
 
     return (GdkWMFunction) func;
 }
