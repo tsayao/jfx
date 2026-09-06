@@ -71,7 +71,7 @@ public class Util {
      * The native side may adjust values after Glass has applied them on the Java side.
      * <p>
      */
-    public static final long GEOMETRY_DELAY = 300;
+    public static final long GEOMETRY_DELAY = 500;
 
     /**
      * Time in milliseconds to wait for window state changes
