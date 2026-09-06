@@ -1200,8 +1200,7 @@ void WindowContext::remove_window_constraints() {
 
     LOG(SIZE, log_id, "remove_window_constraints\n");
 
-    gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr,
-        (GdkWindowHints) (GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE));
+    gtk_window_set_geometry_hints(GTK_WINDOW(gtk_widget), nullptr, nullptr, static_cast<GdkWindowHints>(0));
 }
 
 void WindowContext::update_window_constraints() {
