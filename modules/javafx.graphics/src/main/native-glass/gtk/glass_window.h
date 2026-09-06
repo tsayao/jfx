@@ -450,6 +450,7 @@ private:
     void load_cached_extents();
     bool get_frame_extents_property(int *, int *, int *, int *);
     void update_window_constraints();
+    void update_window_constraints(Size);
     void update_ontop_tree(bool);
     bool on_top_inherited();
     bool effective_on_top();
