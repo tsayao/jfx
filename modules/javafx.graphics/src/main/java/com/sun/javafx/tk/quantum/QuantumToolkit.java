@@ -617,7 +617,8 @@ public final class QuantumToolkit extends Toolkit {
                                            Modality modality, TKStage owner, boolean rtl, boolean darkFrame) {
         assertToolkitRunning();
         if (MdiDesktop.shouldEmbed(peerWindow)) {
-            MdiHost host = new MdiHost(MdiDesktop.getInstance(), stageStyle, primary);
+            MdiHost host = new MdiHost(MdiDesktop.getInstance(), stageStyle, primary, peerWindow,
+                    modality == Modality.NONE && !(owner instanceof MdiStage));
             return new MdiStage(host, modality, owner);
         }
         WindowStage stage = new WindowStage(peerWindow, stageStyle, modality, owner, darkFrame);
