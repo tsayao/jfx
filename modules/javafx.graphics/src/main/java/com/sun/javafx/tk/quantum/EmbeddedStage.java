@@ -34,7 +34,7 @@ import com.sun.javafx.tk.TKScene;
 import com.sun.javafx.tk.Toolkit;
 import javafx.application.Platform;
 
-final class EmbeddedStage extends GlassStage implements EmbeddedStageInterface {
+class EmbeddedStage extends GlassStage implements EmbeddedStageInterface {
 
     private HostInterface host;
 

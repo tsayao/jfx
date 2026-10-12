@@ -840,6 +840,10 @@ public class WindowStage extends GlassStage {
 
     @Override
     protected void setPlatformEnabled(boolean enabled) {
+        if (MdiDesktop.isMdiHostWindow(fxStage)) {
+            // the modal windows are inside of this window: it must keep working
+            return;
+        }
         super.setPlatformEnabled(enabled);
         if (platformWindow != null) {
             platformWindow.setEnabled(enabled);

@@ -616,6 +616,10 @@ public final class QuantumToolkit extends Toolkit {
     @Override public TKStage createTKStage(Window peerWindow, StageStyle stageStyle, boolean primary,
                                            Modality modality, TKStage owner, boolean rtl, boolean darkFrame) {
         assertToolkitRunning();
+        if (MdiDesktop.shouldEmbed(peerWindow)) {
+            MdiHost host = new MdiHost(MdiDesktop.getInstance(), stageStyle, primary);
+            return new MdiStage(host, modality, owner);
+        }
         WindowStage stage = new WindowStage(peerWindow, stageStyle, modality, owner, darkFrame);
         if (primary) {
             stage.setIsPrimary();
