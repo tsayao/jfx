@@ -351,55 +351,14 @@ static jobject get_data_uri_list(JNIEnv *env, gboolean files)
 }
 
 static jobject get_data_image(JNIEnv* env) {
-    GdkPixbuf* pixbuf;
-    guchar *data;
-    jbyteArray data_array;
-    jobject buffer, result;
-    int w,h,stride;
-
-    pixbuf = gtk_clipboard_wait_for_image(get_clipboard());
+    GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(get_clipboard());
     if (pixbuf == NULL) {
         return NULL;
     }
 
-    if (!gdk_pixbuf_get_has_alpha(pixbuf)) {
-        GdkPixbuf *tmp_buf = gdk_pixbuf_add_alpha(pixbuf, FALSE, 0, 0, 0);
-        g_object_unref(pixbuf);
-        pixbuf = tmp_buf;
-    }
-    w = gdk_pixbuf_get_width(pixbuf);
-    h = gdk_pixbuf_get_height(pixbuf);
-    stride = gdk_pixbuf_get_rowstride(pixbuf);
-
-    if (stride <= 0 || h <= 0 || (h > INT_MAX / stride)) {
-        g_object_unref(pixbuf);
-        return NULL;
-    }
-
-    data = gdk_pixbuf_get_pixels(pixbuf);
-
-    //Actually, we are converting RGBA to BGRA, but that's the same operation
-    data = (guchar*) convert_BGRA_to_RGBA((int*)data, stride, h);
-    if (!data) {
-        g_object_unref(pixbuf);
-        return NULL;
-    }
-
-    data_array = env->NewByteArray(stride*h);
-    EXCEPTION_OCCURED(env);
-    env->SetByteArrayRegion(data_array, 0, stride*h, (jbyte*)data);
-    EXCEPTION_OCCURED(env);
-
-    buffer = env->CallStaticObjectMethod(jByteBufferCls, jByteBufferWrap, data_array);
-    EXCEPTION_OCCURED(env);
-    result = env->NewObject(jGtkPixelsCls, jGtkPixelsInit, w, h, buffer);
-    EXCEPTION_OCCURED(env);
-
-    g_free(data);
+    jobject result = pixbuf_to_java(env, pixbuf);
     g_object_unref(pixbuf);
-
     return result;
-
 }
 
 static jobject get_data_raw(JNIEnv *env, const char* mime, gboolean string_data)

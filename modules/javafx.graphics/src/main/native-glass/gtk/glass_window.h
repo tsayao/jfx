@@ -248,6 +248,8 @@ public:
     bool grab_mouse_drag_focus();
     void ungrab_focus();
     void ungrab_mouse_drag_focus();
+    static void reset_mouse_drag_focus();
+    static WindowContext* get_mouse_drag_window();
     void set_cursor(GdkCursor*);
     void set_cursor_override(GdkCursor*);
     void set_level(int) {}

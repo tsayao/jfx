@@ -286,6 +286,8 @@ private:
 
     jobject uris_to_java(JNIEnv *env, gchar **uris, gboolean files);
 
+    jobject pixbuf_to_java(JNIEnv *env, GdkPixbuf *pixbuf);
+
 
 #ifdef __cplusplus
 extern "C" {

@@ -513,6 +513,42 @@ gsize get_files_count(gchar **uris) {
     return files_cnt;
 }
 
+jobject pixbuf_to_java(JNIEnv *env, GdkPixbuf *pixbuf) {
+    GdkPixbuf *buf = gdk_pixbuf_get_has_alpha(pixbuf)
+            ? GDK_PIXBUF(g_object_ref(pixbuf))
+            : gdk_pixbuf_add_alpha(pixbuf, FALSE, 0, 0, 0);
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    int w = gdk_pixbuf_get_width(buf);
+    int h = gdk_pixbuf_get_height(buf);
+    int stride = gdk_pixbuf_get_rowstride(buf);
+
+    //Actually, we are converting RGBA to BGRA, but that's the same operation
+    guchar *data = (guchar*) convert_BGRA_to_RGBA((int*) gdk_pixbuf_get_pixels(buf), stride, h);
+    g_object_unref(buf);
+    if (!data) {
+        return NULL;
+    }
+
+    jobject result = NULL;
+    jbyteArray data_array = env->NewByteArray(stride * h);
+    if (!check_and_clear_exception(env)) {
+        env->SetByteArrayRegion(data_array, 0, stride * h, (jbyte*) data);
+        if (!check_and_clear_exception(env)) {
+            jobject buffer = env->CallStaticObjectMethod(jByteBufferCls, jByteBufferWrap, data_array);
+            if (!check_and_clear_exception(env)) {
+                result = env->NewObject(jGtkPixelsCls, jGtkPixelsInit, w, h, buffer);
+                check_and_clear_exception(env);
+            }
+        }
+    }
+
+    g_free(data);
+    return result;
+}
+
 // Note: passed uris will be freed by this function
 jobject uris_to_java(JNIEnv *env, gchar **uris, gboolean files) {
     if (uris == NULL) {
